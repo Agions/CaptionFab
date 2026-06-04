@@ -2,9 +2,28 @@
 
 All notable changes to CaptionFab are documented here.
 
-## [3.6.0] - 2026-05-11
+## [Unreleased]
 
-### 🔧 Refactoring — Dead Code Elimination
+### 🎨 Branding & Design
+
+- **全新 Logo 设计** — 从 "SubLens" 品牌升级为 "CaptionFab"，采用电影胶卷 + 字幕条视觉元素
+- **专业级 README** — 重构为产品级展示页面，包含特性表格、性能对比、下载链接
+- **VitePress 文档站升级** — Hero 区域重设计，支持品牌色渐变和响应式布局
+- **品牌色系统** — 主色 `#1E40AF` (深蓝) + `#0EA5E9` (天蓝) + `#F59E0B` (琥珀)
+
+---
+
+## [4.0.0] - 2026-06-04
+
+### 🎉 重大更新 — 架构重构 v4 + 品牌升级
+
+### 📦 项目重命名
+- **SubLens** → **CaptionFab**（全项目无死角清洗，35+ 文件 97 处引用更新）
+- GitHub 仓库：`Agions/SubLens` → `Agions/CaptionFab`
+- localStorage keys：`sublens-*` → `captionfab-*`
+- 配置文件：`.sublens.json` → `.captionfab.json`
+
+### 🔴 P0 — 安全红线（已修复）
 
 大规模死代码清理，通过静态分析删除从未被调用的代码，总计减少约 **1,500 行**。
 
