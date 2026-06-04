@@ -13,7 +13,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  NPM_CONFIG_REGISTRY: https://registry.npmjs.org
 
 jobs:
   # ── Frontend (web build – shared by all platforms) ───────────────────────────
@@ -27,10 +26,32 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
+      # ── Cache tesseract.js language models ───────────────────────────────────
+      - name: Cache tesseract models
+        id: cache-tesseract
+        uses: actions/cache@v4
+        with:
+          path: ~/.tesseract
+          key: tesseract-models-v1-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            tesseract-models-v1-
+
+      - name: Download tesseract language models
+        if: steps.cache-tesseract.outputs.cache-hit != 'true'
         run: |
-          npm config set registry https://registry.npmjs.org
-          npm install --prefer-offline --no-audit --loglevel=error
+          mkdir -p ~/.tesseract
+          cd ~/.tesseract
+          # 下载常用语言模型（中文简体、繁体、英文、日文、韩文）
+          for lang in chi_sim chi_tra eng jpn kor; do
+            echo "Downloading $lang..."
+            curl -sL "https://github.com/naptha/tesseract.js/raw/v5.0.0/eng/$lang.traineddata.gz" \
+              -o "$lang.traineddata.gz" && gunzip -f "$lang.traineddata.gz" || true
+          done
+          echo "Done. Models:"
+          ls -la
+
+      - name: Install dependencies
+        run: npm install --prefer-offline --no-audit --loglevel=error
 
       - name: Build web
         run: npm run build
@@ -71,10 +92,31 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install frontend dependencies
+      # ── Cache tesseract.js language models ───────────────────────────────────
+      - name: Cache tesseract models
+        id: cache-tesseract
+        uses: actions/cache@v4
+        with:
+          path: ~/.tesseract
+          key: tesseract-models-v1-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            tesseract-models-v1-
+
+      - name: Download tesseract language models
+        if: steps.cache-tesseract.outputs.cache-hit != 'true'
         run: |
-          npm config set registry https://registry.npmjs.org
-          npm install --prefer-offline --no-audit --loglevel=error
+          mkdir -p ~/.tesseract
+          cd ~/.tesseract
+          for lang in chi_sim chi_tra eng jpn kor; do
+            echo "Downloading $lang..."
+            curl -sL "https://github.com/naptha/tesseract.js/raw/v5.0.0/eng/$lang.traineddata.gz" \
+              -o "$lang.traineddata.gz" && gunzip -f "$lang.traineddata.gz" || true
+          done
+          echo "Done. Models:"
+          ls -la
+
+      - name: Install frontend dependencies
+        run: npm install --prefer-offline --no-audit --loglevel=error
 
       - name: Download web build
         uses: actions/download-artifact@v4
