@@ -21,23 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Build web
-        run: pnpm build
+        run: npm run build
         env:
           CI: true
 
@@ -70,20 +65,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Download web build
         uses: actions/download-artifact@v4
@@ -122,31 +112,30 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'SubLens ${{ github.ref_name }}'
+          releaseName: 'CaptionFab ${{ github.ref_name }}'
           releaseBody: |
-            ## SubLens ${{ github.ref_name }}
+            ## CaptionFab ${{ github.ref_name }}
 
-            视频字幕提取工具，从视频中提取硬编码字幕，支持多种格式输出。
+            智能视频字幕提取工具，从视频中精准提取硬编码字幕，支持 9 种专业格式输出。
 
             ### Downloads
 
             | Platform | Architecture | File |
             |---------|-------------|------|
-            | macOS | Apple Silicon (M1/M2/M3) | `SubLens_macos-apple-silicon.tar.gz` |
-            | macOS | Intel | `SubLens_macos-intel.tar.gz` |
-            | Linux | x86_64 | `SubLens_ubuntu-x64.tar.gz` |
-            | Windows | x64 | `SubLens_windows-x64.zip` |
+            | macOS | Apple Silicon (M1/M2/M3) | `CaptionFab_macos-apple-silicon.tar.gz` |
+            | Linux | x86_64 | `CaptionFab_ubuntu-x64.tar.gz` |
+            | Windows | x64 | `CaptionFab_windows-x64.zip` |
 
             ### Features
-            - 视频字幕提取 via OCR (Tesseract.js / PaddleOCR / EasyOCR)
-            - 多种导出格式：SRT, VTT, ASS, SSA, JSON, TXT, LRC, SBV, CSV
-            - 多语言支持：中文、英文、日文、韩文等
-            - 键盘快捷键 & 主题切换
-            - 桌面 GUI + CLI 双模式
+            - 🤖 多引擎 OCR：PaddleOCR · EasyOCR · Tesseract.js，80+ 语言
+            - ⚡ 五阶段后处理：标准化 → 去噪 → 合并 → 融合 → 校准
+            - 📦 9 种导出格式：SRT, VTT, ASS, SSA, JSON, CSV, TXT, LRC, SBV
+            - 🎬 智能场景检测：直方图 + 卡方检验，减少 60% 无效 OCR
+            - 🔧 纯 Rust 后端：Tokio 异步 I/O，零外部运行时依赖
+            - 🛡️ 置信度校准：混语 · 短文本 · 重复字符自动降权
 
             ### Installation
             1. Download the archive for your platform
-            2. Extract and run `SubLens` (Linux/macOS) or `SubLens.exe` (Windows)
-            3. **macOS**: run `xattr -cr ./SubLens` if blocked by Gatekeeper
+            2. Extract and run `CaptionFab` (Linux/macOS) or `CaptionFab.exe` (Windows)
+            3. **macOS**: run `xattr -cr ./CaptionFab` if blocked by Gatekeeper
           args: ${{ matrix.args }}
-
