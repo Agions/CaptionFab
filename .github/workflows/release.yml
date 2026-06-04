@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Build web
         run: npm run build
@@ -69,11 +67,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Download web build
         uses: actions/download-artifact@v4
