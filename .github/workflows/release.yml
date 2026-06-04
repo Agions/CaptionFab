@@ -25,10 +25,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+
+      # ── Cache node_modules directly ──────────────────────────────────────────
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --loglevel=error
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm install --ignore-scripts --no-audit --loglevel=error
 
       - name: Build web
         run: npm run build
@@ -68,10 +78,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
-      - name: Install frontend dependencies
-        run: npm ci --ignore-scripts --no-audit --loglevel=error
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm install --ignore-scripts --no-audit --loglevel=error
 
       - name: Download web build
         uses: actions/download-artifact@v4
