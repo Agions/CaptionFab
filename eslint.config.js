@@ -2,7 +2,58 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import vueParser from 'vue-eslint-parser'
 import pluginVue from 'eslint-plugin-vue'
-import globals from 'globals'
+
+// Inline browser globals (replaces removed 'globals' package)
+const browserGlobals = {
+  window: 'readonly',
+  document: 'readonly',
+  navigator: 'readonly',
+  location: 'readonly',
+  console: 'readonly',
+  setTimeout: 'readonly',
+  setInterval: 'readonly',
+  clearTimeout: 'readonly',
+  clearInterval: 'readonly',
+  Promise: 'readonly',
+  fetch: 'readonly',
+  Request: 'readonly',
+  Response: 'readonly',
+  Blob: 'readonly',
+  File: 'readonly',
+  FileReader: 'readonly',
+  URL: 'readonly',
+  URLSearchParams: 'readonly',
+  structuredClone: 'readonly',
+  // DOM types
+  MouseEvent: 'readonly',
+  KeyboardEvent: 'readonly',
+  HTMLElement: 'readonly',
+  HTMLVideoElement: 'readonly',
+  HTMLInputElement: 'readonly',
+  HTMLCanvasElement: 'readonly',
+  HTMLImageElement: 'readonly',
+  HTMLButtonElement: 'readonly',
+  HTMLFormElement: 'readonly',
+  HTMLDivElement: 'readonly',
+  HTMLSpanElement: 'readonly',
+  Node: 'readonly',
+  Event: 'readonly',
+  CustomEvent: 'readonly',
+  DragEvent: 'readonly',
+}
+
+const es2022Globals = {
+  AggregateError: 'readonly',
+  Atomics: 'readonly',
+  FinalizationRegistry: 'readonly',
+  globalThis: 'readonly',
+  ImportMeta: 'readonly',
+  Object: 'readonly',
+  Promise: 'readonly',
+  Reflect: 'readonly',
+  SharedArrayBuffer: 'readonly',
+  WeakRef: 'readonly',
+}
 
 export default [
   {
@@ -18,8 +69,8 @@ export default [
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       globals: {
-        ...globals.browser,
-        ...globals.es2022,
+        ...browserGlobals,
+        ...es2022Globals,
       },
     },
     rules: {
@@ -44,7 +95,7 @@ export default [
         extraFileExtensions: ['.vue'],
       },
       globals: {
-        ...globals.browser,
+        ...browserGlobals,
         console: 'readonly',
         alert: 'readonly',
         defineProps: 'readonly',

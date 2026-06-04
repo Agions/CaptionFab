@@ -24,7 +24,7 @@ function updateField<K extends keyof BatchOptions>(key: K, value: BatchOptions[K
     <div class="option-grid">
       <div class="option-item">
         <label class="option-label">OCR 引擎</label>
-        <select :value="modelValue.ocrEngine" @change="updateField('ocrEngine', ($event.target as HTMLSelectElement).value as any)">
+        <select :value="modelValue.ocrEngine" @change="updateField('ocrEngine', ($event.target as HTMLSelectElement).value as BatchOptions['ocrEngine'])">
           <option value="tesseract">Tesseract.js</option>
           <option value="paddle">PaddleOCR</option>
           <option value="easyocr">EasyOCR</option>
@@ -46,8 +46,8 @@ function updateField<K extends keyof BatchOptions>(key: K, value: BatchOptions[K
     <div class="option-item">
       <label class="option-label">导出格式</label>
       <div class="format-chips">
-        <label v-for="fmt in ['srt','vtt','ass','json']" :key="fmt" :class="['chip', { active: modelValue.formats.includes(fmt as any) }]">
-          <input type="checkbox" :value="fmt" :checked="modelValue.formats.includes(fmt as any)" @change="handleFormatChange(fmt, ($event.target as HTMLInputElement).checked)" />
+        <label v-for="fmt in ['srt','vtt','ass','json']" :key="fmt" :class="['chip', { active: modelValue.formats.includes(fmt as BatchOptions['formats'][number]) }]">
+          <input type="checkbox" :value="fmt" :checked="modelValue.formats.includes(fmt as BatchOptions['formats'][number])" @change="handleFormatChange(fmt, ($event.target as HTMLInputElement).checked)" />
           {{ fmt.toUpperCase() }}
         </label>
       </div>
@@ -68,7 +68,7 @@ export default {
   methods: {
     handleFormatChange(fmt: string, checked: boolean) {
       const formats = checked
-        ? [...this.modelValue.formats, fmt as any]
+        ? [...this.modelValue.formats, fmt as BatchOptions['formats'][number]]
         : this.modelValue.formats.filter(f => f !== fmt)
       this.$emit('update:modelValue', { ...this.modelValue, formats })
     }
