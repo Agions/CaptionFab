@@ -223,7 +223,7 @@ async fn extract_frame_at_time_impl(
     let uuid = uuid_v4();
     let timestamp_ms = (timestamp_secs * 1000.0) as u64;
     let output_path = std::env::temp_dir().join(format!(
-        "sublens_frame_{}_{}.png",
+        "captionfab_frame_{}_{}.png",
         timestamp_ms,
         uuid
     ));

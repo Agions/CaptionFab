@@ -1,4 +1,4 @@
-# Contributing to SubLens
+# Contributing to CaptionFab
 
 Contributions are welcome. This guide covers how to report issues, submit code, and set up your development environment.
 
@@ -8,11 +8,11 @@ Contributions are welcome. This guide covers how to report issues, submit code, 
 
 Before opening a new issue:
 
-1. Search [GitHub Issues](https://github.com/Agions/SubLens/issues) to check if it already exists
+1. Search [GitHub Issues](https://github.com/Agions/CaptionFab/issues) to check if it already exists
 2. If not, open a new issue with a clear title and detailed reproduction steps
 
 For bug reports, include:
-- SubLens version
+- CaptionFab version
 - Operating system
 - Steps to reproduce
 - Expected vs actual behavior
@@ -106,8 +106,8 @@ Closes #123
 ### Local Setup
 
 ```bash
-git clone https://github.com/Agions/SubLens.git
-cd SubLens
+git clone https://github.com/Agions/CaptionFab.git
+cd CaptionFab
 pnpm install
 
 # Start development server

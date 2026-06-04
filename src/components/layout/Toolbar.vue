@@ -66,13 +66,13 @@ async function handleSave() {
       roi: sub.roi
     }))
 
-    const filePath = await fileOps.saveFileDialog('保存项目', `${projectName.value}.sublens.json`)
+    const filePath = await fileOps.saveFileDialog('保存项目', `${projectName.value}.captionfab.json`)
     if (!filePath) return
 
     isLoading.value = true
 
     const projectData = JSON.stringify({
-      version: '3.0.0',
+      version: '3.6.0',
       projectName: projectName.value,
       videoPath: projectStore.videoPath,
       subtitles
@@ -117,7 +117,7 @@ function openAbout() {
             fill="currentColor"
           />
         </svg>
-        <span class="logo-text">SubLens</span>
+        <span class="logo-text">CaptionFab</span>
       </div>
 
       <div class="divider" />

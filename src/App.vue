@@ -5,13 +5,13 @@ import { useKeyboardShortcuts } from '@/composables/useHotkeys'
 import { useSubtitleExtractor } from '@/composables/useExtractor'
 import Toolbar from '@/components/layout/Toolbar.vue'
 import Panel from '@/components/layout/Panel.vue'
-import Video from '@/components/layout/Video.vue'
-import List from '@/components/subtitle/List.vue'
-import Timeline from '@/components/video/Timeline.vue'
+import VideoPreview from '@/components/layout/VideoPreview.vue'
+import SubtitleList from '@/components/subtitle/SubtitleList.vue'
+import TimelineController from '@/components/video/TimelineController.vue'
 import StatusBar from '@/components/layout/StatusBar.vue'
 import Shortcuts from '@/components/common/Shortcuts.vue'
 import Export from '@/components/subtitle/SubExport.vue'
-import Batch from '@/components/layout/Batch.vue'
+import BatchProcessing from '@/components/layout/BatchProcessing.vue'
 import SubToast from '@/components/common/SubToast.vue'
 import Toast from '@/components/common/Toast.vue'
 import { useSubtitleStore } from '@/stores/subtitle'
@@ -53,7 +53,7 @@ provide('openExport', openExport)
 const showTimeline = ref(true)
 const shortcutsHelpRef = ref<InstanceType<typeof Shortcuts> | null>(null)
 const exportDialogRef = ref<InstanceType<typeof Export> | null>(null)
-const batchProcessRef = ref<InstanceType<typeof Batch> | null>(null)
+const batchProcessRef = ref<InstanceType<typeof BatchProcessing> | null>(null)
 
 function openBatchProcess() {
   batchProcessRef.value?.open()
@@ -89,17 +89,17 @@ onUnmounted(() => {
     <div class="app-main">
       <Panel />
       <div class="main-content">
-        <Video class="video-area" />
-        <Timeline v-if="showTimeline" class="timeline-area" />
+        <VideoPreview class="video-area" />
+        <TimelineController v-if="showTimeline" class="timeline-area" />
       </div>
-      <List />
+      <SubtitleList />
     </div>
     
     <StatusBar />
     
     <Shortcuts ref="shortcutsHelpRef" />
     <Export ref="exportDialogRef" />
-    <Batch ref="batchProcessRef" />
+    <BatchProcessing ref="batchProcessRef" />
     <SubToast
       :visible="toastVisible"
       :text="toastText"

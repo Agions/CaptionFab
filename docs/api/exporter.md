@@ -1,5 +1,5 @@
 ---
-title: SubLens Exporter
+title: CaptionFab Exporter
 ---
 
 # Exporter — 多格式导出器
@@ -101,7 +101,7 @@ const content = Exporter.exportJson(subtitles, {
 ```json
 {
   "format": "SRT",
-  "tool": "SubLens",
+  "tool": "CaptionFab",
   "version": "3.6.0",
   "exportedAt": "2026-05-11T10:30:00.000Z",
   "title": "Video Subtitle",

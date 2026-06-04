@@ -226,8 +226,4 @@ function handleClick(e: MouseEvent) {
 .icon {
   font-size: 1em;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 </style>

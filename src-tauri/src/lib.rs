@@ -1,8 +1,8 @@
-//! SubLens - Rust Tauri Application Library
+//! CaptionFab - Rust Tauri Application Library
 //!
 //! # Overview
 //!
-//! SubLens is a desktop application for extracting subtitles from videos using OCR.
+//! CaptionFab is a desktop application for extracting subtitles from videos using OCR.
 //!
 //! # Architecture
 //!
@@ -37,7 +37,7 @@ pub fn run() {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    info!("Starting SubLens v{}", env!("CARGO_PKG_VERSION"));
+    info!("Starting CaptionFab v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -58,7 +58,7 @@ pub fn run() {
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
             tracing::error!("Failed to run Tauri application: {}", e);
-            eprintln!("ERROR: Failed to start SubLens application: {}", e);
+            eprintln!("ERROR: Failed to start CaptionFab application: {}", e);
             std::process::exit(1);
         });
 }

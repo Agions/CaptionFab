@@ -1,10 +1,10 @@
 ---
 layout: home
-title: SubLens — 智能视频字幕提取工具
+title: CaptionFab — 智能视频字幕提取工具
 titleTemplate: false
 ---
 hero:
-  name: SubLens
+  name: CaptionFab
   text: 智能视频字幕提取
   tagline: 从视频中提取硬编码字幕，输出 SRT · VTT · ASS · JSON 等 9 种格式。基于 Tauri 2.x + Vue 3 + Rust 构建，前端 OCR，后端纯异步 I/O。
   actions:
@@ -16,7 +16,7 @@ hero:
       link: /architecture
     - theme: alt
       text: GitHub
-      link: https://github.com/Agions/SubLens
+      link: https://github.com/Agions/CaptionFab
 
 features:
   - icon: 🎯

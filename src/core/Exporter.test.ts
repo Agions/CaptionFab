@@ -158,7 +158,7 @@ describe('Exporter', () => {
       expect(parsed.subtitles[0].startTime).toBe(0.0)
       expect(parsed.subtitles[0].endTime).toBe(1.5)
       expect(parsed.subtitles[0].confidence).toBe(0.95)
-      expect(parsed.tool).toBe('SubLens')
+      expect(parsed.tool).toBe('CaptionFab')
     })
   })
 

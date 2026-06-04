@@ -43,14 +43,14 @@ function cleanupLocalStorage(keys: string[]) {
       if (keySet.has(key) || keys.some(k => key.startsWith(k))) {
         try {
           localStorage.removeItem(key)
-          console.warn('[SubLens Settings] Cleaned up:', key)
+          console.warn('[CaptionFab Settings] Cleaned up:', key)
         } catch {
           // 单个 key 删除失败不影响其他
         }
       }
     }
   } catch (e) {
-    console.warn('[SubLens Settings] Failed to cleanup localStorage:', e)
+    console.warn('[CaptionFab Settings] Failed to cleanup localStorage:', e)
   }
 }
 
@@ -63,7 +63,7 @@ export const useSettingsStore = defineStore('settings', () => {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
       }
     } catch (e) {
-      console.warn('[SubLens Settings] Failed to load settings:', e)
+      console.warn('[CaptionFab Settings] Failed to load settings:', e)
     }
     return { ...DEFAULT_SETTINGS }
   }
@@ -78,31 +78,31 @@ export const useSettingsStore = defineStore('settings', () => {
       try {
         const serialized = JSON.stringify(newSettings)
         if (serialized.length > LOCALSTORAGE_SIZE_LIMIT) {
-          console.warn('[SubLens Settings] Settings too large to save:', serialized.length, 'bytes')
+          console.warn('[CaptionFab Settings] Settings too large to save:', serialized.length, 'bytes')
           return
         }
         localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, serialized)
       } catch (e: unknown) {
         const err = e as { name?: string }
         if (err.name === 'QuotaExceededError') {
-          console.warn('[SubLens Settings] localStorage quota exceeded, attempting cleanup')
+          console.warn('[CaptionFab Settings] localStorage quota exceeded, attempting cleanup')
           cleanupLocalStorage([LOCALSTORAGE_KEY_THUMBNAILS, LOCALSTORAGE_KEY_CACHE, LOCALSTORAGE_KEY_TEMP])
           try {
             localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify(newSettings))
-            console.info('[SubLens Settings] Successfully saved after cleanup')
+            console.info('[CaptionFab Settings] Successfully saved after cleanup')
           } catch {
-            console.warn('[SubLens Settings] Cleanup insufficient, saving minimal config')
+            console.warn('[CaptionFab Settings] Cleanup insufficient, saving minimal config')
             try {
               localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify({
                 theme: newSettings.theme,
                 language: newSettings.language
               }))
             } catch {
-              console.error('[SubLens Settings] Failed to save even minimal config')
+              console.error('[CaptionFab Settings] Failed to save even minimal config')
             }
           }
         } else {
-          console.warn('[SubLens Settings] Failed to save settings:', err)
+          console.warn('[CaptionFab Settings] Failed to save settings:', err)
         }
       }
     }, 100)

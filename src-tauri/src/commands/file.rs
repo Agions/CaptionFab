@@ -84,7 +84,7 @@ fn validate_path(path: &str) -> Result<(), String> {
     // Never allow arbitrary user directories like ~/Documents.
     // If data_local_dir is unavailable, fall back to temp only (never ".")
     let allowed_dirs = match dirs::data_local_dir() {
-        Some(local) => vec![std::env::temp_dir(), local.join("SubLens")],
+        Some(local) => vec![std::env::temp_dir(), local.join("CaptionFab")],
         None => vec![std::env::temp_dir()],
     };
 
