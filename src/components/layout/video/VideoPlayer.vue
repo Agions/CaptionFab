@@ -7,7 +7,7 @@ interface Props {
   error: string | null
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   init: [el: HTMLVideoElement]
