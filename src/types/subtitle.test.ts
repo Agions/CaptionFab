@@ -108,8 +108,8 @@ describe('SubtitleExporter', () => {
   describe('LRC', () => {
     it('LRC metadata header', () => {
       const result = exporter.export([createSub()], 'lrc').content
-      expect(result).toContain('[ti:SubLens Export]')
-      expect(result).toContain('[ar:SubLens]')
+      expect(result).toContain('[ti:CaptionFab Export]')
+      expect(result).toContain('[ar:CaptionFab]')
     })
 
     it('timestamp format mm:ss.xx', () => {
@@ -130,7 +130,7 @@ describe('SubtitleExporter', () => {
       const result = exporter.export([createSub()], 'json').content
       const parsed = JSON.parse(result)
       expect(parsed.version).toBe('3.0')
-      expect(parsed.tool).toBe('SubLens')
+      expect(parsed.tool).toBe('CaptionFab')
     })
   })
 

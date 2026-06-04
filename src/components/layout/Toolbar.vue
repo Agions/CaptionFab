@@ -117,7 +117,7 @@ function openAbout() {
             fill="currentColor"
           />
         </svg>
-        <span class="logo-text">SubLens</span>
+        <span class="logo-text">CaptionFab</span>
       </div>
 
       <div class="divider" />

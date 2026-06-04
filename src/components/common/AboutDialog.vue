@@ -35,12 +35,12 @@ function close() {
 </script>
 
 <template>
-  <Modal :open="open" title="关于 SubLens" size="md" @close="close">
+  <Modal :open="open" title="关于 CaptionFab" size="md" @close="close">
     <div class="about-content">
       <div class="about-header">
         <div class="app-icon">🎬</div>
         <div class="app-info">
-          <h2 class="app-name">SubLens</h2>
+          <h2 class="app-name">CaptionFab</h2>
           <p class="app-version">版本 {{ version }}</p>
           <p class="app-date">构建于 {{ buildDate }}</p>
         </div>
@@ -70,15 +70,15 @@ function close() {
       </div>
 
       <div class="links-section">
-        <a href="https://github.com/Agions/SubLens" target="_blank" rel="noopener noreferrer" class="link-item">
+        <a href="https://github.com/Agions/CaptionFab" target="_blank" rel="noopener noreferrer" class="link-item">
           <span class="link-icon">🐛</span>
           <span class="link-text">问题反馈</span>
         </a>
-        <a href="https://github.com/Agions/SubLens/releases" target="_blank" rel="noopener noreferrer" class="link-item">
+        <a href="https://github.com/Agions/CaptionFab/releases" target="_blank" rel="noopener noreferrer" class="link-item">
           <span class="link-icon">📦</span>
           <span class="link-text">发布版本</span>
         </a>
-        <a href="https://github.com/Agions/SubLens/discussions" target="_blank" rel="noopener noreferrer" class="link-item">
+        <a href="https://github.com/Agions/CaptionFab/discussions" target="_blank" rel="noopener noreferrer" class="link-item">
           <span class="link-icon">💬</span>
           <span class="link-text">讨论区</span>
         </a>
