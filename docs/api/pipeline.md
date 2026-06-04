@@ -1,12 +1,12 @@
 ---
-title: SubLens Pipeline
+title: CaptionFab Pipeline
 ---
 
 # Pipeline — OCR 后处理管道
 
 ## 概述
 
-`Pipeline.ts` 是 SubLens 的核心字幕后处理引擎，将 OCR 原始输出转换为干净、可导出的高质量字幕。
+`Pipeline.ts` 是 CaptionFab 的核心字幕后处理引擎，将 OCR 原始输出转换为干净、可导出的高质量字幕。
 
 设计原则：**纯函数、无副作用、可独立测试、可配置**。
 

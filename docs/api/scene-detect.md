@@ -1,12 +1,12 @@
 ---
-title: SubLens SceneDetect
+title: CaptionFab SceneDetect
 ---
 
 # SceneDetect — 场景检测
 
 ## 概述
 
-SubLens 有两套场景检测实现：
+CaptionFab 有两套场景检测实现：
 
 | 实现 | 位置 | 引擎 | 适用场景 |
 |:---|:---|:---|:---|

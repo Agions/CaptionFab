@@ -1,5 +1,5 @@
 ---
-title: SubLens Calibrator
+title: CaptionFab Calibrator
 ---
 
 # Calibrator — 置信度校准

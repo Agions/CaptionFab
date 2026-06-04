@@ -1,4 +1,4 @@
-//! SubLens - Rust Tauri 后端命令层
+//! CaptionFab - Rust Tauri 后端命令层
 //!
 //! ## 模块结构
 //!

@@ -151,7 +151,7 @@ ffmpeg -i input.mkv -c:v libx264 -c:a aac output.mp4
 
 ### Q: 内存占用越来越高？
 
-**A:** SubLens 目前在内存中保留所有识别结果，计划支持流式处理。工作区限制：
+**A:** CaptionFab 目前在内存中保留所有识别结果，计划支持流式处理。工作区限制：
 
 - 关闭其他占用内存的应用
 - 分段处理超长视频（剪成多个小文件）
@@ -166,7 +166,7 @@ ffmpeg -i input.mkv -c:v libx264 -c:a aac output.mp4
 
 ### Q: 项目文件保存在哪里？
 
-**A:** 项目配置在 `~/.sublens/`：
+**A:** 项目配置在 `~/.captionfab/`：
 - `settings.json` — 用户设置
 - `roi-presets.json` — ROI 预设
 - `logs/` — 运行日志

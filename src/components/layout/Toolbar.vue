@@ -66,7 +66,7 @@ async function handleSave() {
       roi: sub.roi
     }))
 
-    const filePath = await fileOps.saveFileDialog('保存项目', `${projectName.value}.sublens.json`)
+    const filePath = await fileOps.saveFileDialog('保存项目', `${projectName.value}.captionfab.json`)
     if (!filePath) return
 
     isLoading.value = true

@@ -1,12 +1,12 @@
 ---
-title: SubLens API 命令总览
+title: CaptionFab API 命令总览
 ---
 
 # Tauri 命令总览
 
 ## 概览
 
-SubLens 后端通过 Tauri IPC 暴露 11 个命令给前端调用。
+CaptionFab 后端通过 Tauri IPC 暴露 11 个命令给前端调用。
 
 ## 命令列表
 

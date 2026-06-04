@@ -1,8 +1,8 @@
 ---
-title: SubLens 开发者指南
+title: CaptionFab 开发者指南
 ---
 
-# SubLens 开发者指南
+# CaptionFab 开发者指南
 
 ## 1. 环境搭建
 
@@ -19,8 +19,8 @@ title: SubLens 开发者指南
 ### 1.2 初始化项目
 
 ```bash
-git clone https://github.com/Agions/SubLens.git
-cd SubLens
+git clone https://github.com/Agions/CaptionFab.git
+cd CaptionFab
 pnpm install
 ```
 
@@ -67,7 +67,7 @@ cargo clippy -- -D warnings
 ## 2. 项目结构速查
 
 ```
-SubLens/
+CaptionFab/
 ├── src/                        # Vue 前端
 │   ├── components/            # UI 组件
 │   ├── composables/           # 组合式函数
@@ -144,7 +144,7 @@ invoke_handler(tauri::generate_handler![
 
 ```typescript
 import { invoke } from '@tauri-apps/api/core'
-const greeting = await invoke<string>('greet', { name: 'SubLens' })
+const greeting = await invoke<string>('greet', { name: 'CaptionFab' })
 ```
 
 ---
@@ -433,7 +433,7 @@ pnpm tauri build
 
 ## 12. 文档结构
 
-SubLens 使用 **VitePress** 作为文档系统，源码在 `docs/` 目录：
+CaptionFab 使用 **VitePress** 作为文档系统，源码在 `docs/` 目录：
 
 ```
 docs/

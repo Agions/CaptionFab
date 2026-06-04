@@ -1,12 +1,12 @@
 ---
-title: SubLens 架构文档
+title: CaptionFab 架构文档
 ---
 
-# SubLens 架构文档
+# CaptionFab 架构文档
 
 ## 1. 系统概览
 
-SubLens 是一款基于 Tauri 2.x 的桌面字幕提取工具，前端 Vue 3 + TypeScript，后端 Rust + Tokio。核心设计原则：**前端承担计算密集型 OCR，后端专注系统级 I/O**。
+CaptionFab 是一款基于 Tauri 2.x 的桌面字幕提取工具，前端 Vue 3 + TypeScript，后端 Rust + Tokio。核心设计原则：**前端承担计算密集型 OCR，后端专注系统级 I/O**。
 
 ### 1.1 数据流向
 
@@ -198,7 +198,7 @@ get_video_metadata(path)
 extract_frame_at_time(path, timestamp_secs, crop_filter?)
   │
   ├─ canonicalize 路径（防止路径遍历）
-  ├─ 生成临时文件: sublens_frame_{timestamp_ms}_{uuid}.png
+  ├─ 生成临时文件: captionfab_frame_{timestamp_ms}_{uuid}.png
   ├─ TempFileGuard 注册析构（函数返回时自动清理）
   │
   └─ ffmpeg -ss {ts} -i {path} -vframes 1 [-vf {crop}] {temp}.png

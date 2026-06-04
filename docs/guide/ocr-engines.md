@@ -79,7 +79,7 @@ pip install paddlepaddle-gpu  # GPU 版本
 pip install paddleocr
 ```
 
-详见 [PaddleOCR 安装指南](https://github.com/Agions/SubLens/tree/main/docs/guide/ocr-engines)。
+详见 [PaddleOCR 安装指南](https://github.com/Agions/CaptionFab/tree/main/docs/guide/ocr-engines)。
 
 ## 引擎选择建议
 

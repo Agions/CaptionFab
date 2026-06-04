@@ -1,19 +1,19 @@
-# SubLens
+# CaptionFab
 
 <div align="center">
-  <img src="public/logo.svg" width="120" height="120" alt="SubLens" />
+  <img src="public/logo.svg" width="120" height="120" alt="CaptionFab" />
 </div>
 
 **视频字幕提取工具** — 从视频中提取硬编码字幕，输出 SRT / VTT / ASS / JSON 等多种格式。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Stars](https://img.shields.io/github/stars/Agions/SubLens?style=social)](https://github.com/Agions/SubLens/stargazers)
+[![Stars](https://img.shields.io/github/stars/Agions/CaptionFab?style=social)](https://github.com/Agions/CaptionFab/stargazers)
 [![Tauri](https://img.shields.io/badge/Tauri-FFC131?style=flat-square&logo=tauri&logoColor=FFC131)](https://tauri.app)
 [![Vue](https://img.shields.io/badge/Vue.js-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white)](https://vuejs.org)
 [![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
-[![Test](https://img.shields.io/badge/Tests-193%20%E9%80%89%E9%80%89%E9%80%9A%E8%BF%87-green?style=flat-square)](https://github.com/Agions/SubLens/actions)
-[![CI](https://img.shields.io/github/actions/workflow/status/Agions/SubLens/CI.yml?branch=main&style=flat-square)](https://github.com/Agions/SubLens/actions/workflows/CI.yml)
-[![npm](https://img.shields.io/npm/v/sublens?style=flat-square)](https://www.npmjs.com/package/sublens)
+[![Test](https://img.shields.io/badge/Tests-193%20%E9%80%89%E9%80%89%E9%80%9A%E8%BF%87-green?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/Agions/CaptionFab/CI.yml?branch=main&style=flat-square)](https://github.com/Agions/CaptionFab/actions/workflows/CI.yml)
+[![npm](https://img.shields.io/npm/v/captionfab?style=flat-square)](https://www.npmjs.com/package/captionfab)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen?style=flat-square)](https://nodejs.org)
 
 ---
@@ -53,8 +53,8 @@ MP4 · MKV · AVI · MOV · WebM · M4V · WMV · FLV · 3GP
 ## 快速开始
 
 ```bash
-git clone https://github.com/Agions/SubLens.git
-cd SubLens
+git clone https://github.com/Agions/CaptionFab.git
+cd CaptionFab
 pnpm install
 pnpm tauri dev   # 开发模式
 pnpm tauri build # 生产构建
@@ -86,7 +86,7 @@ pnpm tauri build # 生产构建
 ## 项目结构
 
 ```
-SubLens/
+CaptionFab/
 ├── src/                       # Vue 3 前端
 │   ├── components/           # Vue SFC 组件
 │   │   ├── common/           # Button、Modal、Tooltip

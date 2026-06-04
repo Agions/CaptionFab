@@ -6,7 +6,7 @@ title: 导出格式
 
 ## 支持的格式
 
-SubLens 支持 9 种字幕格式导出：
+CaptionFab 支持 9 种字幕格式导出：
 
 | 格式 | 文件扩展名 | 兼容性 | 特点 |
 |:---|:---|:---|:---|
@@ -56,7 +56,7 @@ WEBVTT
 
 ```ass
 [Script Info]
-Title: SubLens Export
+Title: CaptionFab Export
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, Bold, Alignment
@@ -87,7 +87,7 @@ Dialogue: 0,0:00:05.20,0:00:08.80,Default,0,0,0,,第二条字幕
 ```json
 {
   "format": "SRT",
-  "tool": "SubLens",
+  "tool": "CaptionFab",
   "exportedAt": "2026-05-11T10:30:00.000Z",
   "subtitles": [
     {

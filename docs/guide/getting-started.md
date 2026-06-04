@@ -52,8 +52,8 @@ tesseract --version
 ## 项目初始化
 
 ```bash
-git clone https://github.com/Agions/SubLens.git
-cd SubLens
+git clone https://github.com/Agions/CaptionFab.git
+cd CaptionFab
 pnpm install
 ```
 

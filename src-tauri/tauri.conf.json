@@ -41,8 +41,8 @@
     ],
     "resources": [],
     "category": "Utility",
-    "shortDescription": "SubLens - 视频字幕提取工具",
-    "longDescription": "SubLens is a video subtitle extraction tool powered by OCR. It extracts hardcoded subtitles from videos using Tesseract.js, PaddleOCR, or EasyOCR, and exports to multiple formats including SRT, VTT, ASS, SSA, JSON, TXT, LRC, SBV, and CSV.",
+    "shortDescription": "CaptionFab - 视频字幕提取工具",
+    "longDescription": "CaptionFab is a video subtitle extraction tool powered by OCR. It extracts hardcoded subtitles from videos using Tesseract.js, PaddleOCR, or EasyOCR, and exports to multiple formats including SRT, VTT, ASS, SSA, JSON, TXT, LRC, SBV, and CSV.",
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
