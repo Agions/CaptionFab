@@ -31,7 +31,7 @@ titleTemplate: CaptionFab | 专业字幕提取
     </div>
   </div>
   <div class="hero-visual">
-    <img src="/logo.svg" alt="CaptionFab Logo" class="hero-logo"/>
+    <img src="/logo.svg" alt="CaptionFab Logo" class="hero-logo" style="width: 140px; height: 140px;"/>
   </div>
 </div>
 ```

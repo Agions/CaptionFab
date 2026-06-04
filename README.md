@@ -11,7 +11,7 @@
 
 ---
 
-![CaptionFab](https://raw.githubusercontent.com/Agions/CaptionFab/main/public/logo.svg)
+<img src="https://raw.githubusercontent.com/Agions/CaptionFab/main/public/logo.svg" alt="CaptionFab" width="100"/>
 
 </div>
 
