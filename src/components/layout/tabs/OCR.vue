@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useOCR } from '@/composables/useOCR'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useProjectStore } from '@/stores/project'
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 
 const projectStore = useProjectStore()
 const {
@@ -143,12 +144,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">多通道 OCR</span>
             <span class="option-hint">多次识别取最优结果</span>
           </div>
-          <button
-            :class="['toggle-switch', { on: multiPass }]"
-            @click="toggleMultiPass"
-          >
-            <span class="toggle-thumb"/>
-          </button>
+          <ToggleSwitch v-model="multiPass" @update:model-value="toggleMultiPass" />
         </div>
 
         <!-- Text Post-processing -->
@@ -157,12 +153,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">文字后处理</span>
             <span class="option-hint">自动修正标点、繁简转换</span>
           </div>
-          <button
-            :class="['toggle-switch', { on: postProcess }]"
-            @click="togglePostProcess"
-          >
-            <span class="toggle-thumb"/>
-          </button>
+          <ToggleSwitch v-model="postProcess" @update:model-value="togglePostProcess" />
         </div>
 
         <!-- Merge Similar Subtitles -->
@@ -171,12 +162,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">字幕合并</span>
             <span class="option-hint">自动合并相似相邻字幕</span>
           </div>
-          <button
-            :class="['toggle-switch', { on: mergeSubtitles }]"
-            @click="toggleMergeSubtitles"
-          >
-            <span class="toggle-thumb"/>
-          </button>
+          <ToggleSwitch v-model="mergeSubtitles" @update:model-value="toggleMergeSubtitles" />
         </div>
 
         <!-- Merge Threshold -->

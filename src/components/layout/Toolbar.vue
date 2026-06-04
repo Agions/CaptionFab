@@ -72,7 +72,7 @@ async function handleSave() {
     isLoading.value = true
 
     const projectData = JSON.stringify({
-      version: '3.0.0',
+      version: '3.6.0',
       projectName: projectName.value,
       videoPath: projectStore.videoPath,
       subtitles

@@ -14,7 +14,6 @@
 //! | `file` | 文件操作（对话框、读写） |
 //! | `system` | 系统依赖检查（ffmpeg、tesseract）|
 //! | `timestamp` | 时间戳格式化（SRT/VTT/ASS/SSA/SBV）|
-//! | `ocr` | OCR 占位（逻辑已移至前端 WASM）|
 
 pub mod types;
 pub mod utils;
@@ -26,4 +25,3 @@ pub mod ffmpeg;
 pub mod file;
 pub mod system;
 pub mod timestamp;
-pub mod ocr;

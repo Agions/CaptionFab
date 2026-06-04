@@ -12,7 +12,7 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-const version = '3.0.0'
+const version = '3.6.0'
 const buildDate = new Date().toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: 'long',

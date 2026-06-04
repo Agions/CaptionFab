@@ -1,0 +1,27 @@
+// ============================================
+// Global Animation Keyframes
+// ============================================
+
+// Fade up: entrance animation with slight upward motion
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Card enter: subtle entrance for card components
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

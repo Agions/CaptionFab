@@ -129,3 +129,14 @@ export function formatTimeLrc(seconds: number): string {
 export function formatFrameNumber(frame: number): string {
   return frame.toLocaleString()
 }
+
+/**
+ * Format seconds to ETA string (estimated time of arrival)
+ * Used for batch processing progress display
+ */
+export function formatETA(seconds: number | null): string {
+  if (seconds === null) return ''
+  if (seconds < 60) return `约 ${seconds}s`
+  if (seconds < 3600) return `约 ${Math.ceil(seconds / 60)}m`
+  return `约 ${Math.floor(seconds / 3600)}h ${Math.ceil((seconds % 3600) / 60)}m`
+}
