@@ -1,7 +1,7 @@
 {
   "name": "caption-fab",
   "version": "3.6.0",
-  "description": "CaptionFab - Professional Hardcoded Subtitle Extraction Tool",
+  "description": "CaptionFab - 专业硬编码字幕提取工具，从视频中精准提取字幕，支持多种格式输出。基于 Tauri + Vue 3 + Rust 构建。",
   "type": "module",
   "scripts": {
     "dev": "vite",
