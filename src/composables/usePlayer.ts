@@ -36,6 +36,7 @@ export function useVideoPlayer() {
   // Track listeners so they can be removed on cleanup
   type BoundHandler = [HTMLVideoElement, VideoEvent, EventListener]
   const _listeners: BoundHandler[] = []
+  let _rvfcActive = false
 
   function _addListener(el: HTMLVideoElement, event: VideoEvent, handler: EventListener) {
     el.addEventListener(event, handler)
@@ -76,8 +77,36 @@ export function useVideoPlayer() {
     })
 
     // Throttled frame update — prevents store updates on every timeupdate event
+    // Performance: use requestVideoFrameCallback when available for frame-accurate tracking
     let _rafPending = false
     let _lastFrameTime = 0
+
+    // Performance: requestVideoFrameCallback for smoother frame-accurate updates (Chrome 117+)
+    function _startRVFC() {
+      if (!_rvfcActive && 'requestVideoFrameCallback' in element) {
+        _rvfcActive = true
+        const videoEl = element as any
+        const callback = (_now: DOMHighResTimeStamp, _metadata: any) => {
+          if (projectStore.videoMeta && element.currentTime) {
+            const frame = Math.floor(element.currentTime * projectStore.videoMeta.fps)
+            if (frame !== _lastFrameTime) {
+              _lastFrameTime = frame
+              projectStore.setCurrentFrame(frame)
+            }
+          }
+          if (_rvfcActive && !element.paused) {
+            videoEl.requestVideoFrameCallback(callback)
+          } else {
+            _rvfcActive = false
+          }
+        }
+        videoEl.requestVideoFrameCallback(callback)
+      }
+    }
+
+    function _stopRVFC() {
+      _rvfcActive = false
+    }
 
     _addListener(element, VIDEO_EVENTS.TIME_UPDATE, () => {
       if (_rafPending) return
@@ -92,6 +121,20 @@ export function useVideoPlayer() {
         }
         _rafPending = false
       })
+    })
+
+    // Start RVFC when video plays
+    _addListener(element, VIDEO_EVENTS.PLAY, () => {
+      _startRVFC()
+    })
+
+    // Stop RVFC when video pauses
+    _addListener(element, VIDEO_EVENTS.PAUSE, () => {
+      _stopRVFC()
+    })
+
+    _addListener(element, VIDEO_EVENTS.ENDED, () => {
+      _stopRVFC()
     })
   }
 
@@ -235,6 +278,9 @@ export function useVideoPlayer() {
   // Cleanup — remove all event listeners and clear video src
   onUnmounted(() => {
     _cleanupListeners()
+    if (_rvfcActive && videoRef.value && 'requestVideoFrameCallback' in videoRef.value) {
+      _rvfcActive = false
+    }
     if (videoRef.value) {
       videoRef.value.pause()
       videoRef.value.src = ''

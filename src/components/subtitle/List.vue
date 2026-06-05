@@ -122,12 +122,13 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
         <SkeletonCard v-for="i in 5" :key="i" />
       </template>
 
-      <!-- Cards -->
+      <!-- Cards — Performance: v-memo skips re-render when subtitle data unchanged -->
       <template v-else>
         <Card
           v-for="sub in visibleSubtitles"
           :key="sub.id"
           :subtitle="sub"
+          v-memo="[sub.id, sub.text, sub.startTime, sub.endTime, sub.confidence, sub.edited, subtitleStore.selectedId]"
         />
 
         <!-- Load more button -->

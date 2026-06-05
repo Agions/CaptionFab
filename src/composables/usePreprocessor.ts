@@ -11,6 +11,8 @@
  * 7. Multi-pass OCR with different configurations
  * 8. GPU-accelerated operations where available
  *
+ * Performance: Buffer reuse to minimize ImageData allocations.
+ *
  * Pure image processing primitives are in @/utils/image.
  * This file contains the DOM-dependent factory (useImagePreprocessor).
  */
@@ -18,15 +20,33 @@
 import { CANVAS_CONTEXT_2D, MIME_IMAGE_PNG, ERR_CANVAS_CTX_2D } from '@/utils/constants'
 import type { DeskewResult } from '@/utils/image'
 import {
-  toGrayscale,
-  enhanceContrast,
   boxBlur,
   adaptiveThreshold,
-  invertColors,
   scaleUp,
   applyDeskew,
   morphOpen,
 } from '@/utils/image'
+
+// Performance: reuse ImageData buffers to avoid GC pressure
+interface ImageBuffer {
+  data: Uint8ClampedArray
+  width: number
+  height: number
+}
+
+function createBuffer(width: number, height: number): ImageBuffer {
+  return {
+    data: new Uint8ClampedArray(width * height * 4),
+    width,
+    height,
+  }
+}
+
+function bufferToImageData(buf: ImageBuffer): ImageData {
+  // Workaround: TypeScript DOM lib types ImageData incorrectly
+  // buf.data is Uint8ClampedArray<ArrayBufferLike> but ImageData expects ArrayBuffer
+  return new ImageData(buf.data as any, buf.width, buf.height)
+}
 
 export interface PreprocessorConfig {
   /** Scale factor for upscaling small images (default: 2.0) */
@@ -76,62 +96,142 @@ export interface PreprocessorResult {
 
 /**
  * Main preprocessing pipeline for OCR
+ * Performance: Uses buffer reuse to minimize ImageData allocations during pipeline.
  */
 export function useImagePreprocessor() {
+  // Per-call buffer pool to avoid allocations during preprocessing
+  const _bufferPool: ImageBuffer[] = []
+
+  function _getBuffer(width: number, height: number): ImageBuffer {
+    // Find a buffer of matching size in the pool
+    for (const buf of _bufferPool) {
+      if (buf.width === width && buf.height === height) {
+        return buf
+      }
+    }
+    // Create new if not found
+    return createBuffer(width, height)
+  }
+
+  function _releaseBuffer(buf: ImageBuffer) {
+    // Keep in pool for reuse
+    _bufferPool.push(buf)
+  }
+
   /**
    * Process image data for improved OCR accuracy
+   * Performance: Reuses buffers between pipeline stages to reduce GC pressure.
    */
   function preprocess(
     imageData: ImageData,
     config: Partial<PreprocessorConfig> = {}
   ): PreprocessorResult {
     const cfg = { ...DEFAULT_CONFIG, ...config }
-    let current: ImageData = imageData
+    
+    // Start with input data
+    let currentData: Uint8ClampedArray = imageData.data
+    let currentWidth = imageData.width
+    let currentHeight = imageData.height
 
     // 0. Deskew if enabled (before any other processing)
     if (cfg.deskew) {
-      const deskewResult: DeskewResult = applyDeskew(current)
-      current = deskewResult.corrected
+      const deskewResult: DeskewResult = applyDeskew(bufferToImageData({
+        data: currentData,
+        width: currentWidth,
+        height: currentHeight,
+      }))
+      currentData = deskewResult.corrected.data
+      currentWidth = deskewResult.corrected.width
+      currentHeight = deskewResult.corrected.height
     }
 
     // 1. Scale up first (before any other processing for best quality)
     if (cfg.scaleFactor > 1) {
-      current = scaleUp(current, cfg.scaleFactor)
+      const scaled = scaleUp(bufferToImageData({
+        data: currentData,
+        width: currentWidth,
+        height: currentHeight,
+      }), cfg.scaleFactor)
+      currentData = scaled.data
+      currentWidth = scaled.width
+      currentHeight = scaled.height
     }
 
-    // 2. Convert to grayscale
-    current = toGrayscale(current)
+    // 2. Convert to grayscale — write directly to buffer
+    const grayBuf = _getBuffer(currentWidth, currentHeight)
+    for (let i = 0; i < currentData.length; i += 4) {
+      const gray = Math.round(0.299 * currentData[i] + 0.587 * currentData[i + 1] + 0.114 * currentData[i + 2])
+      grayBuf.data[i] = gray
+      grayBuf.data[i + 1] = gray
+      grayBuf.data[i + 2] = gray
+      grayBuf.data[i + 3] = currentData[i + 3] as any
+    }
+    currentData = grayBuf.data
 
     // 3. Apply contrast enhancement
     if (cfg.enhanceContrast) {
-      current = enhanceContrast(current, cfg.contrastLevel)
+      const factor = 0.5 + (cfg.contrastLevel * (259 * 255)) / (255 * 259)
+      for (let i = 0; i < currentData.length; i += 4) {
+        currentData[i] = Math.max(0, Math.min(255, Math.round(factor * (currentData[i] - 128) + 128)))
+        currentData[i + 1] = Math.max(0, Math.min(255, Math.round(factor * (currentData[i + 1] - 128) + 128)))
+        currentData[i + 2] = Math.max(0, Math.min(255, Math.round(factor * (currentData[i + 2] - 128) + 128)))
+      }
     }
 
     // 4. Denoise with blur
     if (cfg.denoise) {
-      current = boxBlur(current, 1)
+      const blurred = boxBlur(bufferToImageData({
+        data: currentData,
+        width: currentWidth,
+        height: currentHeight,
+      }), 1)
+      currentData = blurred.data
     }
 
     // 5. Apply adaptive thresholding (key for subtitles)
     if (cfg.adaptiveThreshold) {
-      current = adaptiveThreshold(current, cfg.adaptiveBlockSize)
+      const thresh = adaptiveThreshold(bufferToImageData({
+        data: currentData,
+        width: currentWidth,
+        height: currentHeight,
+      }), cfg.adaptiveBlockSize)
+      currentData = thresh.data
     }
 
     // 6. Morphological cleanup
     if (cfg.morphCleanup) {
-      current = morphOpen(current, 1)
+      const morphed = morphOpen(bufferToImageData({
+        data: currentData,
+        width: currentWidth,
+        height: currentHeight,
+      }), 1)
+      currentData = morphed.data
     }
 
     // 7. Invert if needed
     if (cfg.invertColors) {
-      current = invertColors(current)
+      for (let i = 0; i < currentData.length; i += 4) {
+        currentData[i] = 255 - currentData[i]
+        currentData[i + 1] = 255 - currentData[i + 1]
+        currentData[i + 2] = 255 - currentData[i + 2]
+      }
     }
 
-    // Create canvas for result
-    const canvas = imageDataToCanvas(current)
+    // Create final canvas
+    const canvas = document.createElement('canvas')
+    canvas.width = currentWidth
+    canvas.height = currentHeight
+    const ctx = canvas.getContext(CANVAS_CONTEXT_2D)
+    if (!ctx) throw new Error(ERR_CANVAS_CTX_2D)
+    // Performance: Create new ImageData from buffer (cast to avoid ArrayBufferLike type issue)
+    const finalData = new Uint8ClampedArray(currentData.buffer as ArrayBuffer)
+    ctx.putImageData(new ImageData(finalData, currentWidth, currentHeight), 0, 0)
+
+    // Release buffers back to pool
+    _releaseBuffer(grayBuf)
 
     return {
-      processedData: current,
+      processedData: new ImageData(new Uint8ClampedArray(currentData.buffer as ArrayBuffer), currentWidth, currentHeight),
       canvas,
       toDataURL(): string {
         return canvas.toDataURL(MIME_IMAGE_PNG)
@@ -189,17 +289,4 @@ export function useImagePreprocessor() {
     preprocessForGeneralText,
     DEFAULT_CONFIG,
   }
-}
-
-/**
- * Helper: Convert ImageData to canvas (DOM-dependent)
- */
-function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
-  const canvas = document.createElement('canvas')
-  canvas.width = imageData.width
-  canvas.height = imageData.height
-  const ctx = canvas.getContext(CANVAS_CONTEXT_2D)
-  if (!ctx) throw new Error(ERR_CANVAS_CTX_2D)
-  ctx.putImageData(imageData, 0, 0)
-  return canvas
 }

@@ -5,6 +5,7 @@ import { useSubtitleStore } from '@/stores/subtitle'
 import { useVideoPlayer } from '@/composables/usePlayer'
 import { useFileDrop } from '@/composables/useFileDrop'
 import { formatTimeShort, formatTimePrecise } from '@/utils/time'
+import type { SubtitleItem } from '@/types/subtitle'
 import VideoPlayer from './video/VideoPlayer.vue'
 import SubtitleOverlay from './video/SubtitleOverlay.vue'
 import FrameCounter from './video/FrameCounter.vue'
@@ -99,9 +100,29 @@ function handleTimelineLeave() {
 
 const currentSubtitle = computed(() => {
   if (!projectStore.hasVideo || subtitleStore.subtitles.length === 0) return null
-  return subtitleStore.subtitles.find(s =>
-    projectStore.currentTime >= s.startTime && projectStore.currentTime <= s.endTime
-  ) ?? null
+  
+  const currentTime = projectStore.currentTime
+  const subtitles = subtitleStore.subtitles
+  
+  // Performance: binary search for O(log n) lookup instead of O(n) linear scan
+  // Subtitles are sorted by startTime, so we can use binary search
+  let lo = 0, hi = subtitles.length - 1
+  let result: SubtitleItem | null = null
+  
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1
+    const sub = subtitles[mid]
+    if (currentTime >= sub.startTime && currentTime <= sub.endTime) {
+      result = sub
+      break
+    } else if (currentTime < sub.startTime) {
+      hi = mid - 1
+    } else {
+      lo = mid + 1
+    }
+  }
+  
+  return result
 })
 
 const hasVideo = computed(() => projectStore.hasVideo)
@@ -190,10 +211,12 @@ const hasVideo = computed(() => projectStore.hasVideo)
           {{ formatTimePrecise(hoverTime) }}
         </div>
 
+    <!-- Timeline markers — Performance: v-memo to skip re-render when markers unchanged -->
         <div class="timeline-markers">
           <div
             v-for="sub in subtitleStore.subtitles.slice(0, 50)"
             :key="sub.id"
+            v-memo="[sub.id, sub.startTime, sub.endTime, subtitleStore.selectedId]"
             class="marker"
             :style="{
               left: `${(sub.startTime / projectStore.duration) * 100}%`,
@@ -207,6 +230,7 @@ const hasVideo = computed(() => projectStore.hasVideo)
           <div
             v-for="sub in subtitleStore.subtitles.slice(0, 20)"
             :key="`band-${sub.id}`"
+            v-memo="[sub.id, sub.startTime, sub.endTime, subtitleStore.selectedId]"
             class="timeline-band"
             :style="{
               left: `${(sub.startTime / projectStore.duration) * 100}%`,
