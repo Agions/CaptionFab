@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'SubLens',
-  description: '智能视频字幕提取工具 — 基于 Tauri 2.x + Vue 3 + Rust，输出 12 种字幕格式',
+  title: 'CaptionFab',
+  description: '专业硬编码字幕提取工具 — 基于 Tauri 2.x + Vue 3 + Rust，输出 12 种字幕格式',
   lang: 'zh-CN',
   cleanUrls: true,
 
@@ -10,14 +10,14 @@ export default defineConfig({
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['meta', { name: 'theme-color', content: '#08090a' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: 'SubLens — 智能视频字幕提取工具' }],
+    ['meta', { property: 'og:title', content: 'CaptionFab — 专业硬编码字幕提取工具' }],
     ['meta', { property: 'og:description', content: '从视频中提取硬编码字幕，输出 SRT · VTT · ASS · JSON 等 12 种格式' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
   ],
 
   themeConfig: {
     logo: '/logo.svg',
-    siteTitle: 'SubLens',
+    siteTitle: 'CaptionFab',
 
     nav: [
       { text: '快速开始', link: '/guide/getting-started', activeMatch: '/guide/getting-started' },
@@ -41,7 +41,7 @@ export default defineConfig({
           { text: '常见问题', link: '/guide/faq' },
           { text: '架构设计', link: '/architecture' },
           { text: '开发者指南', link: '/developer-guide' },
-          { text: 'GitHub', link: 'https://github.com/Agions/SubLens' },
+          { text: 'GitHub', link: 'https://github.com/Agions/CaptionFab' },
         ],
       },
     ],
@@ -101,7 +101,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/Agions/SubLens/edit/main/docs/:path',
+      pattern: 'https://github.com/Agions/CaptionFab/edit/main/docs/:path',
       text: '在 GitHub 上编辑此页',
     },
 
@@ -112,11 +112,11 @@ export default defineConfig({
 
     footer: {
       message: '基于 MIT 许可证开源',
-      copyright: 'Copyright © 2024-present SubLens Contributors',
+      copyright: 'Copyright © 2024-present CaptionFab Contributors',
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Agions/SubLens' },
+      { icon: 'github', link: 'https://github.com/Agions/CaptionFab' },
     ],
   },
 

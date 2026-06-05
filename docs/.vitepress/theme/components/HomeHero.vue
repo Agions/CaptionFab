@@ -188,7 +188,7 @@ await invoke&lt;string&gt;('export_subtitles', {
       <p>开源免费，MIT 许可证</p>
       <div class="cta-actions">
         <a href="/guide/getting-started" class="cta-primary">快速开始 →</a>
-        <a href="https://github.com/Agions/SubLens" class="cta-secondary">GitHub ★ Star</a>
+        <a href="https://github.com/Agions/CaptionFab" class="cta-secondary">GitHub ★ Star</a>
       </div>
     </div>
 
