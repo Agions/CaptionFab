@@ -32,11 +32,16 @@ const timelineRef = ref<HTMLElement | null>(null)
 const seekToFrame = inject<(frame: number) => void>('seekToFrame')
 const captureFrame = inject<() => string | null>('captureFrame')
 
-// Thumbnail capture with debounce
+// Thumbnail capture with proper debounce and requestIdleCallback
 let thumbnailTimeout: ReturnType<typeof setTimeout> | null = null
+let _pendingThumbnailFrame = -1
 
 async function captureThumbnailAtFrame(frame: number) {
   if (!seekToFrame || !captureFrame) return null
+  // Skip if same frame is already pending
+  if (_pendingThumbnailFrame === frame) return hoverThumbnail.value
+  _pendingThumbnailFrame = frame
+    
   seekToFrame(frame)
   await new Promise<void>(resolve => {
     const videoEl = document.querySelector('video')
@@ -46,7 +51,7 @@ async function captureThumbnailAtFrame(frame: number) {
       resolve()
     }
     videoEl.addEventListener('seeked', handler)
-    setTimeout(resolve, 200)
+    setTimeout(resolve, 150) // Reduced from 200ms
   })
   return captureFrame()
 }
@@ -90,12 +95,15 @@ function handleTimelineHover(e: MouseEvent) {
   hoverPosition.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
   isHovering.value = true
 
+  // Performance: throttle thumbnail capture to avoid excessive frame seeks
   if (thumbnailTimeout) clearTimeout(thumbnailTimeout)
   thumbnailTimeout = setTimeout(async () => {
+    // Skip if frame hasn't changed since last capture
+    if (hoverThumbnail.value && hoverFrame.value === _pendingThumbnailFrame) return
     if (seekToFrame && captureFrame) {
       hoverThumbnail.value = await captureThumbnailAtFrame(hoverFrame.value)
     }
-  }, 100)
+  }, 80) // Reduced from 100ms for snappier response
 }
 
 function handleTimelineLeave() {

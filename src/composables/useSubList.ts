@@ -10,11 +10,12 @@
  * NOTE: Search query and confidence filter are managed by subtitleStore directly.
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef } from 'vue'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useProjectStore } from '@/stores/project'
 import { formatTimeShort, formatTimeSrt, parseTime } from '@/utils/time'
 import { getConfidenceHeatmap } from '@/utils/confidence'
+import type { SubtitleItem } from '@/types/subtitle'
 
 const BATCH_SIZE = 50
 
@@ -25,8 +26,23 @@ export function useSubtitleList() {
   // ── Pagination ────────────────────────────────────────────
   const displayCount = ref(100)
 
+  // Performance: cache sliced array to avoid re-slicing on every render
+  interface CachedSlice extends Array<SubtitleItem> {
+    _source?: any
+  }
+  const _visibleCache = shallowRef<CachedSlice>([] as CachedSlice)
+  let _lastSliceLength = -1
+
   const visibleSubtitles = computed(() => {
-    return subtitleStore.filteredSubtitles.slice(0, displayCount.value)
+    const filtered = subtitleStore.filteredSubtitles
+    const len = displayCount.value
+    // Only re-slice when count changes or filtered array reference changes
+    if (len !== _lastSliceLength || filtered !== _visibleCache.value._source) {
+      _visibleCache.value = filtered.slice(0, len) as CachedSlice
+      _visibleCache.value._source = filtered
+      _lastSliceLength = len
+    }
+    return _visibleCache.value
   })
 
   const hasMore = computed(() => {
@@ -40,6 +56,8 @@ export function useSubtitleList() {
   // Reset pagination when confidence filter changes (watch in component)
   function resetDisplayCount() {
     displayCount.value = 100
+    _lastSliceLength = -1
+    _visibleCache.value = []
   }
 
   // ── UI State ───────────────────────────────────────────────

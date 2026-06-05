@@ -12,6 +12,8 @@ interface Props {
   subtitle: SubtitleItem
 }
 
+// Note: props are already shallow in Vue 3.3+ defineProps
+// No need for shallowRef wrapper - props are passed by reference
 const props = defineProps<Props>()
 
 const subtitleStore = useSubtitleStore()
@@ -28,6 +30,7 @@ const {
   getConfidenceHeatmap,
 } = useSubtitleList()
 
+// Performance: computed values only re-evaluate when their dependencies change
 const isSelected = computed(() => subtitleStore.selectedId === props.subtitle.id)
 const isHovered = computed(() => hoveredId.value === props.subtitle.id)
 const isEditing = computed(() => editingId.value === props.subtitle.id)
