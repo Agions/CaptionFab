@@ -38,9 +38,9 @@
 
 | 平台 | 下载链接 |
 |:-----|:---------|
-| Windows | [captionfab-v4.0.0-x64-setup.exe](https://github.com/Agions/CaptionFab/releases/download/v4.0.0/captionfab-v4.0.0-x64-setup.exe) |
-| macOS | [captionfab-v4.0.0-x64.dmg](https://github.com/Agions/CaptionFab/releases/download/v4.0.0/captionfab-v4.0.0-x64.dmg) |
-| Linux | [captionfab-v4.0.0-amd64.deb](https://github.com/Agions/CaptionFab/releases/download/v4.0.0/captionfab-v4.0.0-amd64.deb) |
+| Windows | [captionfab-v3.6.0-x64-setup.exe](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-x64-setup.exe) |
+| macOS | [captionfab-v3.6.0-x64.dmg](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-x64.dmg) |
+| Linux | [captionfab-v3.6.0-amd64.deb](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-amd64.deb) |
 
 ### 开发构建
 

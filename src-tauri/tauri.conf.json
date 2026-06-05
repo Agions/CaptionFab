@@ -42,7 +42,7 @@
     "resources": [],
     "category": "Utility",
     "shortDescription": "CaptionFab - 视频字幕提取工具",
-    "longDescription": "CaptionFab is a video subtitle extraction tool powered by OCR. It extracts hardcoded subtitles from videos using Tesseract.js, PaddleOCR, or EasyOCR, and exports to multiple formats including SRT, VTT, ASS, SSA, JSON, TXT, LRC, SBV, and CSV.",
+    "longDescription": "CaptionFab 是一款基于 OCR 的视频字幕提取工具。它使用 Tesseract.js、PaddleOCR 或 EasyOCR 从视频中提取硬编码字幕，并支持导出为 SRT、VTT、ASS、SSA、JSON、TXT、LRC、SBV 和 CSV 等多种格式。",
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",

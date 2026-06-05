@@ -232,9 +232,16 @@
   border: 1px solid transparent;
 }
 
+// ── Confidence Level Colors (map-based, no deprecated if()) ───
+$conf-levels: (
+  'high': $conf-high,
+  'mid': $conf-mid,
+  'low': $conf-low
+);
+
 // ── Confidence Level Badge ─────────────────────────────────
 @mixin conf-badge($level) {
-  $color: if($level == 'high', $conf-high, if($level == 'mid', $conf-mid, $conf-low));
+  $color: map.get($conf-levels, $level) or $conf-low;
   background: rgba($color, 0.12);
   color: $color;
   border: 1px solid rgba($color, 0.25);
@@ -252,7 +259,7 @@
 
 // ── Confidence Level Tab ──────────────────────────────────
 @mixin conf-tab($level) {
-  $color: if($level == 'high', $conf-high, if($level == 'mid', $conf-mid, $conf-low));
+  $color: map.get($conf-levels, $level) or $conf-low;
   color: $color;
   background: rgba($color, 0.08);
   border-color: rgba($color, 0.2);
