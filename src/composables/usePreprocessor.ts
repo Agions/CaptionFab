@@ -18,6 +18,7 @@
  */
 
 import { CANVAS_CONTEXT_2D, MIME_IMAGE_PNG, ERR_CANVAS_CTX_2D } from '@/utils/constants'
+import { pixelLuma } from '@/utils/math'
 import type { DeskewResult } from '@/utils/image'
 import {
   boxBlur,
@@ -157,10 +158,10 @@ export function useImagePreprocessor() {
       currentHeight = scaled.height
     }
 
-    // 2. Convert to grayscale — write directly to buffer
+    // 2. Convert to grayscale — 优化：复用 pixelLuma 避免重复公式
     const grayBuf = _getBuffer(currentWidth, currentHeight)
     for (let i = 0; i < currentData.length; i += 4) {
-      const gray = Math.round(0.299 * currentData[i] + 0.587 * currentData[i + 1] + 0.114 * currentData[i + 2])
+      const gray = Math.round(pixelLuma(currentData, i))
       grayBuf.data[i] = gray
       grayBuf.data[i + 1] = gray
       grayBuf.data[i + 2] = gray

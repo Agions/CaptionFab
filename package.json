@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "docs:build": "vitepress build docs",
-    "postinstall": ""
+    "coverage": "vitest run --coverage"
   },
   "keywords": [
     "video",

@@ -27,8 +27,9 @@ export function useSubtitleList() {
   const displayCount = ref(100)
 
   // Performance: cache sliced array to avoid re-slicing on every render
+  // 优化：用 unknown 替代 any，缓存源数组引用用于变更检测
   interface CachedSlice extends Array<SubtitleItem> {
-    _source?: any
+    _source?: unknown
   }
   const _visibleCache = shallowRef<CachedSlice>([] as CachedSlice)
   let _lastSliceLength = -1

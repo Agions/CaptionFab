@@ -30,24 +30,24 @@ export default defineConfig({
     minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
-    // Performance: enable build caching for faster rebuilds
+    // 优化：构建缓存加速增量编译
     cacheDir: '.vite-cache',
-    // Performance: rollup options for better code splitting
+    // 优化：智能分包策略，减少初始加载体积
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // OCR engine: heavy WASM, lazy-load friendly
+            // OCR 引擎：WASM 体积大，独立 chunk 支持按需加载
             if (id.includes('tesseract.js')) return 'vendor-ocr'
-            // Vue ecosystem: stable, rarely changes
+            // Vue 生态：稳定依赖，缓存友好
             if (id.includes('vue') || id.includes('pinia') || id.includes('vue-demi')) return 'vendor-vue'
-            // VueUse: utility functions, tree-shakeable
+            // VueUse：工具函数库，tree-shaking 友好
             if (id.includes('@vueuse')) return 'vendor-vueuse'
           }
         }
       }
     },
-    // Performance: reduce initial JS payload
+    // 优化：禁用 modulePreload polyfill，减少额外 JS 体积
     modulePreload: {
       polyfill: false
     }
@@ -55,12 +55,14 @@ export default defineConfig({
   esbuild: {
     drop: ['console', 'debugger'],
     legalComments: 'none',
-    // Performance: minify identifiers in production
+    // 优化：压缩标识符减小产物体积
     minifyIdentifiers: true
   },
   optimizeDeps: {
-    include: ['vue', 'pinia', '@vueuse/core', 'tesseract.js'],
-    // Performance: exclude heavy WASM libs from pre-bundling
+    // 优化：预构建稳定依赖加速冷启动
+    // 注意：tesseract.js 含 WASM 不参与预构建，仅用 include 加速首次加载
+    include: ['vue', 'pinia', '@vueuse/core'],
+    // 优化：排除 WASM 重型依赖，避免预构建阻塞
     exclude: ['tesseract.js']
   }
 })

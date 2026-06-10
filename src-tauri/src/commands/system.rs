@@ -153,31 +153,35 @@ async fn check_single_dependency(dep: &SystemDependency) -> DependencyCheckResul
 }
 
 fn extract_version(output: &str) -> Option<String> {
+    // 优化：配置驱动，消除重复的 if-chain 模式
+    // 每个入口：(匹配前缀, 取第 n 个 token)
+    let patterns: &[(&str, usize)] = &[
+        ("ffmpeg version", 2),
+        ("ffprobe version", 2),
+        ("tesseract", 1),
+    ];
     for line in output.lines() {
-        let line = line.trim();
-        if line.starts_with("ffmpeg version") || line.starts_with("ffprobe version") {
-            if let Some(version_part) = line.split_whitespace().nth(2) {
-                return Some(version_part.to_string());
+        let trimmed = line.trim();
+        for &(prefix, token_idx) in patterns {
+            if trimmed.starts_with(prefix) {
+                return trimmed
+                    .split_whitespace()
+                    .nth(token_idx)
+                    .map(|v| v.to_string());
             }
         }
-        if line.starts_with("tesseract") {
-            if let Some(version_part) = line.split_whitespace().nth(1) {
-                return Some(version_part.to_string());
-            }
-        }
-        if line.contains("ImageMagick") && line.contains("version") {
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            for (i, part) in parts.iter().enumerate() {
-                if *part == "version" && i + 1 < parts.len() {
-                    return Some(parts[i + 1].to_string());
-                }
+        // ImageMagick: 行内匹配 "ImageMagick ... version x.y.z"
+        if trimmed.contains("ImageMagick") && trimmed.contains("version") {
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            if let Some(pos) = parts.iter().position(|&p| p == "version") {
+                return parts.get(pos + 1).map(|&s| s.to_string());
             }
         }
     }
-
-    let first_line = output.lines().next().unwrap_or("");
+    // 最后兜底：第一行包含 version 关键词
+    let first_line = output.lines().next()?.trim();
     if first_line.contains("version") || first_line.contains("Version") {
-        Some(first_line.trim().to_string())
+        Some(first_line.to_string())
     } else {
         None
     }

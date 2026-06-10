@@ -1,8 +1,9 @@
 /**
- * useOCR - OCR tab state
- * Extracted from SidePanel.vue OCR tab
+ * useOCR - OCR 标签页状态
+ * 优化：消除影子状态反模式 — 所有选项通过 computed get/set 直连 projectStore，
+ * 不再维护本地 ref 副本。confidenceThreshold 原有的正确模式扩展到全部属性。
  */
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useProjectStore } from '@/stores/project'
 import type { OCREngine } from '@/types/video'
 import { clamp } from '@/utils/math'
@@ -22,7 +23,7 @@ export interface OCREngineInfo {
 export function useOCR() {
   const projectStore = useProjectStore()
 
-  // OCR Engine definitions
+  // 引擎定义（只读数据，直接导出常量）
   const ocrEngines: OCREngineInfo[] = [
     {
       id: 'paddle',
@@ -33,7 +34,7 @@ export function useOCR() {
       speed: '快',
       accuracy: '高',
       langs: 80,
-      description: '支持80+语言，适合字幕识别'
+      description: '支持80+语言，适合字幕识别',
     },
     {
       id: 'easyocr',
@@ -44,7 +45,7 @@ export function useOCR() {
       speed: '中',
       accuracy: '高',
       langs: 40,
-      description: '支持40+语言，GPU加速'
+      description: '支持40+语言，GPU加速',
     },
     {
       id: 'tesseract',
@@ -55,11 +56,10 @@ export function useOCR() {
       speed: '慢',
       accuracy: '中',
       langs: 100,
-      description: '纯JS实现，无需服务器'
-    }
+      description: '纯JS实现，无需服务器',
+    },
   ]
 
-  // Language options
   const languageOptions = [
     { value: 'ch', label: '中文', abbr: '中' },
     { value: 'en', label: 'English', abbr: 'EN' },
@@ -74,77 +74,77 @@ export function useOCR() {
     { value: 'ar', label: 'العربية', abbr: 'AR' },
   ]
 
-  // Advanced options state
-  const showAdvanced = ref(false)
-  const multiPass = ref(true)
-  const postProcess = ref(true)
-  const mergeSubtitles = ref(true)
-  const mergeThreshold = ref(0.8)
-  const sceneThreshold = ref(0.3)
-  const frameInterval = ref(1)
+  // ─── 优化：所有选项通过 computed get/set 直连 store ──────────
+  // 修复：消除影子状态反模式，不再维护本地 ref 副本
+  // confidenceThreshold 原有模式扩展到全部属性
 
-  // Confidence threshold - synchronized with store
   const confidenceThreshold = computed({
     get: () => Math.round(projectStore.extractOptions.confidenceThreshold * 100),
     set: (val: number) => {
       projectStore.extractOptions.confidenceThreshold = val / 100
-    }
+    },
   })
 
-  // Computed: estimated accuracy
+  const multiPass = computed({
+    get: () => projectStore.extractOptions.multiPass,
+    set: (val: boolean) => {
+      projectStore.extractOptions.multiPass = val
+    },
+  })
+
+  const postProcess = computed({
+    get: () => projectStore.extractOptions.postProcess,
+    set: (val: boolean) => {
+      projectStore.extractOptions.postProcess = val
+    },
+  })
+
+  const mergeSubtitles = computed({
+    get: () => projectStore.extractOptions.mergeSubtitles,
+    set: (val: boolean) => {
+      projectStore.extractOptions.mergeSubtitles = val
+    },
+  })
+
+  const mergeThreshold = computed({
+    get: () => projectStore.extractOptions.mergeThreshold,
+    set: (val: number) => {
+      projectStore.extractOptions.mergeThreshold = val
+    },
+  })
+
+  const sceneThreshold = computed({
+    get: () => projectStore.extractOptions.sceneThreshold,
+    set: (val: number) => {
+      projectStore.extractOptions.sceneThreshold = val
+    },
+  })
+
+  const frameInterval = computed({
+    get: () => projectStore.extractOptions.frameInterval,
+    set: (val: number) => {
+      projectStore.extractOptions.frameInterval = val
+    },
+  })
+
+  // 预估准确率
   const estimatedAccuracy = computed(() => {
     const engine = projectStore.extractOptions.ocrEngine
-    const baseAccuracy = {
-      paddle: 92,
-      easyocr: 90,
-      tesseract: 78
-    }[engine] ?? 80
-
+    const baseAccuracy = { paddle: 92, easyocr: 90, tesseract: 78 }[engine] ?? 80
     let adjusted = baseAccuracy
     if (multiPass.value) adjusted += 3
     if (postProcess.value) adjusted += 2
     return clamp(adjusted, 0, 99)
   })
 
-  // Methods
+  // 方法 — 简化为直接赋值
   function setLanguage(lang: string) {
     projectStore.extractOptions.languages = [lang]
-  }
-
-  function toggleMultiPass() {
-    multiPass.value = !multiPass.value
-    projectStore.extractOptions.multiPass = multiPass.value
-  }
-
-  function togglePostProcess() {
-    postProcess.value = !postProcess.value
-    projectStore.extractOptions.postProcess = postProcess.value
-  }
-
-  function toggleMergeSubtitles() {
-    mergeSubtitles.value = !mergeSubtitles.value
-    projectStore.extractOptions.mergeSubtitles = mergeSubtitles.value
-  }
-
-  function setMergeThreshold(value: number) {
-    mergeThreshold.value = value
-    projectStore.extractOptions.mergeThreshold = value
-  }
-
-  function setSceneThreshold(value: number) {
-    sceneThreshold.value = value
-    projectStore.extractOptions.sceneThreshold = value
-  }
-
-  function setFrameInterval(value: number) {
-    frameInterval.value = value
-    projectStore.extractOptions.frameInterval = value
   }
 
   return {
     ocrEngines,
     languageOptions,
-    showAdvanced,
     multiPass,
     postProcess,
     mergeSubtitles,
@@ -154,11 +154,5 @@ export function useOCR() {
     confidenceThreshold,
     estimatedAccuracy,
     setLanguage,
-    toggleMultiPass,
-    togglePostProcess,
-    toggleMergeSubtitles,
-    setMergeThreshold,
-    setSceneThreshold,
-    setFrameInterval,
   }
 }

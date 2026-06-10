@@ -4,7 +4,7 @@ import { type ExportFormat } from '@/core'
 import Modal from '@/components/common/Modal.vue'
 import Button from '@/components/common/Button.vue'
 import { useSubtitleStore } from '@/stores/subtitle'
-import { useFile } from '@/composables/useFile'
+import { saveFileDialog, writeTextFile } from '@/utils/file'
 import { useNotification } from '@/composables/useNotification'
 
 const { error: notifyError } = useNotification()
@@ -32,7 +32,6 @@ function openDialog() {
 defineExpose({ open: openDialog, close })
 
 const subtitleStore = useSubtitleStore()
-const fileOps = useFile()
 
 const selectedFormats = computed(() => {
   return Object.entries(subtitleStore.exportFormats)
@@ -77,13 +76,13 @@ async function handleExport() {
       const ext = format
       const defaultName = `${baseName}.${ext}`
 
-      const filePath = await fileOps.saveFileDialog(`导出 ${format.toUpperCase()}`, defaultName)
+      const filePath = await saveFileDialog(`导出 ${format.toUpperCase()}`, defaultName)
       if (!filePath) {
         exportResults.value.push(`⏭️  ${format.toUpperCase()}: 已取消`)
         continue
       }
 
-      const saved = await fileOps.writeTextFile(filePath, content)
+      const saved = await writeTextFile(filePath, content)
       if (saved) {
         exportResults.value.push(`✅ ${format.toUpperCase()}: ${filePath}`)
       } else {

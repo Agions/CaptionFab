@@ -12,7 +12,7 @@ export function clamp(value: number, min = 0, max = 1): number {
 /**
  * ITU-R BT.601 luma conversion — RGB to grayscale.
  * Formula: Y = 0.299·R + 0.587·G + 0.114·B
- * Shared by useImagePreprocessor (toGrayscale) and useSubtitleExtractor (_isRoiRegionLikelyEmpty).
+ * Shared by useImagePreprocessor (toGrayscale) and useSubtitleExtractor (isRoiRegionLikelyEmpty).
  */
 export function rgbToGrayscale(r: number, g: number, b: number): number {
   return 0.299 * r + 0.587 * g + 0.114 * b

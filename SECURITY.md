@@ -4,9 +4,9 @@
 
 | Version | Status |
 |:---|:---|
-| v3.x.x | Actively supported |
-| v2.x.x | Security updates only |
-| v1.x.x | Unsupported |
+| v4.x.x | Actively supported |
+| v3.x.x | Security updates only |
+| v2.x.x | Unsupported |
 
 ## Reporting a Vulnerability
 

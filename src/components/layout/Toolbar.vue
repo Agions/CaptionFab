@@ -2,9 +2,9 @@
 import { ref, inject } from 'vue'
 import { useProjectStore } from '@/stores/project'
 import { useSubtitleStore } from '@/stores/subtitle'
-import { useFile } from '@/composables/useFile'
+import { openFileDialog, saveFileDialog, writeTextFile } from '@/utils/file'
 import { useVideoPlayer } from '@/composables/usePlayer'
-import { useVideoMetadata } from '@/composables/useVideoMetadata'
+import { getVideoMetadata } from '@/utils/video'
 import { useTheme } from '@/composables/useTheme'
 import { useNotification } from '@/composables/useNotification'
 import AboutDialog from '@/components/common/AboutDialog.vue'
@@ -14,24 +14,24 @@ const subtitleStore = useSubtitleStore()
 const { error: notifyError } = useNotification()
 const { currentTheme, toggleTheme } = useTheme()
 
-// Composable instances - created once at setup level for proper state sharing
-const fileOps = useFile()
+// 优化：useVideoMetadata 已转为纯工具模块 @/utils/video，直接导入 getVideoMetadata
 const videoPlayer = useVideoPlayer()
-const { getVideoMetadata } = useVideoMetadata()
 
 const projectName = ref('未命名项目')
 const showAbout = ref(false)
-const isLoading = ref(false)
+// 优化：重命名 isBusy，明确表示"单操作互斥锁"语义
+// 原 isLoading 在 open/save 间共享，实际是互斥守卫而非加载状态
+const isBusy = ref(false)
 const openBatchProcess = inject<() => void>('openBatchProcess')
 
 async function handleOpenFile() {
-  if (isLoading.value) return
+  if (isBusy.value) return
 
   try {
-    const filePath = await fileOps.openFileDialog('选择视频文件')
+    const filePath = await openFileDialog('选择视频文件')
     if (!filePath) return
 
-    isLoading.value = true
+    isBusy.value = true
 
     const metadata = await getVideoMetadata(filePath)
     projectStore.setVideo(filePath, metadata)
@@ -45,12 +45,12 @@ async function handleOpenFile() {
     console.error('[ToolBar] Failed to open file:', e)
     notifyError(`打开文件失败: ${e}`)
   } finally {
-    isLoading.value = false
+    isBusy.value = false
   }
 }
 
 async function handleSave() {
-  if (isLoading.value) return
+  if (isBusy.value) return
 
   try {
     const subtitles = subtitleStore.subtitles.map(sub => ({
@@ -66,10 +66,10 @@ async function handleSave() {
       roi: sub.roi
     }))
 
-    const filePath = await fileOps.saveFileDialog('保存项目', `${projectName.value}.captionfab.json`)
+    const filePath = await saveFileDialog('保存项目', `${projectName.value}.captionfab.json`)
     if (!filePath) return
 
-    isLoading.value = true
+    isBusy.value = true
 
     const projectData = JSON.stringify({
       version: '3.6.0',
@@ -78,13 +78,13 @@ async function handleSave() {
       subtitles
     }, null, 2)
 
-    await fileOps.writeTextFile(filePath, projectData)
+    await writeTextFile(filePath, projectData)
 
   } catch (e) {
     console.error('[ToolBar] Failed to save project:', e)
     notifyError(`保存失败: ${e}`)
   } finally {
-    isLoading.value = false
+    isBusy.value = false
   }
 }
 

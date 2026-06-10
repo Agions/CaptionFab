@@ -1,479 +1,339 @@
----
-title: CaptionFab 开发者指南
----
-
 # CaptionFab 开发者指南
+
+> 面向贡献者的完整开发指南，涵盖环境搭建、调试、测试和发布流程。
+
+---
 
 ## 1. 环境搭建
 
-### 1.1 前置依赖
+### 前置依赖
 
-| 依赖 | 版本 | 安装 |
-|:---|:---|:---|
-| Node.js | 18+ | `nvm install 18` |
-| pnpm | 8+ | `npm i -g pnpm` |
-| Rust | 1.70+ | `rustup install stable` |
-| FFmpeg | 最新 | `apt install ffmpeg` 或 `brew install ffmpeg` |
-| Tesseract | 最新 | `apt install tesseract-ocr` 或 `brew install tesseract` |
+| 依赖 | 最低版本 | 说明 |
+|:-----|:---------|:-----|
+| **Node.js** | 18+ | JavaScript 运行时 |
+| **pnpm** | 8+ | 包管理器（项目使用 pnpm，非 npm） |
+| **Rust** | 1.82+ | Tauri 2.x 要求 |
+| **FFmpeg** | 4.0+ | 视频处理（运行时依赖） |
 
-### 1.2 初始化项目
+### 安装步骤
 
 ```bash
+# 1. 克隆仓库
 git clone https://github.com/Agions/CaptionFab.git
 cd CaptionFab
+
+# 2. 安装前端依赖
 pnpm install
-```
 
-### 1.3 开发命令
-
-```bash
-# 前端热重载开发（Rust 后端自动编译）
+# 3. 启动开发服务器（自动编译 Rust 后端）
 pnpm tauri dev
 
-# 仅前端开发（mock Tauri 调用）
-pnpm vite
-
-# 生产构建
+# 4. 生产构建
 pnpm tauri build
-
-# 前端类型检查
-pnpm vue-tsc --noEmit
-
-# ESLint
-pnpm lint
-
-# 测试
-pnpm test
 ```
 
-### 1.4 Rust 工具链
+### 推荐工具
 
-```bash
-# 查看 Rust 版本
-rustc --version   # 需要 1.70+
-
-# 检查 Tauri CLI
-cargo tauri --version
-
-# Rustfmt 格式化
-cargo fmt
-
-# Rust Lint
-cargo clippy -- -D warnings
-```
+- **IDE**: VS Code + Volar 扩展 + rust-analyzer
+- **调试**: Chrome DevTools（WebView 内置）+ `cargo test`
 
 ---
 
-## 2. 项目结构速查
+## 2. 项目结构
 
 ```
 CaptionFab/
-├── src/                        # Vue 前端
-│   ├── components/            # UI 组件
-│   ├── composables/           # 组合式函数
-│   ├── stores/                # Pinia store
-│   └── core/                  # 纯业务逻辑（可独立测试）
-│
-├── src-tauri/                  # Rust 后端
+├── src/                          # 前端源码
+│   ├── components/               # Vue 组件
+│   │   ├── common/               # 通用组件 (Button, Modal, Toast)
+│   │   ├── layout/               # 布局组件 (Panel, Toolbar, VideoPreview)
+│   │   │   ├── tabs/             # 标签页面板
+│   │   │   ├── batch/            # 批量子组件
+│   │   │   └── video/            # 视频子组件
+│   │   ├── subtitle/             # 字幕组件
+│   │   │   ├── card/             # 字幕卡片子组件
+│   │   │   └── list/             # 列表子组件
+│   │   └── video/                # 视频组件
+│   │       └── timeline/         # 时间轴子组件
+│   ├── composables/              # Vue 组合式函数
+│   ├── core/                     # 核心业务逻辑
+│   ├── stores/                   # Pinia 状态管理
+│   ├── utils/                    # 工具函数
+│   │   ├── image.ts              # 核心像素操作
+│   │   ├── image-deskew.ts       # 倾斜矫正
+│   │   ├── image-morph.ts        # 形态学操作
+│   │   ├── image-kernel.ts       # 共享内核工具
+│   │   ├── text.ts               # CJK 检测 + 语言映射
+│   │   ├── lru-cache.ts          # 泛型 LRU 缓存
+│   │   ├── detection.ts          # 帧分析
+│   │   └── subtitleSearch.ts     # 字幕二分查找
+│   ├── types/                    # TypeScript 类型定义
+│   └── themes/                   # 主题配置
+├── src-tauri/                    # Rust 后端
 │   ├── src/
-│   │   ├── main.rs            # 入口，调用 lib::run()
-│   │   ├── lib.rs             # Tauri Builder 配置 + 命令注册
-│   │   └── commands/          # IPC 命令
-│   │       ├── mod.rs
-│   │       ├── video.rs       # get_video_metadata, extract_frame_at_time
-│   │       ├── export.rs      # 9 格式字幕导出
-│   │       ├── scene.rs       # 场景检测
-│   │       ├── file.rs        # 文件对话框
-│   │       ├── system.rs      # 系统依赖检查
-│   │       ├── utils.rs       # 工具函数
-│   │       └── types.rs       # 共享类型
-│   └── tauri.conf.json        # Tauri 配置
-│
-└── docs/                       # Docsify 在线文档
-    ├── README.md               # 封面（Docsify 自动读取）
-    ├── _sidebar.md             # 侧边导航
-    ├── index.html              # Docsify 入口
-    ├── architecture.md
-    ├── developer-guide.md
-    └── changelog.md
+│   │   ├── commands/             # Tauri 命令模块
+│   │   ├── lib.rs                # 库入口
+│   │   └── main.rs               # 二进制入口
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── docs/                         # VitePress 文档站点
+│   ├── .vitepress/               # VitePress 配置
+│   ├── guide/                    # 用户指南
+│   └── api/                      # API 文档
+├── public/                       # 静态资源
+├── vitest.config.ts              # 测试配置
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 3. 添加新命令（Rust 后端）
+## 3. 开发命令速查
 
-### 3.1 创建模块
-
-在 `src-tauri/src/commands/` 下新建文件，例如 `hello.rs`：
-
-```rust
-//! Hello world command module.
-
-#[tauri::command]
-pub async fn greet(name: String) -> String {
-    format!("Hello, {}!", name)
-}
-```
-
-### 3.2 注册模块
-
-在 `commands/mod.rs` 添加：
-
-```rust
-pub mod hello;
-```
-
-### 3.3 暴露命令（lib.rs）
-
-在 `src-tauri/src/lib.rs` 添加公开导出：
-
-```rust
-pub use commands::hello::greet;
-```
-
-并在 `generate_handler!` 中注册：
-
-```rust
-invoke_handler(tauri::generate_handler![
-    // ... existing commands ...
-    commands::hello::greet,
-])
-```
-
-### 3.4 前端调用
-
-```typescript
-import { invoke } from '@tauri-apps/api/core'
-const greeting = await invoke<string>('greet', { name: 'CaptionFab' })
-```
+| 命令 | 说明 |
+|:-----|:-----|
+| `pnpm tauri dev` | 启动开发服务器（前端热重载 + Rust 自动编译） |
+| `pnpm tauri build` | 生产构建 |
+| `pnpm test` | 运行全部测试（193 个） |
+| `pnpm test:watch` | 测试监听模式 |
+| `pnpm lint` | ESLint 检查 |
+| `pnpm lint:fix` | ESLint 自动修复 |
+| `pnpm type-check` | TypeScript 类型检查（vue-tsc --noEmit） |
+| `pnpm docs:dev` | 启动文档开发服务器 |
 
 ---
 
-## 4. 前端核心模块开发
+## 4. 核心模块开发指南
 
-### 4.1 Pipeline 自定义配置
+### 4.1 添加新的 Pipeline 阶段
 
-```typescript
-import { Pipeline, DEFAULT_PIPELINE_OPTIONS } from '@/core/Pipeline'
-
-const pipeline = new Pipeline({
-  jitterMinDuration: 0.5,       // 调高：过滤更多噪声
-  splitSimilarityThreshold: 0.9, // 调高：更少合并
-})
-
-const cleaned = pipeline.process(rawSubtitles)
-
-// 单独运行某阶段（调试）
-const afterDenoise = pipeline.processStage(rawSubtitles, 1)
-```
-
-### 4.2 添加新导出格式
-
-1. 在 `src-tauri/src/commands/types.rs` 的 `ExportFormat` 枚举添加变体：
-
-```rust
-pub enum ExportFormat {
-    SRT,
-    WebVTT,
-    ASS,
-    SSA,
-    JSON,
-    TXT,
-    LRC,   // 新增 LRC 格式
-    SBV,
-    CSV,
-}
-```
-
-2. 在 `src-tauri/src/commands/export_fmt.rs` 添加导出函数：
-
-```rust
-pub fn export_as_lrc(subtitles: &[SubtitleItem]) -> String {
-    subtitles.iter()
-        .map(|sub| {
-            let start = format_timestamp_lrc(sub.start_time);
-            format!("[{}] {}", start, sub.text)
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-```
-
-3. 在 `src-tauri/src/commands/export.rs` 的 `export_subtitles` match 中添加分支：
-
-```rust
-ExportFormat::LRC => export_as_lrc(&subtitles),
-```
-
-4. 前端 TypeScript `ExportFormat` 类型定义同步更新。
-
----
-
-## 5. 调试
-
-### 5.1 Rust 日志
-
-```bash
-# 启用 tracing 日志（开发模式）
-RUST_LOG=debug pnpm tauri dev
-```
-
-### 5.2 前端断点
-
-```bash
-# Vite 开发服务器（端口 5173）
-pnpm vite
-
-# Chrome DevTools: F12 → Sources → 找到对应 .ts 文件打断点
-```
-
-### 5.3 Tauri IPC 调试
+Pipeline 位于 `src/core/Pipeline.ts`，每个阶段是一个纯函数：
 
 ```typescript
-// 在前端添加日志包装
-import { invoke } from '@tauri-apps/api/core'
-
-async function invokeDebug<T>(cmd: string, args: Record<string, unknown>) {
-  console.log(`[Tauri] invoking ${cmd}`, args)
-  const result = await invoke<T>(cmd, args)
-  console.log(`[Tauri] ${cmd} =>`, result)
+// 输入输出均为 SubtitleLite[]
+function stage5_myNewStage(
+  subs: SubtitleLite[],
+  opts: PipelineOptions,
+  cache: LRUCache<string, number>,
+): SubtitleLite[] {
+  // 实现逻辑
   return result
 }
 ```
 
-### 5.4 FFmpeg 调试
+然后在 `Pipeline.process()` 中调用：
 
-```bash
-# 手动测试帧提取
-ffmpeg -ss 10.5 -i input.mp4 -vframes 1 output.png
-
-# 检查视频元数据
-ffprobe -v quiet -print_format json -show_format -show_streams input.mp4
+```typescript
+result = stage5_myNewStage(result, this.opts, this._cache)
 ```
+
+### 4.2 添加新的校准规则
+
+Calibrator 位于 `src/core/Calibrator.ts`，规则通过 `_buildCJCRules` / `_buildNonCJCRules` / `_buildCommonRules` 构建：
+
+```typescript
+// 在 _buildCommonRules 中添加
+{ condition: myCheck(ctx), factor: 0.85, reason: 'my new rule' }
+```
+
+### 4.3 添加新的图像处理操作
+
+1. 在 `src/utils/image.ts` 中添加核心操作
+2. 如果涉及内核操作，从 `image-kernel.ts` 导入 `forEachNeighbor` 和 `getSquareKernel`
+3. 如果涉及形态学，添加到 `image-morph.ts`
+4. 在 `usePreprocessor.ts` 中调用
+
+### 4.4 添加新的 Tauri 命令
+
+1. 在 `src-tauri/src/commands/` 下创建或编辑模块
+2. 在 `src-tauri/src/commands/mod.rs` 中注册
+3. 在 `src-tauri/src/lib.rs` 中注册到 `tauri::generate_handler!`
+4. 前端通过 `invoke<ReturnType>('command_name', { args })` 调用
 
 ---
 
-## 6. 测试
+## 5. 测试
 
-### 6.1 前端单元测试
+### 测试框架
 
-```bash
-pnpm test               # 运行所有测试
-pnpm test -- --watch   # Watch 模式
-pnpm test src/core/Pipeline.ts  # 测试特定文件
-```
+项目使用 **Vitest**，配置位于 `vitest.config.ts`。
 
-### 6.2 Rust 测试
+### 运行测试
 
 ```bash
-cargo test --manifest-path src-tauri/Cargo.toml
+pnpm test              # 运行全部 193 个测试
+pnpm test:watch        # 监听模式
 ```
 
-### 6.3 集成测试（字幕导出）
+### 测试文件约定
 
-```bash
-# 手动验证导出文件
-cargo test --manifest-path src-tauri/Cargo.toml
+- 测试文件与源码同目录，命名为 `*.test.ts`
+- 示例：`src/core/Pipeline.test.ts` 测试 `src/core/Pipeline.ts`
+
+### 编写测试
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { Pipeline } from './Pipeline'
+
+describe('Pipeline', () => {
+  it('should filter jitter subtitles', () => {
+    const pipeline = new Pipeline()
+    const result = pipeline.process([
+      { text: 'hi', startTime: 0, endTime: 0.1, confidence: 0.3, startFrame: 0, endFrame: 3 },
+      { text: 'Hello world', startTime: 1, endTime: 3, confidence: 0.95, startFrame: 30, endFrame: 90 },
+    ])
+    expect(result).toHaveLength(1)
+    expect(result[0].text).toBe('Hello world')
+  })
+})
 ```
+
+### 测试覆盖目标
+
+- 核心层 (`core/`): 100% 函数覆盖
+- 工具层 (`utils/`): 100% 函数覆盖
+- 组合层 (`composables/`): 关键路径覆盖
 
 ---
 
-## 7. 构建与发布
+## 6. 代码规范
 
-### 7.1 生产构建
+### TypeScript
 
-```bash
-pnpm tauri build
-```
+- 使用 `vue-tsc --noEmit` 进行类型检查，目标 **零错误**
+- 避免 `any` 类型，使用 `unknown` + 类型守卫
+- 枚举导出使用 `export { MyEnum }`（非 `export type`）
 
-产物位于 `src-tauri/target/release/bundle/`：
-- macOS: `.app` / `.dmg`
-- Linux: `.AppImage` / `.deb`
-- Windows: `.exe` / `.msi`
+### Vue 组件
 
-## 9. 版本管理
-
-版本在 `package.json` 和 `src-tauri/Cargo.toml` 中必须保持同步：
-
-```bash
-# package.json
-"version": "3.6.0"
-
-# src-tauri/Cargo.toml
-version = "3.6.0"
-```
-
-发布流程：更新版本 → git tag → GitHub Actions 自动构建 → Draft Release。详细 Release 工作流见 `.github/workflows/release.yml`。
-
-### GitHub Actions 工作流
-
-`.github/workflows/` 下有 3 个 workflow 文件，其中 `ci.yml` 内含 **3 个并行 job**：
-
-| Workflow | 触发 | Job | 说明 |
-|:---|:---|:---|:---|
-| `ci.yml` | PR / push | `quality` | vue-tsc + ESLint + Vitest |
-| `ci.yml` | PR / push | `build` | Tauri 生产构建 |
-| `ci.yml` | PR / push | `rust-test` | cargo test（lib + bins）|
-| `docs.yml` | push (main) | — | VitePress → GitHub Pages |
-| `release.yml` | Git tag | — | Tauri 发布构建 |
-
-### 质量门禁标准
-
-本地预览文档（VitePress）：
-
-```bash
-pnpm docs:build    # 构建到 docs/.vitepress/dist/
-# 或开发模式热重载
-pnpm vitepress dev docs
-```
-
----
-
-## 8. 常见问题
-
-### Q: `pnpm tauri dev` 报 "Rust 1.75.0 too old for Tauri 2.x"？
-
-A: Tauri 2.x 需要 Rust 1.82+。升级 Rust：
-```bash
-rustup update stable
-rustc --version  # 确认 >= 1.82
-```
-
-### Q: OCR 引擎初始化失败？
-
-A: 检查 Tesseract 是否安装：
-```bash
-tesseract --version
-```
-如果使用 EasyOCR，确保 `node_modules/easyocr` 正确安装。
-
-### Q: 帧提取返回空图片？
-
-A: 检查 ffmpeg 是否可用：
-```bash
-ffmpeg -version
-```
-确认视频路径不包含特殊字符（引号、`$`、反引号）。
-
-### Q: 场景检测报错 "scene_detect.py not found"？
-
-A: 确保 `scene_detect.py` 位于 `src-tauri/scripts/` 目录，且 Python 在 PATH 中：
-```bash
-python3 --version
-```
-
-### Q: 前端 `invoke` 调用报错 "command not found"？
-
-A: 确认命令已在 `lib.rs` 的 `generate_handler!` 中注册。
-
----
-
-## 10. CI/CD 工作流
-
-### GitHub Actions 工作流
-
-`.github/workflows/` 下有 3 个 workflow 文件，其中 `ci.yml` 内含 **3 个并行 job**：
-
-| Workflow | 触发 | Job | 说明 |
-|:---|:---|:---|:---|
-| `ci.yml` | PR / push | `quality` | vue-tsc + ESLint + Vitest |
-| `ci.yml` | PR / push | `build` | Tauri 生产构建 |
-| `ci.yml` | PR / push | `rust-test` | cargo test（lib + bins）|
-| `docs.yml` | push (main) | — | VitePress → GitHub Pages |
-| `release.yml` | Git tag | — | Tauri 发布构建 |
-
-**质量门禁标准：**
-- `vue-tsc --noEmit` 必须通过
-- ESLint `pnpm lint` 必须通过（允许 `--fix` 自动修复）
-- Vitest 测试套件全部通过
-
-### 本地模拟 CI
-
-```bash
-# 质量检查（CI 第一路）
-pnpm type-check && pnpm lint
-
-# Rust 检查
-cargo clippy -- -D warnings
-
-# 前端测试
-pnpm test
-
-# 完整构建
-pnpm tauri build
-```
-
----
-
-## 11. 命名规范速查
-
-详见 [architecture.md](./architecture) 完整规范。
+- 使用 `<script setup lang="ts">` 语法
+- Props 使用 `const props = defineProps<Props>()` 显式绑定（当 script 中需要访问时）
+- SCSS 使用 `@use` 替代已废弃的 `@import`
 
 ### Rust
 
-| 类型 | 规范 | 示例 |
-|:---|:---|:---|
-| 模块文件 | snake_case | `video_processor.rs` |
-| 公开函数 | snake_case | `get_video_metadata` |
-| 公开结构体/枚举 | PascalCase | `VideoMetadata`, `ExportFormat` |
-| 私有函数 | snake_case | `extract_frame_ffmpeg` |
-| 常量 | SCREAMING_SNAKE_CASE | `DEFAULT_TIMEOUT_SECS` |
+- 使用 `cargo clippy` 进行 lint 检查
+- 错误处理使用 `thiserror` + `Result`，避免 `unwrap()`
+- 异步 I/O 使用 `tokio::fs`，避免阻塞
 
-### TypeScript / Vue
+### Git 提交
 
-| 类型 | 规范 | 示例 |
-|:---|:---|:---|
-| 组件 | PascalCase | `SubtitleList.vue` |
-| Composables | camelCase + `use` 前缀 | `useSubtitleList.ts` |
-| 工具函数 | camelCase | `textSimilarity` |
-| 类型/接口 | PascalCase | `PipelineOptions` |
-| 常量 | SCREAMING_SNAKE_CASE | `DEFAULT_PIPELINE_OPTIONS` |
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
+
+```
+feat: 新增 xxx 功能
+fix: 修复 xxx 问题
+refactor: 重构 xxx 模块
+docs: 更新 xxx 文档
+test: 添加 xxx 测试
+chore: 构建/依赖更新
+```
 
 ---
 
-## 12. 文档结构
+## 7. 文档开发
 
-CaptionFab 使用 **VitePress** 作为文档系统，源码在 `docs/` 目录：
+文档使用 [VitePress](https://vitepress.dev/) 构建。
+
+```bash
+# 启动文档开发服务器
+pnpm docs:dev
+
+# 构建文档
+pnpm docs:build
+```
+
+### 文档结构
 
 ```
 docs/
 ├── .vitepress/
-│   └── config.ts       # VitePress 配置（导航 + 侧边栏）
-├── guide/              # 用户指南（面向使用者）
+│   └── config.ts           # VitePress 配置
+├── index.md                # 首页
+├── architecture.md         # 架构文档
+├── developer-guide.md      # 开发者指南（本文件）
+├── guide/                  # 用户指南
 │   ├── getting-started.md
 │   ├── first-extraction.md
-│   ├── ocr-engines.md
 │   ├── roi.md
+│   ├── ocr-engines.md
 │   ├── export-formats.md
 │   ├── keyboard-shortcuts.md
 │   └── faq.md
-├── api/               # API 参考（面向开发者）
-│   ├── commands.md     # Tauri IPC 命令
-│   ├── pipeline.md
-│   ├── exporter.md
-│   ├── scene-detect.md
-│   └── calibrator.md
-├── index.md           # 文档首页（VitePress Home）
-└── architecture.md    # 架构设计文档
-```
-
-本地预览文档：
-
-```bash
-# VitePress dev server（需先安装依赖）
-npx vitepress dev docs
-
-# 或
-cd docs && npx vitepress dev .
+└── api/                    # API 文档
+    ├── pipeline.md
+    ├── calibrator.md
+    ├── scene-detect.md
+    ├── exporter.md
+    └── commands.md
 ```
 
 ---
 
-## 13. 贡献指南
+## 8. 构建与发布
 
-1. Fork 仓库，创建分支：`git checkout -b feat/my-feature`
-2. 遵循本文档的命名规范
-3. 运行 `pnpm type-check` 确保类型检查通过
-4. 运行 `pnpm lint:fix` 自动修复格式问题
-5. Commit 遵循 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:`, `fix:`, `docs:`, `refactor:`, `perf:`
-6. Push 并提 PR
+### 版本号管理
+
+版本号在以下文件中同步更新：
+
+| 文件 | 字段 |
+|:-----|:-----|
+| `package.json` | `version` |
+| `src-tauri/Cargo.toml` | `version` |
+| `src-tauri/tauri.conf.json` | `version` |
+
+### 发布流程
+
+```bash
+# 1. 更新版本号
+# 编辑 package.json, Cargo.toml, tauri.conf.json
+
+# 2. 更新 CHANGELOG.md
+# 添加新版本条目
+
+# 3. 提交并打标签
+git add -A
+git commit -m "release: v4.1.0"
+git tag v4.1.0
+git push origin main --tags
+
+# 4. GitHub Actions 自动构建并创建 Release
+```
+
+---
+
+## 9. 常见问题
+
+### Q: `pnpm tauri dev` 报错 "Rust toolchain not found"
+
+安装 Rust：`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+
+### Q: TypeScript 报 `Cannot find module` 错误
+
+运行 `pnpm install` 确保依赖已安装。如果问题持续，删除 `node_modules` 重新安装。
+
+### Q: 测试失败但代码逻辑正确
+
+检查是否是测试文件引用了旧的 API。运行 `pnpm type-check` 查看类型错误。
+
+### Q: 如何添加新的导出格式？
+
+1. 在 `src-tauri/src/commands/export_fmt.rs` 添加格式化函数
+2. 在 `src/types/subtitle.ts` 的 `ExportFormat` 联合类型中添加
+3. 在 `src/stores/subtitle.ts` 的 `exportFormats` 中添加默认值
+4. 添加单元测试
+
+---
+
+## 10. 贡献指南
+
+详见 [CONTRIBUTING.md](../CONTRIBUTING.md)。
+
+**核心原则：**
+
+1. 所有代码需通过 `pnpm lint` 和 `pnpm test`
+2. 新增功能需附带单元测试
+3. 提交前运行 `pnpm type-check` 确保零类型错误
+4. 遵循 Conventional Commits 规范
+5. PR 标题清晰描述变更内容

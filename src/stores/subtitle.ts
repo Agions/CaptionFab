@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import type { SubtitleItem, SubtitleEdit, EditableField, EditableValue, ExportFormats } from '@/types/subtitle'
 import { CONFIDENCE_HIGH, CONFIDENCE_MID, getConfidenceLevel } from '@/utils/confidence'
 import { type ConfidenceFilterValue } from '@/utils/confidence'
@@ -7,7 +7,7 @@ import { getExporter, type ExportFormat } from '@/core'
 
 export const useSubtitleStore = defineStore('subtitle', () => {
   // State
-  const subtitles = ref<SubtitleItem[]>([])
+  const subtitles = shallowRef<SubtitleItem[]>([])
   const selectedId = ref<string | null>(null)
   const isExtracting = ref(false)
   const extractProgress = ref(0)
@@ -20,7 +20,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   const confidenceFilter = ref<ConfidenceFilterValue>('all')
   
   // Export Options
-  const exportFormats = ref<ExportFormats>({
+  const exportFormats = shallowRef<ExportFormats>({
     srt: true,
     vtt: false,
     ass: false,
@@ -33,7 +33,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   })
   
   // Edit History (for undo/redo)
-  const editHistory = ref<SubtitleEdit[]>([])
+  const editHistory = shallowRef<SubtitleEdit[]>([])
   const historyIndex = ref(-1)
   
   // Computed
@@ -153,7 +153,8 @@ export const useSubtitleStore = defineStore('subtitle', () => {
     isExtracting.value = true
     extractProgress.value = 0
     currentExtractFrame.value = 0
-    subtitles.value = []
+    // 修复：使用 setSubtitles 保持索引映射不变量
+    setSubtitles([])
   }
   
   function updateExtractionProgress(frame: number, totalFrames: number) {
@@ -259,7 +260,8 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   }
 
   function clearAll() {
-    subtitles.value = []
+    // 修复：使用 setSubtitles 保持索引映射不变量
+    setSubtitles([])
     selectedId.value = null
     searchQuery.value = ''
     confidenceFilter.value = 'all'

@@ -232,32 +232,25 @@ async fn extract_frame_at_time_impl(
     // Build ffmpeg arguments with security flags
     // -y: overwrite output without asking
     // -nostdin: disable interactive mode (avoids deadlock in CI/non-TTY)
-    let mut args = vec![
-        "-y".to_string(), "-nostdin".to_string(),
-        "-ss".to_string(),
-        format!("{}", timestamp_secs),
-        "-i".to_string(),
-        path.to_string(),
-        "-vframes".to_string(),
-        "1".to_string(),
-        "-q:v".to_string(),
-        "2".to_string(),
+    // 优化：直接使用 &[&str] 切片，消除 Vec<String>→Vec<&str> 冗余转换
+    let mut args: Vec<&str> = vec![
+        "-y", "-nostdin",
+        "-ss", &format!("{}", timestamp_secs),
+        "-i", path,
+        "-vframes", "1",
+        "-q:v", "2",
     ];
 
     // Add crop filter if specified
     if let Some(filter) = crop_filter {
-        args.extend(["-vf".to_string(), filter.to_string()]);
+        args.extend(["-vf", filter]);
     }
 
-    args.push(output_path.to_string_lossy().into_owned());
-
-    // Use run_command_with_timeout for extract_frame_at_time as well
-    // Build string args for timeout helper
-    let args_str: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    args.push(output_path.to_str().unwrap_or_default());
 
     let output = run_command_with_timeout(
         "ffmpeg",
-        &args_str,
+        &args,
         std::time::Duration::from_secs(30),
     )
     .await

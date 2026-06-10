@@ -58,9 +58,3 @@ async function getVideoMetadataBrowser(path: string): Promise<VideoMetadata> {
     video.src = src
   })
 }
-
-export function useVideoMetadata() {
-  return {
-    getVideoMetadata
-  }
-}

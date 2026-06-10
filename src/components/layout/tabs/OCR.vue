@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useOCR } from '@/composables/useOCR'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useProjectStore } from '@/stores/project'
@@ -9,7 +9,6 @@ const projectStore = useProjectStore()
 const {
   ocrEngines,
   languageOptions,
-  showAdvanced,
   multiPass,
   postProcess,
   mergeSubtitles,
@@ -19,13 +18,11 @@ const {
   confidenceThreshold,
   estimatedAccuracy,
   setLanguage,
-  toggleMultiPass,
-  togglePostProcess,
-  toggleMergeSubtitles,
-  setMergeThreshold,
-  setSceneThreshold,
-  setFrameInterval,
 } = useOCR()
+
+// 优化：showAdvanced 是纯 UI 状态（控制高级面板展开/折叠），
+// 不属于业务数据，不应放入 store 或 composable，作为组件本地 ref 即可
+const showAdvanced = ref(false)
 
 const subtitleStore = useSubtitleStore()
 
@@ -144,7 +141,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">多通道 OCR</span>
             <span class="option-hint">多次识别取最优结果</span>
           </div>
-          <ToggleSwitch v-model="multiPass" @update:model-value="toggleMultiPass" />
+          <ToggleSwitch v-model="multiPass" />
         </div>
 
         <!-- Text Post-processing -->
@@ -153,7 +150,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">文字后处理</span>
             <span class="option-hint">自动修正标点、繁简转换</span>
           </div>
-          <ToggleSwitch v-model="postProcess" @update:model-value="togglePostProcess" />
+          <ToggleSwitch v-model="postProcess" />
         </div>
 
         <!-- Merge Similar Subtitles -->
@@ -162,7 +159,7 @@ const belowThresholdCount = computed(() =>
             <span class="option-name">字幕合并</span>
             <span class="option-hint">自动合并相似相邻字幕</span>
           </div>
-          <ToggleSwitch v-model="mergeSubtitles" @update:model-value="toggleMergeSubtitles" />
+          <ToggleSwitch v-model="mergeSubtitles" />
         </div>
 
         <!-- Merge Threshold -->
@@ -170,7 +167,7 @@ const belowThresholdCount = computed(() =>
           <span class="sub-label">相似度阈值</span>
           <div class="slider-track small">
             <div class="slider-fill" :style="{ width: mergeThreshold * 100 + '%' }"/>
-            <input type="range" :value="mergeThreshold * 100" min="50" max="100" @input="setMergeThreshold(Number(($event.target as HTMLInputElement).value) / 100)"/>
+            <input type="range" :value="mergeThreshold * 100" min="50" max="100" @input="mergeThreshold = Number(($event.target as HTMLInputElement).value) / 100"/>
           </div>
           <span class="sub-value">{{ Math.round(mergeThreshold * 100) }}%</span>
         </div>
@@ -185,7 +182,8 @@ const belowThresholdCount = computed(() =>
         </div>
         <div class="slider-track">
           <div class="slider-fill" :style="{ width: sceneThreshold * 100 + '%' }"/>
-          <input type="range" :value="sceneThreshold * 100" min="0" max="100" @input="setSceneThreshold(Number(($event.target as HTMLInputElement).value) / 100)"/>
+          <!-- 优化：sceneThreshold 现在是 WritableComputedRef，可直接赋值，无需单独的 setter 函数 -->
+          <input type="range" :value="sceneThreshold * 100" min="0" max="100" @input="sceneThreshold = Number(($event.target as HTMLInputElement).value) / 100"/>
         </div>
 
         <!-- Frame Interval -->
@@ -195,11 +193,12 @@ const belowThresholdCount = computed(() =>
             <span class="option-hint">每隔 N 帧处理一次（1=全部）</span>
           </div>
           <div class="stepper">
-            <button class="stepper-btn" @click="setFrameInterval(Math.max(1, frameInterval - 1))">
+            <!-- 优化：frameInterval 同为 WritableComputedRef，直接赋值即可 -->
+            <button class="stepper-btn" @click="frameInterval = Math.max(1, frameInterval - 1)">
               <svg viewBox="0 0 10 10" fill="none"><path d="M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
             <span class="stepper-val">{{ frameInterval }}</span>
-            <button class="stepper-btn" @click="setFrameInterval(Math.min(10, frameInterval + 1))">
+            <button class="stepper-btn" @click="frameInterval = Math.min(10, frameInterval + 1)">
               <svg viewBox="0 0 10 10" fill="none"><path d="M5 2v6M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
           </div>

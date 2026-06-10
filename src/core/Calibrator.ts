@@ -19,8 +19,10 @@
  */
 
 import { clamp } from '@/utils/math'
+import type { Script } from '@/utils/text'
 
-export type Script = 'chinese' | 'japanese' | 'korean' | 'latin' | 'other'
+// 优化：Script 类型已迁移到 @/utils/text，此处 re-export 保持向后兼容
+export type { Script } from '@/utils/text'
 
 export interface CalibrationResult {
   confidence: number
@@ -187,6 +189,111 @@ function _normalizeCJKPunct(text: string): { normalized: string; changed: boolea
   return { normalized: result, changed }
 }
 
+/** 增强校准的预计算上下文 — 提取自 calibrateEnhanced，避免参数传递爆炸 */
+interface EnhancedCalibCtx {
+  workingText: string
+  trimmed: string
+  len: number
+  isCJK: boolean
+  raw: number
+  quality: number
+  punctChanged: boolean
+  /** 孤立的 CJK 字符（前后有空格） */
+  orphanedCJK: boolean
+  /** 引号计数 */
+  dq: number
+  sq: number
+  /** 纯大写拉丁字母 */
+  upperOnly: string
+  /** 罕见 CJK 字符数 */
+  rareCount: number
+  /** 含竖线/异常 CJK bigram */
+  hasVerticalBar: boolean
+  /** 原始置信度与文本质量不匹配 */
+  confMismatch: boolean
+}
+
+/**
+ * 预计算所有增强校准所需条件。
+ * 优化思路：将 calibrateEnhanced 中 30+ 行的预计算逻辑集中到一处，
+ * 使得主方法只关注规则组装和执行。
+ */
+function _precomputeEnhancedContext(
+  workingText: string, trimmed: string, isCJK: boolean,
+  raw: number, quality: number, punctChanged: boolean,
+): EnhancedCalibCtx {
+  const len = trimmed.length
+  const cjkBMP = /[\u4e00-\u9fff]/
+  const cjkExtB = /[\uD840-\uD869][\uDC00-\uDEDF]/
+  const orphanedCJK = isCJK && (
+    (cjkBMP.test(workingText) && / [\u4e00-\u9fff]/.test(workingText)) ||
+    (cjkExtB.test(workingText) && / [\uD840-\uD869][\uDC00-\uDEDF]/.test(workingText))
+  )
+  const dq = (workingText.match(/"/g) || []).length
+  const sq = (workingText.match(/'/g) || []).length
+  const upperOnly = workingText.replace(/[^A-Z]/g, '')
+  const rareCount = _countRareChars(workingText)
+  const hasVerticalBar = _hasCJKAnomaly(workingText)
+  const rawIsHigh = raw > 0.88
+  const textQualityScore = quality / (quality || 1)
+  const confMismatch = rawIsHigh && textQualityScore < 0.75
+
+  return {
+    workingText, trimmed, len, isCJK, raw, quality, punctChanged,
+    orphanedCJK, dq, sq, upperOnly, rareCount, hasVerticalBar, confMismatch,
+  }
+}
+
+/**
+ * 构建 CJK 专属校准规则。
+ * 优化思路：从 calibrateEnhanced 提取为独立函数，
+ * 职责单一，便于单独测试 CJK 规则集。
+ */
+function _buildCJCRules(ctx: EnhancedCalibCtx): Rule[] {
+  if (!ctx.isCJK) return []
+  const rules: Rule[] = [
+    { condition: ctx.orphanedCJK, factor: F_ORPHANED_CJK, reason: 'orphaned CJK character' },
+    { condition: ctx.dq % 2 !== 0 || ctx.sq % 2 !== 0, factor: F_UNBALANCED_QUOTE, reason: 'unbalanced quotation marks' },
+    { condition: ctx.hasVerticalBar, factor: F_VERTICAL_BAR, reason: 'vertical bar character detected (OCR artifact)' },
+    { condition: ctx.rareCount >= 2, factor: F_RARE_CHAR, reason: 'contains multiple rare characters' },
+    { condition: /\n.{0,5}\n/.test(ctx.workingText), factor: F_CJK_LINE_BREAK, reason: 'mid-sentence line break detected' },
+    { condition: /\d+[年月日时分秒]/.test(ctx.workingText), factor: F_CJK_NUMBER, reason: 'CJK numeral detected (verify accuracy)' },
+  ]
+  // v2: bigram anomaly check
+  if (ctx.hasVerticalBar) {
+    rules.push({ condition: true, factor: F_CJK_BIGRAM_ANOMALY, reason: 'impossible/nonsensical character bigram detected' })
+  }
+  return rules
+}
+
+/**
+ * 构建非 CJK（拉丁文）校准规则。
+ * 优化思路：与 _buildCJCRules 对称，职责清晰。
+ */
+function _buildNonCJCRules(ctx: EnhancedCalibCtx): Rule[] {
+  if (ctx.isCJK) return []
+  return [
+    { condition: ctx.upperOnly.length >= 4 && /[a-z]/.test(ctx.trimmed), factor: F_ALL_CAPS, reason: 'all-caps (likely OCR error)' },
+    { condition: / \d{1,3} /.test(ctx.workingText), factor: F_ISOLATED_DIGIT, reason: 'isolated digit fragment' },
+    { condition: /[.!?]$/.test(ctx.trimmed), factor: F_SENTENCE_END, reason: 'proper sentence ending', bonus: true },
+    { condition: /[,;]\s*$/.test(ctx.trimmed) && !/[.!?]$/.test(ctx.trimmed), factor: F_TRAILING_COMMA, reason: 'trailing comma (incomplete sentence)' },
+  ]
+}
+
+/**
+ * 构建通用校准规则（不分语言）。
+ * 优化思路：独立函数后，新增通用规则只需改这一处。
+ */
+function _buildCommonRules(ctx: EnhancedCalibCtx): Rule[] {
+  return [
+    { condition: /[、,\\.。\-_]{3,}$/.test(ctx.workingText), factor: F_REPEATED_PUNCT, reason: 'repeated trailing punctuation' },
+    { condition: ctx.len >= TH_LEN_GOOD_MIN && ctx.len <= TH_LEN_GOOD_MAX, factor: F_GOOD_LENGTH, reason: 'reasonable subtitle length', bonus: true },
+    { condition: ctx.len > TH_LEN_SUSPICIOUS, factor: F_TOO_LONG, reason: 'suspiciously long subtitle' },
+    { condition: /^[\s,.!?;:]/.test(ctx.trimmed), factor: F_LEADING_SPACE, reason: 'leading whitespace or punctuation' },
+    { condition: ctx.confMismatch, factor: F_CONF_DEVIATION, reason: 'raw confidence vs text quality mismatch' },
+  ]
+}
+
 // ─── Main Calibrator ──────────────────────────────────────────────
 
 export class Calibrator {
@@ -215,6 +322,10 @@ export class Calibrator {
     return { confidence: clamp(quality), signals }
   }
 
+  /**
+   * 增强校准 — 重构后主方法仅负责：输入验证 → 标点规范化 → 预计算 → 规则组装 → 执行。
+   * 规则构建逻辑拆分为 _buildCJCRules / _buildNonCJCRules / _buildCommonRules。
+   */
   calibrateEnhanced(text: string, raw: number, script: Script = 'other'): CalibrationResult {
     if (!text) return { confidence: raw, signals: [] }
 
@@ -225,84 +336,32 @@ export class Calibrator {
       return { confidence: clamp(F_EMPTY_AFTER_TRIM * raw), signals }
     }
 
-    const len = trimmed.length
-
-    // v2: normalize CJK full-width punctuation first
+    // 优化：标点规范化后统一处理
     const { normalized: normText, changed: punctChanged } = _normalizeCJKPunct(trimmed)
     const workingText = normText
+    const isCJK = script === 'chinese' || script === 'japanese' || script === 'korean'
 
-    // Base calibration
+    // 基础校准
     const base = this.calibrate(workingText, raw)
     let quality = base.confidence
     signals.push(...base.signals)
 
-    // Precompute conditions
-    const isCJK = script === 'chinese' || script === 'japanese' || script === 'korean'
-    const cjkBMP = /[\u4e00-\u9fff]/
-    const cjkExtB = /[\uD840-\uD869][\uDC00-\uDEDF]/
-    const orphanedCJK = isCJK && (
-      (cjkBMP.test(workingText) && / [\u4e00-\u9fff]/.test(workingText)) ||
-      (cjkExtB.test(workingText) && / [\uD840-\uD869][\uDC00-\uDEDF]/.test(workingText))
-    )
+    // 优化：预计算集中到专用函数
+    const ctx = _precomputeEnhancedContext(workingText, trimmed, isCJK, raw, quality, punctChanged)
 
-    const dq = (workingText.match(/"/g) || []).length
-    const sq = (workingText.match(/'/g) || []).length
-    const upperOnly = workingText.replace(/[^A-Z]/g, '')
-    const rareCount = _countRareChars(workingText)
-    const hasVerticalBar = _hasCJKAnomaly(workingText)
-
-    // v2: confidence deviation check
-    // If raw confidence is high (>0.9) but text looks bad → penalize
-    // If raw confidence is low (<0.6) but text looks clean → boost slightly
-    const rawIsHigh = raw > 0.88
-    const textQualityScore = quality / (base.confidence || 1)
-    const confMismatch = rawIsHigh && textQualityScore < 0.75
-
-    // CJK rules
-    const cjkRules: Rule[] = isCJK ? [
-      { condition: orphanedCJK,                           factor: F_ORPHANED_CJK,       reason: 'orphaned CJK character' },
-      { condition: dq % 2 !== 0 || sq % 2 !== 0,         factor: F_UNBALANCED_QUOTE,   reason: 'unbalanced quotation marks' },
-      // v2 new CJK rules
-      { condition: hasVerticalBar,                        factor: F_VERTICAL_BAR,        reason: 'vertical bar character detected (OCR artifact)' },
-      { condition: rareCount >= 2,                        factor: F_RARE_CHAR,           reason: 'contains multiple rare characters' },
-      { condition: /\n.{0,5}\n/.test(workingText),        factor: F_CJK_LINE_BREAK,      reason: 'mid-sentence line break detected' },
-      { condition: /\d+[年月日时分秒]/.test(workingText) && isCJK, factor: F_CJK_NUMBER, reason: 'CJK numeral detected (verify accuracy)' },
-    ] : []
-
-    // Non-CJK rules
-    const nonCjkRules: Rule[] = !isCJK ? [
-      { condition: upperOnly.length >= 4 && /[a-z]/.test(trimmed),  factor: F_ALL_CAPS,       reason: 'all-caps (likely OCR error)' },
-      { condition: / \d{1,3} /.test(workingText),                   factor: F_ISOLATED_DIGIT, reason: 'isolated digit fragment' },
-      { condition: /[.!?]$/.test(trimmed),                           factor: F_SENTENCE_END,   reason: 'proper sentence ending', bonus: true },
-      { condition: /[,;]\s*$/.test(trimmed) && !/[.!?]$/.test(trimmed), factor: F_TRAILING_COMMA, reason: 'trailing comma (incomplete sentence)' },
-    ] : []
-
-    // v2 new: bigram anomaly check for CJK
-    if (isCJK && _hasCJKAnomaly(workingText)) {
-      cjkRules.push({
-        condition: true,
-        factor: F_CJK_BIGRAM_ANOMALY,
-        reason: 'impossible/nonsensical character bigram detected',
-      })
-    }
-
-    // v2: punctuation normalization bonus
+    // 标点规范化奖励
     if (punctChanged) {
       signals.push(BONUS(F_CJK_PUNCT_NORM, 'CJK punctuation normalized'))
       quality = clamp(quality * F_CJK_PUNCT_NORM)
     }
 
-    // Common rules
-    const commonRules: Rule[] = [
-      { condition: /[、,\\.。\-_]{3,}$/.test(workingText),  factor: F_REPEATED_PUNCT,  reason: 'repeated trailing punctuation' },
-      { condition: len >= TH_LEN_GOOD_MIN && len <= TH_LEN_GOOD_MAX, factor: F_GOOD_LENGTH, reason: 'reasonable subtitle length', bonus: true },
-      { condition: len > TH_LEN_SUSPICIOUS,                factor: F_TOO_LONG,        reason: 'suspiciously long subtitle' },
-      { condition: /^[\s,.!?;:]/.test(trimmed),             factor: F_LEADING_SPACE,   reason: 'leading whitespace or punctuation' },
-      // v2 new
-      { condition: confMismatch,                             factor: F_CONF_DEVIATION,  reason: 'raw confidence vs text quality mismatch' },
+    // 优化：规则按语言分组构建，主方法只负责组装和执行
+    const allRules = [
+      ..._buildCJCRules(ctx),
+      ..._buildNonCJCRules(ctx),
+      ..._buildCommonRules(ctx),
     ]
-
-    quality = _applyRules([...cjkRules, ...nonCjkRules, ...commonRules], signals, quality)
+    quality = _applyRules(allRules, signals, quality)
     return { confidence: clamp(quality), signals }
   }
 
@@ -345,15 +404,8 @@ export class Calibrator {
   }
 }
 
-// ─── Language code → Script ──────────────────────────────────────
-
-export function langToScript(lang: string): Script {
-  if (['zh', 'chi', 'ch', 'zho'].includes(lang)) return 'chinese'
-  if (['ja', 'jpn', 'jap'].includes(lang)) return 'japanese'
-  if (['ko', 'kor', 'korean'].includes(lang)) return 'korean'
-  if (['en', 'eng', 'latin'].includes(lang)) return 'latin'
-  return 'other'
-}
+// 优化：langToScript 已迁移到 @/utils/text，此处 re-export 保持向后兼容
+export { langToScript } from '@/utils/text'
 
 // ─── Global singleton ─────────────────────────────────────────────
 let _calibrator: Calibrator | null = null

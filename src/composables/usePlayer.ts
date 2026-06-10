@@ -85,8 +85,10 @@ export function useVideoPlayer() {
     function _startRVFC() {
       if (!_rvfcActive && 'requestVideoFrameCallback' in element) {
         _rvfcActive = true
-        const videoEl = element as any
-        const callback = (_now: DOMHighResTimeStamp, _metadata: any) => {
+        // 优化：使用 unknown 替代 any，保持类型安全
+        // requestVideoFrameCallback 的 metadata 类型在部分 TS 版本中未定义
+        const videoEl = element as HTMLVideoElement & { requestVideoFrameCallback?: (cb: (now: DOMHighResTimeStamp, metadata: unknown) => void) => number }
+        const callback = (_now: DOMHighResTimeStamp, _metadata: unknown) => {
           if (projectStore.videoMeta && element.currentTime) {
             const frame = Math.floor(element.currentTime * projectStore.videoMeta.fps)
             if (frame !== _lastFrameTime) {

@@ -11,12 +11,6 @@ use super::types::ROI;
 pub use super::types::ExportFormat;
 pub use super::types::SubtitleItem;
 
-// Re-export so the public API surface is unchanged
-pub use super::timestamp::format_timestamp_ass as _ts_ass;
-pub use super::timestamp::format_timestamp_srt as _ts_srt;
-pub use super::timestamp::format_timestamp_vtt as _ts_vtt;
-pub use super::timestamp::format_timestamp_sbv as _ts_sbv;
-
 // ─── Shared exporter for timed text formats (SRT, VTT, SBV) ───────────────────
 
 /// Shared exporter for timed subtitle formats (SRT, VTT, SBV).
@@ -53,7 +47,7 @@ pub fn export_as_vtt(subtitles: &[SubtitleItem]) -> String {
 }
 
 pub fn export_as_sbv(subtitles: &[SubtitleItem]) -> String {
-    // SBV format: each entry is "start,end\ntext\n\n"
+    // SBV format: "start,end\ntext\n\n" — 复用 timed_entries 模式但使用不同的行格式
     let capacity = subtitles.iter().map(|s| 30 + s.text.len()).sum();
     let mut output = String::with_capacity(capacity);
     use std::fmt::Write;

@@ -14,55 +14,10 @@
   flex-direction: column;
 }
 
-@mixin flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-@mixin flex-start {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-@mixin flex-column {
-  display: flex;
-  flex-direction: column;
-}
-
-// ── Typography ───────────────────────────────────────────────
-@mixin text-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@mixin text-clamp($lines: 2) {
-  display: -webkit-box;
-  -webkit-line-clamp: $lines;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 // ── Interactive States ───────────────────────────────────────
-@mixin interactive {
-  cursor: pointer;
-  user-select: none;
-  transition: all $duration-fast $ease-out-expo;
-  
-  &:hover {
-    background-color: var(--bg-overlay);
-  }
-  
-  &:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-}
-
 @mixin pressable {
   transition: transform $duration-instant $ease-out-expo;
-  
+
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
@@ -75,64 +30,29 @@
   }
 }
 
-// ── Glass Effect ────────────────────────────────────────────
-@mixin glass {
-  background: rgba($gray-800, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid $gray-700;
-}
-
 // ── Scrollbar ───────────────────────────────────────────────
 @mixin custom-scrollbar($width: 6px) {
   &::-webkit-scrollbar {
     width: $width;
     height: $width;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: $gray-700;
     border-radius: $radius-full;
-    
+
     &:hover {
       background: $gray-600;
     }
   }
-  
+
   // Firefox
   scrollbar-width: thin;
   scrollbar-color: $gray-700 transparent;
-}
-
-// ── Glow Effects ─────────────────────────────────────────────
-@mixin glow-sm {
-  box-shadow: 0 0 0 2px rgba($primary, 0.15), 0 2px 8px rgba($primary, 0.1);
-}
-
-@mixin glow-md {
-  box-shadow: 0 0 0 3px rgba($primary, 0.2), 0 4px 16px rgba($primary, 0.15);
-}
-
-@mixin glow-lg {
-  box-shadow: 0 0 0 4px rgba($primary, 0.25), 0 8px 32px rgba($primary, 0.2);
-}
-
-// ── Noise Texture (subtle grain) ─────────────────────────────
-@mixin noise($opacity: 0.025) {
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    opacity: $opacity;
-    pointer-events: none;
-    z-index: 1;
-  }
 }
 
 // ── Entrance Animation ──────────────────────────────────────
@@ -157,7 +77,7 @@
   white-space: nowrap;
   @include pressable;
   @include focus-ring;
-  
+
   &:disabled {
     pointer-events: none;
   }
@@ -167,7 +87,7 @@
   @include btn-base;
   background: var(--primary);
   color: white;
-  
+
   &:hover:not(:disabled) {
     background: lighten($primary, 8%);
     box-shadow: $shadow-md;
@@ -178,7 +98,7 @@
   @include btn-base;
   background: transparent;
   color: var(--text-secondary);
-  
+
   &:hover:not(:disabled) {
     background: var(--bg-overlay);
     color: var(--text-primary);
@@ -190,7 +110,7 @@
   background: color-mix(in oklch, $error 12%, transparent);
   color: $error;
   border: 1px solid color-mix(in oklch, $error 25%, transparent);
-  
+
   &:hover:not(:disabled) {
     background: color-mix(in oklch, $error 20%, transparent);
     border-color: color-mix(in oklch, $error 40%, transparent);
@@ -205,16 +125,11 @@
   transition: border-color $duration-fast $ease-out-expo,
               box-shadow $duration-fast $ease-out-expo,
               transform $duration-fast $ease-out-expo;
-  
+
   &:hover {
     border-color: var(--border-light);
     box-shadow: $shadow-md;
   }
-}
-
-@mixin card-selected {
-  border-color: var(--primary);
-  box-shadow: $glow-md;
 }
 
 // ── Badge ───────────────────────────────────────────────────
@@ -239,24 +154,6 @@ $conf-levels: (
   'low': $conf-low
 );
 
-// ── Confidence Level Badge ─────────────────────────────────
-@mixin conf-badge($level) {
-  $color: map.get($conf-levels, $level) or $conf-low;
-  background: rgba($color, 0.12);
-  color: $color;
-  border: 1px solid rgba($color, 0.25);
-}
-
-// ── Confidence Level Pill (compact version) ────────────────
-@mixin conf-pill-base {
-  font-family: $font-mono;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: $radius-full;
-  letter-spacing: 0.02em;
-}
-
 // ── Confidence Level Tab ──────────────────────────────────
 @mixin conf-tab($level) {
   $color: map.get($conf-levels, $level) or $conf-low;
@@ -275,43 +172,6 @@ $conf-levels: (
   }
 }
 
-// ── Slider Track ─────────────────────────────────────────────
-@mixin slider-track {
-  position: relative;
-  height: 6px;
-  background: $bg-overlay;
-  border-radius: $radius-full;
-
-  .slider-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, $primary, $accent);
-    border-radius: $radius-full;
-    pointer-events: none;
-    transition: width 0.1s;
-  }
-
-  .slider {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-}
-
-// Slider fill color variants
-@mixin slider-fill-colors {
-  .slider-fill {
-    &.fill-green { background: linear-gradient(90deg, var(--success), color-mix(in oklch, var(--success) 85%, white)); }
-    &.fill-yellow { background: linear-gradient(90deg, var(--warning), color-mix(in oklch, var(--warning) 85%, white)); }
-    &.fill-red { background: linear-gradient(90deg, var(--error), color-mix(in oklch, var(--error) 85%, white)); }
-  }
-}
-
 // ── Card Border Variants ───────────────────────────────────────
 @mixin card-border {
   border: 1.5px solid $border;
@@ -319,8 +179,4 @@ $conf-levels: (
 
 @mixin card-border-error {
   border: 1.5px solid rgba($error, 0.3);
-}
-
-@mixin card-border-dashed {
-  border: 1.5px dashed $border;
 }

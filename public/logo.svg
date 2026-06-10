@@ -1,77 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="CaptionFab Logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CaptionFab Logo">
   <title>CaptionFab</title>
-  <desc>Professional video subtitle extraction tool logo</desc>
-  
+  <desc>智能硬编码字幕提取工具 Logo — 融合胶片、字幕文本和工厂齿轮元素</desc>
+
   <defs>
-    <!-- Primary gradient: deep blue to cyan -->
+    <!-- 主渐变：深蓝到青色 -->
     <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E40AF"/>
-      <stop offset="50%" stop-color="#0EA5E9"/>
-      <stop offset="100%" stop-color="#06B6D4"/>
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="40%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
     </linearGradient>
-    
-    <!-- Accent gradient: warm amber -->
+
+    <!-- 强调色渐变：琥珀到橙 -->
     <linearGradient id="accentGradient" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#F59E0B"/>
       <stop offset="100%" stop-color="#F97316"/>
     </linearGradient>
-    
-    <!-- Subtle glow filter -->
-    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
+
+    <!-- 高光渐变 -->
+    <linearGradient id="highlightGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- 柔和阴影 -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- 发光效果 -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
-    
-    <!-- Inner shadow for depth -->
-    <linearGradient id="innerShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.05"/>
-    </linearGradient>
-    
-    <!-- Clip path for rounded square -->
+
+    <!-- 圆角矩形裁剪 -->
     <clipPath id="iconClip">
-      <rect x="20" y="20" width="216" height="216" rx="48"/>
+      <rect x="24" y="24" width="464" height="464" rx="96"/>
     </clipPath>
   </defs>
-  
-  <!-- Background: rounded square with gradient -->
-  <rect x="0" y="0" width="256" height="256" rx="64" fill="url(#brandGradient)"/>
-  
-  <!-- Subtle inner highlight -->
-  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#innerShadow)"/>
-  
-  <!-- Film frame / video icon -->
-  <g transform="translate(64, 56)">
-    <!-- Outer frame (film strip style) -->
-    <rect x="0" y="0" width="128" height="96" rx="12" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.9"/>
-    
-    <!-- Film perforations (left side) -->
-    <rect x="-8" y="8" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="-8" y="30" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="-8" y="52" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="-8" y="74" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    
-    <!-- Film perforations (right side) -->
-    <rect x="130" y="8" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="130" y="30" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="130" y="52" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    <rect x="130" y="74" width="6" height="14" rx="2" fill="#ffffff" fill-opacity="0.7"/>
-    
-    <!-- Play button triangle (center) -->
-    <polygon points="52,28 96,50 52,72" fill="#ffffff" opacity="0.95"/>
-    
-    <!-- Caption/text overlay indicator (bottom of frame) -->
-    <rect x="16" y="72" width="96" height="16" rx="4" fill="#ffffff" fill-opacity="0.25"/>
-    <rect x="24" y="76" width="60" height="8" rx="2" fill="#ffffff" fill-opacity="0.6"/>
-    <rect x="24" y="86" width="40" height="6" rx="2" fill="#ffffff" fill-opacity="0.4"/>
+
+  <!-- 背景：圆角矩形 -->
+  <rect width="512" height="512" rx="128" fill="url(#brandGradient)" filter="url(#softShadow)"/>
+
+  <!-- 高光层 -->
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="url(#highlightGradient)"/>
+
+  <!-- 主图标组：胶片帧 + 字幕 -->
+  <g transform="translate(128, 100)" clip-path="url(#iconClip)">
+
+    <!-- 胶片外框 -->
+    <rect x="0" y="0" width="256" height="200" rx="16" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.9"/>
+
+    <!-- 胶片齿孔 — 左侧 -->
+    <rect x="-12" y="16" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="-12" y="56" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="-12" y="96" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="-12" y="136" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="-12" y="176" width="10" height="16" rx="4" fill="#ffffff" opacity="0.6"/>
+
+    <!-- 胶片齿孔 — 右侧 -->
+    <rect x="258" y="16" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="258" y="56" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="258" y="96" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="258" y="136" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="258" y="176" width="10" height="16" rx="4" fill="#ffffff" opacity="0.6"/>
+
+    <!-- 播放按钮三角 -->
+    <polygon points="100,50 176,100 100,150" fill="#ffffff" opacity="0.95"/>
+
+    <!-- 字幕文本行（底部，模拟硬编码字幕效果） -->
+    <rect x="24" y="160" width="208" height="28" rx="6" fill="#000" fill-opacity="0.5"/>
+    <!-- 第一行字幕 -->
+    <rect x="48" y="166" width="140" height="6" rx="3" fill="#ffffff" opacity="0.9"/>
+    <!-- 第二行字幕 -->
+    <rect x="64" y="178" width="100" height="5" rx="2.5" fill="#ffffff" opacity="0.6"/>
   </g>
-  
-  <!-- Sparkle / "Fab" accent (top-right corner) -->
-  <g transform="translate(180, 32)" filter="url(#softGlow)">
-    <polygon points="0,-12 4,0 0,12 -4,0" fill="url(#accentGradient)" opacity="0.9"/>
-    <polygon points="8,-4 10,0 8,4 6,0" fill="#ffffff" opacity="0.6"/>
+
+  <!-- "Fab" 齿轮/火花装饰（右上角） -->
+  <g transform="translate(380, 80)" filter="url(#glow)">
+    <!-- 八角齿轮 -->
+    <polygon points="0,-28 8,-10 28,-8 12,4 18,24 0,14 -18,24 -12,4 -28,-8 -8,-10"
+             fill="url(#accentGradient)" opacity="0.9"/>
+    <!-- 中心圆 -->
+    <circle cx="0" cy="0" r="8" fill="#ffffff" opacity="0.8"/>
   </g>
-  
-  <!-- Subtle corner accent (bottom-left) -->
-  <path d="M 32 224 L 56 224 L 44 240 Z" fill="#ffffff" fill-opacity="0.15"/>
+
+  <!-- 底部品牌文字（内嵌） -->
+  <g transform="translate(256, 400)">
+    <text x="0" y="0" text-anchor="middle"
+          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="48" font-weight="700" letter-spacing="-1"
+          fill="#ffffff" opacity="0.95">
+      CaptionFab
+    </text>
+    <text x="0" y="32" text-anchor="middle"
+          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="16" font-weight="400" letter-spacing="4"
+          fill="#ffffff" opacity="0.5">
+      SUBTITLE EXTRACTOR
+    </text>
+  </g>
+
+  <!-- 装饰性角落元素 -->
+  <path d="M 48 464 L 80 464 L 64 480 Z" fill="#ffffff" opacity="0.1"/>
+  <circle cx="464" cy="464" r="4" fill="#ffffff" opacity="0.15"/>
 </svg>

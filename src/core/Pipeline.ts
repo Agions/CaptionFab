@@ -18,6 +18,8 @@
  */
 
 import type { SubtitleLite } from '@/types/subtitle'
+import { LRUCache } from '@/utils/lru-cache'
+import { isCJKText } from '@/utils/text'
 
 export interface PipelineOptions {
   /** 最小持续时间（秒），低于此值视为噪声 */
@@ -43,72 +45,24 @@ export const DEFAULT_PIPELINE_OPTIONS: PipelineOptions = {
   similarSimilarityThreshold: 0.80,
 }
 
-// ── Pipeline threshold constants ────────────────────────────────
-// Cached similarity limit (used by SimilarityCache)
+// 优化：使用共享 LRUCache 替代内联 SimilarityCache + _trimMemo，消除重复缓存逻辑
+type SimilarityCache = LRUCache<string, number>
+
 const SIMILARITY_CACHE_MAX_SIZE = 3000
 const SIMILARITY_CACHE_TRIM_TO  = 2500
 
-// ─── Levenshtein 距离（带缓存 per-pipeline 实例）───────────────────────
-// 每个 Pipeline 实例拥有独立缓存，避免不同配置（threshold）互相干扰。
-// 3000 条缓存、LRU淘汰策略（同 original）。
-
-class SimilarityCache {
-  private _map = new Map<string, number>()
-
-  get(key: string): number | undefined { return this._map.get(key) }
-
-  set(key: string, sim: number): void {
-    // Batch trim when exceeding limit (O(1) amortized with Map's insertion order)
-    if (this._map.size >= SIMILARITY_CACHE_MAX_SIZE) {
-      // Map maintains insertion order in modern JS engines (V8, SpiderMonkey, etc.)
-      const keys = [...this._map.keys()]
-      const deleteCount = keys.length - SIMILARITY_CACHE_TRIM_TO
-      for (let i = 0; i < deleteCount; i++) {
-        this._map.delete(keys[i])
-      }
-    }
-    this._map.set(key, sim)
-  }
-
-  clear(): void { this._map.clear() }
-}
-
 // module-level fallback cache for direct textSimilarity() calls (no pipeline instance)
-const _fallbackCache = new SimilarityCache()
+const _fallbackCache: SimilarityCache = new LRUCache(SIMILARITY_CACHE_MAX_SIZE, SIMILARITY_CACHE_TRIM_TO)
 
-// Function-level memoization — caches (a,b) → similarity for all callers.
-// Shared across the entire module so any call with the same text pair is a cache hit.
-// Automatic LRU trim keeps it bounded.
-const _memo = new Map<string, number>()
-const _MEMO_MAX = 2000
-const _MEMO_TRIM_TO = 1500
+// 函数级 memo 缓存 — 使用 LRUCache 替代手动 Map + _trimMemo
+const _memo: SimilarityCache = new LRUCache(2000, 1500)
 
 function _memoKey(a: string, b: string): string {
-  // Deterministic key regardless of argument order
+  // 确定性键：不论参数顺序都生成相同 key
   return a.length <= b.length ? `${a.length}:${a}|${b}` : `${b.length}:${b}|${a}`
 }
 
-function _trimMemo() {
-  if (_memo.size <= _MEMO_MAX) return
-  // Delete oldest entries (Map preserves insertion order)
-  const keys = [..._memo.keys()]
-  const deleteCount = keys.length - _MEMO_TRIM_TO
-  for (let i = 0; i < deleteCount; i++) _memo.delete(keys[i])
-}
-
-// ─── CJK text detection ──────────────────────────────────────────────
-
-/** Detect whether text is primarily CJK (Chinese/Japanese/Korean) script. */
-function _isCJCText(text: string): boolean {
-  const cjkCount = (text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g) || []).length
-  return cjkCount / text.length > 0.5
-}
-
-/**
- * Character-level Levenshtein distance for CJK text.
- * Each CJK character counts as one unit (not bytes).
- * For mixed text, falls back to word-level for the Latin parts.
- */
+// ─── Character-level Levenshtein distance (CJK) ─────────────────
 function _charLevenshtein(a: string, b: string): number {
   if (a === b) return 0
   if (!a.length) return b.length
@@ -131,10 +85,7 @@ function _charLevenshtein(a: string, b: string): number {
   return dp[long.length]
 }
 
-/**
- * Word-level Levenshtein for Latin/English text.
- * Splits on whitespace and compares words for better semantic similarity.
- */
+// ─── Word-level Levenshtein (Latin/English) ─────────────────────
 function _wordLevenshtein(a: string, b: string): number {
   const wordsA = a.toLowerCase().split(/\s+/)
   const wordsB = b.toLowerCase().split(/\s+/)
@@ -150,23 +101,21 @@ export function textSimilarity(a: string, b: string, cache?: SimilarityCache): n
   const memoHit = _memo.get(memoKey)
   if (memoHit !== undefined) return memoHit
 
-  // Determine text type and select appropriate distance metric
-  const isCJK = _isCJCText(a) || _isCJCText(b)
+  // 优化：使用共享 isCJKText 替代内联 _isCJKText
+  const isCJK = isCJKText(a) || isCJKText(b)
   const dist = isCJK
     ? _charLevenshtein(a, b)
     : _wordLevenshtein(a, b)
 
   // 缓存键：短串在前 + 长度前缀（确保对称性）。
-  // 短文本（≤4字）直接用完整文本；较长文本取首尾各4字确保唯一性。
-  // 使用字符串拼接而非 hash 函数，零依赖且确定性输出。
   const [short, long] = a.length <= b.length ? [a, b] : [b, a]
   const cacheKey = short.length <= 4
     ? `${short.length}:${short}|${long.slice(0, 8)}`
     : `${short.length}:${short.slice(0, 4)}..${short.slice(-4)}|${long.slice(0, 8)}`
   const activeCache = cache ?? _fallbackCache
-  const hit = activeCache.get(cacheKey); if (hit !== undefined) {
+  const hit = activeCache.get(cacheKey)
+  if (hit !== undefined) {
     _memo.set(memoKey, hit)
-    _trimMemo()
     return hit
   }
 
@@ -174,7 +123,6 @@ export function textSimilarity(a: string, b: string, cache?: SimilarityCache): n
 
   activeCache.set(cacheKey, sim)
   _memo.set(memoKey, sim)
-  _trimMemo()
   return sim
 }
 
@@ -183,14 +131,11 @@ function stage0_normalize(subs: SubtitleLite[]): SubtitleLite[] {
   return subs.map(sub => ({
     ...sub,
     text: sub.text
-      // 统一换行符
       .replace(/\r\n/g, '\n')
       .replace(/\r/g, '\n')
-      // 移除每行首尾空白
       .split('\n')
       .map(line => line.trim())
       .join('\n')
-      // 去除连续多个换行
       .replace(/\n{3,}/g, '\n\n')
       .trim(),
   }))
@@ -302,7 +247,7 @@ function stage3_mergeSimilar(subs: SubtitleLite[], opts: PipelineOptions, cache:
     const sim = textSimilarity(current.text, curr.text, cache)
 
     if (sim >= opts.similarSimilarityThreshold && gap <= opts.similarMaxGap) {
-      // 合并：取时间跨度最大者 + 置信度最高者；文本优先选当前项（信息更完整）
+      // 合并：取时间跨度最大者 + 置信度最高者
       current.endTime = Math.max(current.endTime, curr.endTime)
       current.endFrame = Math.max(current.endFrame, curr.endFrame)
       current.confidence = Math.max(current.confidence, curr.confidence)
@@ -318,18 +263,14 @@ function stage3_mergeSimilar(subs: SubtitleLite[], opts: PipelineOptions, cache:
 }
 
 // ─── Stage 4: 计算 endTime（基于下一条字幕）────────────────────────
-// NOTE: 不再强制截断最大时长上限，保留原始 endTime。
-// 如有超长单字幕需求，由调用方在 pipeline 外自行处理。
 function stage4_computeEndTime(subs: SubtitleLite[]): SubtitleLite[] {
   if (subs.length === 0) return subs
 
   return subs.map((sub, i) => {
     const next = subs[i + 1]
     if (next) {
-      // 有下一条：取原始 endTime 与下一条 startTime 的较小值
       return { ...sub, endTime: Math.min(sub.endTime, next.startTime) }
     }
-    // 无下一条：保留原始 endTime
     return { ...sub }
   })
 }
@@ -337,7 +278,7 @@ function stage4_computeEndTime(subs: SubtitleLite[]): SubtitleLite[] {
 // ─── 主管道 ─────────────────────────────────────────────────────
 export class Pipeline {
   private opts: PipelineOptions
-  private _cache = new SimilarityCache()
+  private _cache: SimilarityCache = new LRUCache(SIMILARITY_CACHE_MAX_SIZE, SIMILARITY_CACHE_TRIM_TO)
 
   constructor(opts: Partial<PipelineOptions> = {}) {
     this.opts = { ...DEFAULT_PIPELINE_OPTIONS, ...opts }
@@ -351,21 +292,17 @@ export class Pipeline {
   process(rawSubs: SubtitleLite[]): SubtitleLite[] {
     let result = [...rawSubs]
 
-    // 按时间排序（addSubtitle 已保证有序，此处防御性排序）
+    // 按时间排序（防御性排序）
     result.sort((a, b) => a.startTime - b.startTime)
 
     // Stage 0: 文本正则化
     result = stage0_normalize(result)
-
     // Stage 1: 过滤噪声
     result = stage1_filterJitter(result, this.opts, this._cache)
-
     // Stage 2: 合并分裂字幕
     result = stage2_mergeSplit(result, this.opts, this._cache)
-
     // Stage 3: 合并相似字幕
     result = stage3_mergeSimilar(result, this.opts, this._cache)
-
     // Stage 4: 计算准确时长
     result = stage4_computeEndTime(result)
 

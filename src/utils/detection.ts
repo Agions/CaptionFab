@@ -139,8 +139,9 @@ export class AdaptiveEmptyDetector {
 
     // Auto-tune threshold from first 10 frames (collect baseline)
     if (this.frameCount <= 10) {
-      if (this.buffer.length > this.buffer.length) {
-        // Keep buffer bounded
+      if (this.buffer.length > this.opts.bufferSize) {
+        // 优化：预热阶段也要限制缓冲区大小，防止内存膨胀
+        while (this.buffer.length > this.opts.bufferSize) this.buffer.shift()
       }
       // During warmup, just return false (don't skip frames yet)
       if (this.buffer.length < this.opts.confirmFrames) return false

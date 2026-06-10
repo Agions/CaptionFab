@@ -5,7 +5,7 @@ import { useSubtitleStore } from '@/stores/subtitle'
 import { useVideoPlayer } from '@/composables/usePlayer'
 import { useFileDrop } from '@/composables/useFileDrop'
 import { formatTimeShort, formatTimePrecise } from '@/utils/time'
-import type { SubtitleItem } from '@/types/subtitle'
+import { findSubtitleAtTime } from '@/utils/subtitleSearch'
 import VideoPlayer from './video/VideoPlayer.vue'
 import SubtitleOverlay from './video/SubtitleOverlay.vue'
 import FrameCounter from './video/FrameCounter.vue'
@@ -53,11 +53,14 @@ const isDragOver = ref(false)
 const hoverTime = ref<number | null>(null)
 const hoverX = ref(0)
 
+// 优化：provide 移到 setup 顶层，确保在子组件挂载前可用
+// 原来在 onMounted 内调用是 Vue 反模式，可能导致子组件注入失败
+provide('seekToFrame', seekToFrame)
+provide('captureFrame', captureFrameAsDataURL)
+
 onMounted(() => {
   if (videoElement.value) {
     initVideo(videoElement.value)
-    provide('seekToFrame', seekToFrame)
-    provide('captureFrame', captureFrameAsDataURL)
   }
   window.addEventListener('keydown', handleKeydown)
 })
@@ -100,29 +103,8 @@ function handleTimelineLeave() {
 
 const currentSubtitle = computed(() => {
   if (!projectStore.hasVideo || subtitleStore.subtitles.length === 0) return null
-  
-  const currentTime = projectStore.currentTime
-  const subtitles = subtitleStore.subtitles
-  
-  // Performance: binary search for O(log n) lookup instead of O(n) linear scan
-  // Subtitles are sorted by startTime, so we can use binary search
-  let lo = 0, hi = subtitles.length - 1
-  let result: SubtitleItem | null = null
-  
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1
-    const sub = subtitles[mid]
-    if (currentTime >= sub.startTime && currentTime <= sub.endTime) {
-      result = sub
-      break
-    } else if (currentTime < sub.startTime) {
-      hi = mid - 1
-    } else {
-      lo = mid + 1
-    }
-  }
-  
-  return result
+  // 优化：二分查找提取到 utils/subtitleSearch.ts，可复用且可独立测试
+  return findSubtitleAtTime(subtitleStore.subtitles, projectStore.currentTime)
 })
 
 const hasVideo = computed(() => projectStore.hasVideo)

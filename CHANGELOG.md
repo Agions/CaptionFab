@@ -4,12 +4,15 @@ All notable changes to CaptionFab are documented here.
 
 ## [Unreleased]
 
-### 🎨 Branding & Design
+## [4.1.0] - Unreleased
 
-- **全新 Logo 设计** — 从 "SubLens" 品牌升级为 "CaptionFab"，采用电影胶卷 + 字幕条视觉元素
-- **专业级 README** — 重构为产品级展示页面，包含特性表格、性能对比、下载链接
-- **VitePress 文档站升级** — Hero 区域重设计，支持品牌色渐变和响应式布局
-- **品牌色系统** — 主色 `#1E40AF` (深蓝) + `#0EA5E9` (天蓝) + `#F59E0B` (琥珀)
+### 🏗️ Architecture Refactoring
+
+- **LRUCache 提取** — 将 LRU 缓存逻辑抽取为独立模块，提升可复用性
+- **文本工具模块** — 文本处理相关工具函数统一归入 `textUtils`
+- **图片模块拆分** — 将图片处理模块按职责拆分为更小的子模块
+- **Composable 清理** — 移除未使用的 composable，简化导入路径
+- **死代码移除** — 静态分析识别并删除无调用的冗余代码
 
 ---
 

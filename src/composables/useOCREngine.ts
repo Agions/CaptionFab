@@ -17,7 +17,8 @@ import { ref, shallowRef } from 'vue'
 import type { OCRConfig, OCREngine } from '@/types/video'
 import { CANVAS_CONTEXT_2D, ERR_OCR_NOT_READY, MIME_IMAGE_PNG } from '@/utils/constants'
 import { useImagePreprocessor } from './usePreprocessor'
-import { getCalibrator, langToScript } from '@/core'
+import { getCalibrator } from '@/core'
+import { langToScript } from '@/utils/text'
 
 // ─── Canvas context guard ────────────────────────────────────────────
 // Throws if canvas 2D context is unavailable (critical — OCR cannot proceed without it)
@@ -43,6 +44,15 @@ export interface OCRProcessingOptions {
   scaleFactor?: number
   multiPass?: boolean
   useGpu?: boolean
+}
+
+/** 单次 OCR pass 的结果 — 优化：提取自 processMultiPass 内联类型 */
+interface PassResult {
+  ocrResults: OCRResult[]
+  rawConfidence: number
+  calibratedConfidence: number
+  scale: number
+  error?: string
 }
 
 // ─── Tesseract Worker 接口 ───────────────────────────────────────
@@ -294,19 +304,80 @@ export function useOCREngine() {
   // ─── Multi-pass OCR with failure recovery & adaptive selection ────
 
   /**
-   * Run multi-pass OCR with graceful per-pass failure recovery.
+   * 执行单次 OCR pass 并返回校准后的结果。
+   * 优化思路：从 processMultiPass 的 for 循环体提取，
+   * 消除嵌套 try/catch，每个 pass 的逻辑完全独立。
+   */
+  async function _runSinglePass(
+    imageData: ImageData,
+    config: OCRConfig,
+    opts: { preprocess: boolean; preprocessMode: 'subtitle'; scaleFactor: number },
+  ): Promise<PassResult> {
+    try {
+      const ocrResults = await processImageData(imageData, config, opts)
+      if (ocrResults.length === 0) {
+        return { ocrResults, rawConfidence: 0, calibratedConfidence: 0, scale: opts.scaleFactor, error: 'no text detected' }
+      }
+
+      const rawConfidence = ocrResults.reduce((sum, r) => sum + r.confidence, 0) / ocrResults.length
+      const lang = config.language?.[0] ?? 'ch'
+      const { confidence: calibrated } = calibrator.calibrateEnhanced(
+        ocrResults.map(r => r.text).join(' '),
+        rawConfidence,
+        langToScript(lang),
+      )
+
+      return { ocrResults, rawConfidence, calibratedConfidence: calibrated, scale: opts.scaleFactor }
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e)
+      return { ocrResults: [], rawConfidence: 0, calibratedConfidence: 0, scale: opts.scaleFactor, error: errMsg }
+    }
+  }
+
+  /**
+   * 从多 pass 结果中选择最优并合并。
+   * 优化思路：独立函数后，选优+合并逻辑可单独测试。
+   */
+  async function _selectBestAndMerge(
+    results: PassResult[],
+    imageData: ImageData,
+    config: OCRConfig,
+  ): Promise<OCRResult[]> {
+    const validResults = results.filter(r => r.ocrResults.length > 0 && !r.error)
+
+    if (validResults.length === 0) {
+      // 所有 pass 失败 — 回退到 scale 2.0 的单次 pass
+      return processImageData(imageData, config, {
+        preprocess: true,
+        preprocessMode: 'subtitle',
+        scaleFactor: 2.0,
+      })
+    }
+
+    // 按校准置信度排序，取前 3 个 pass 的结果合并
+    validResults.sort((a, b) => b.calibratedConfidence - a.calibratedConfidence)
+    const allOcrResults = validResults
+      .slice(0, 3)
+      .flatMap(r => r.ocrResults)
+
+    return allOcrResults.length > 1
+      ? _mergeOCRResults([allOcrResults])
+      : allOcrResults
+  }
+
+  /**
+   * 多通道 OCR — 使用不同缩放因子运行多次，取最优结果合并。
    *
-   * Strategy:
-   * 1. Run passes sequentially — early exit if a pass yields very high confidence (≥ 0.95)
-   * 2. If a pass throws, capture the error and continue with remaining passes
-   * 3. After all passes, select the best result by calibrated confidence (not raw)
-   * 4. If all passes fail, fall back to a single pass at scale 2.0
-   * 5. Each pass uses a different scale factor for diversity
+   * 策略：
+   * 1. 顺序执行各 pass — 高置信度（≥0.95）时提前退出
+   * 2. 单 pass 失败不中断，捕获错误后继续
+   * 3. 全部完成后按校准置信度选最优
+   * 4. 全部失败时回退到 scale 2.0
    */
   async function processMultiPass(
     imageData: ImageData,
     config: OCRConfig,
-    options: OCRProcessingOptions = {}
+    options: OCRProcessingOptions = {},
   ): Promise<OCRResult[]> {
     if (!options.multiPass) {
       return processImageData(imageData, config, options)
@@ -319,82 +390,28 @@ export function useOCREngine() {
     isProcessing.value = true
     error.value = null
 
-    // Scale factors for diversity — ordered by expected effectiveness for subtitles
+    // 优化：不同缩放因子提供多样性，按字幕场景预期效果排序
     const scales = [2.0, 3.0, 2.5] as const
     const passOptions = scales.map(scale => ({
-      preprocess: true,
+      preprocess: true as const,
       preprocessMode: 'subtitle' as const,
       scaleFactor: scale,
     }))
 
-    const results: Array<{
-      ocrResults: OCRResult[]
-      rawConfidence: number
-      calibratedConfidence: number
-      scale: number
-      error?: string
-    }> = []
-
     try {
-      for (let i = 0; i < passOptions.length; i++) {
-        const opts = passOptions[i]
-        try {
-          const ocrResults = await processImageData(imageData, config, opts)
-          if (ocrResults.length === 0) {
-            results.push({ ocrResults, rawConfidence: 0, calibratedConfidence: 0, scale: opts.scaleFactor!, error: 'no text detected' })
-            continue
-          }
+      const results: PassResult[] = []
 
-          const rawConfidence = ocrResults.reduce((s, r) => s + r.confidence, 0) / ocrResults.length
-          const lang = config.language?.[0] ?? 'ch'
-          const { confidence: calibrated } = calibrator.calibrateEnhanced(
-            ocrResults.map(r => r.text).join(' '),
-            rawConfidence,
-            langToScript(lang)
-          )
+      for (const opts of passOptions) {
+        const result = await _runSinglePass(imageData, config, opts)
+        results.push(result)
 
-          results.push({ ocrResults, rawConfidence, calibratedConfidence: calibrated, scale: opts.scaleFactor! })
-
-          // Early exit: high confidence means we can stop early
-          if (calibrated >= 0.95 && ocrResults.length >= 3) {
-            break
-          }
-        } catch (e) {
-          const errMsg = e instanceof Error ? e.message : String(e)
-          results.push({
-            ocrResults: [],
-            rawConfidence: 0,
-            calibratedConfidence: 0,
-            scale: opts.scaleFactor!,
-            error: errMsg,
-          })
+        // 高置信度 + 足够文本 → 提前退出
+        if (result.calibratedConfidence >= 0.95 && result.ocrResults.length >= 3) {
+          break
         }
       }
 
-      // Find best result by calibrated confidence
-      const validResults = results.filter(r => r.ocrResults.length > 0 && !r.error)
-      if (validResults.length === 0) {
-        // All passes failed — fallback to single pass at scale 2.0
-        const fallback = await processImageData(imageData, config, {
-          preprocess: true,
-          preprocessMode: 'subtitle',
-          scaleFactor: 2.0,
-        })
-        progress.value = 100
-        return fallback
-      }
-
-      // Sort by calibrated confidence (highest first)
-      validResults.sort((a, b) => b.calibratedConfidence - a.calibratedConfidence)
-
-      // Merge results across all valid passes using spatial grid deduplication
-      const allOcrResults = validResults
-        .slice(0, 3)
-        .flatMap(r => r.ocrResults)
-      const merged = allOcrResults.length > 1
-        ? _mergeOCRResults([allOcrResults])
-        : allOcrResults
-
+      const merged = await _selectBestAndMerge(results, imageData, config)
       progress.value = 100
       return merged
     } catch (e) {

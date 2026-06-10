@@ -1,16 +1,22 @@
 /**
  * Pure image processing primitives for OCR preprocessing.
  * No DOM/browser dependencies — all functions accept and return ImageData.
+ *
+ * 优化：旋转/矫正 → image-deskew.ts，形态学 → image-morph.ts
+ * 本文件聚焦于：ROI处理、核心像素操作、缩放。
+ * 通过 re-export 保持所有 API 向后兼容。
  */
 
 import { clamp, pixelLuma } from '@/utils/math'
+import { forEachNeighbor, getSquareKernel } from './image-kernel'
+
+// ─── Re-exports for backward compatibility ───────────────────────
+// 优化：子模块独立后，通过 re-export 保持现有 import 路径不变
+export { detectSkewAngle, rotateImage, applyDeskew } from './image-deskew'
+export type { DeskewResult } from './image-deskew'
+export { morphologicalErode, morphologicalDilate, morphOpen } from './image-morph'
 
 // ─── Types ────────────────────────────────────────────────────────
-
-export interface DeskewResult {
-  angle: number
-  corrected: ImageData
-}
 
 export interface NormalizedROI {
   x0: number
@@ -45,54 +51,14 @@ export function normalizeROI(
   }
 }
 
-// ─── Kernel utilities ─────────────────────────────────────────────
-
-type NeighborCallback = (nx: number, ny: number, srcIdx: number) => void
-
-function forEachNeighbor(
-  centerX: number,
-  centerY: number,
-  width: number,
-  height: number,
-  offsets: [number, number][],
-  callback: NeighborCallback,
-): void {
-  for (const [dx, dy] of offsets) {
-    const nx = centerX + dx
-    const ny = centerY + dy
-    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-      callback(nx, ny, (ny * width + nx) * 4)
-    }
-  }
-}
-
-function _getSquareKernel(
-  radius: number,
-  cache: Map<number, [number, number][]>,
-): [number, number][] {
-  if (!cache.has(radius)) {
-    const deltas: [number, number][] = []
-    for (let dy = -radius; dy <= radius; dy++) {
-      for (let dx = -radius; dx <= radius; dx++) {
-        deltas.push([dy, dx])
-      }
-    }
-    cache.set(radius, deltas)
-  }
-  return cache.get(radius)!
-}
-
-// Per-operation caches (avoids cross-operation interference)
+// ─── Kernel caches ────────────────────────────────────────────────
+// 优化：内核遍历逻辑已提取到 image-kernel.ts，此处保留缓存实例
 const _boxBlurKernelCache = new Map<number, [number, number][]>()
 const _adaptiveBlockKernelCache = new Map<number, [number, number][]>()
-const _morphKernelCache = new Map<number, [number, number][]>()
 
 // ─── Core pixel operations ────────────────────────────────────────
 
-/**
- * Performance: Direct Uint8ClampedArray access with precomputed offsets.
- * Avoids repeated multiplication in inner loops.
- */
+/** RGBA 转灰度图 */
 export function toGrayscale(imageData: ImageData): ImageData {
   const { data, width, height } = imageData
   const grayscale = new ImageData(width, height)
@@ -108,7 +74,7 @@ export function toGrayscale(imageData: ImageData): ImageData {
   return grayscale
 }
 
-// Lookup table for contrast enhancement (precomputed to avoid per-pixel math)
+// 对比度增强 LUT 缓存（预计算避免逐像素数学运算）
 const _contrastLUTCache = new Map<number, Uint8Array>()
 
 function getContrastLUT(level: number): Uint8Array {
@@ -124,11 +90,10 @@ function getContrastLUT(level: number): Uint8Array {
   return lut
 }
 
+/** 使用预计算 LUT 增强对比度 */
 export function enhanceContrast(imageData: ImageData, level: number): ImageData {
   const { data, width, height } = imageData
   const result = new ImageData(width, height)
-
-  // Performance: Use precomputed lookup table instead of per-pixel math
   const lut = getContrastLUT(level)
   
   for (let i = 0; i < data.length; i += 4) {
@@ -141,10 +106,11 @@ export function enhanceContrast(imageData: ImageData, level: number): ImageData 
   return result
 }
 
+/** 均值模糊（降噪） */
 export function boxBlur(imageData: ImageData, radius: number = 1): ImageData {
   const { data, width, height } = imageData
   const result = new ImageData(width, height)
-  const kernel = _getSquareKernel(radius, _boxBlurKernelCache)
+  const kernel = getSquareKernel(radius, _boxBlurKernelCache)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -170,14 +136,14 @@ export function boxBlur(imageData: ImageData, radius: number = 1): ImageData {
 }
 
 function _getAdaptiveKernel(blockSize: number): [number, number][] {
-  return _getSquareKernel(Math.floor(blockSize / 2), _adaptiveBlockKernelCache)
+  return getSquareKernel(Math.floor(blockSize / 2), _adaptiveBlockKernelCache)
 }
 
+/** 自适应阈值二值化（处理半透明字幕背景） */
 export function adaptiveThreshold(imageData: ImageData, blockSize: number = 11, C: number = 2): ImageData {
   const { width, height } = imageData
   const result = new ImageData(width, height)
 
-  // Apply Gaussian blur to reduce noise first
   const blurred = boxBlur(imageData, Math.floor(blockSize / 3))
   const blurredData = blurred.data
 
@@ -206,9 +172,7 @@ export function adaptiveThreshold(imageData: ImageData, blockSize: number = 11, 
   return result
 }
 
-/**
- * Performance: Direct array access, no function calls in inner loop.
- */
+/** 反色 */
 export function invertColors(imageData: ImageData): ImageData {
   const { data, width, height } = imageData
   const result = new ImageData(width, height)
@@ -226,8 +190,8 @@ export function invertColors(imageData: ImageData): ImageData {
 // ─── Scaling ──────────────────────────────────────────────────────
 
 /**
- * Scale up image using bilinear interpolation.
- * Performance: Fast path for integer scale factors (2x, 3x, 4x) using simplified interpolation.
+ * 双线性插值放大。
+ * 整数倍（2x/3x/4x）使用快速路径，其他使用通用双线性插值。
  */
 export function scaleUp(imageData: ImageData, factor: number): ImageData {
   const { data, width, height } = imageData
@@ -235,7 +199,7 @@ export function scaleUp(imageData: ImageData, factor: number): ImageData {
   const newHeight = Math.round(height * factor)
   const result = new ImageData(newWidth, newHeight)
 
-  // Fast path: integer scale factor (e.g., 2.0, 3.0, 4.0)
+  // 快速路径：整数倍放大
   if (Number.isInteger(factor) && factor >= 2 && factor <= 4) {
     const f = factor as number
     for (let y = 0; y < newHeight; y++) {
@@ -250,7 +214,6 @@ export function scaleUp(imageData: ImageData, factor: number): ImageData {
         const srcX1 = Math.min(srcX + 1, width - 1)
         const dstIdx = (rowOffset + x) * 4
         
-        // Simple nearest-neighbor with blending at edges
         for (let c = 0; c < 4; c++) {
           const v00 = data[(srcRowOffset + srcX) * 4 + c]
           const v10 = data[(srcRowOffset + srcX1) * 4 + c]
@@ -263,7 +226,7 @@ export function scaleUp(imageData: ImageData, factor: number): ImageData {
     return result
   }
 
-  // General bilinear interpolation for non-integer factors
+  // 通用双线性插值
   for (let y = 0; y < newHeight; y++) {
     const srcY = y / factor
     const y0 = Math.floor(srcY)
@@ -299,157 +262,4 @@ export function scaleUp(imageData: ImageData, factor: number): ImageData {
   }
 
   return result
-}
-
-// ─── Rotation / deskew ────────────────────────────────────────────
-
-function evaluateProjectionFast(binary: Uint8Array, width: number, height: number, cosVal: number, sinVal: number): number {
-  const projections: number[] = new Array(height).fill(0)
-
-  for (let y = 0; y < height; y++) {
-    const rowOffset = y * width
-    for (let x = 0; x < width; x++) {
-      if (binary[rowOffset + x]) {
-        const ry = Math.round(x * sinVal + y * cosVal)
-        if (ry >= 0 && ry < height) {
-          projections[ry]++
-        }
-      }
-    }
-  }
-
-  // Score: lower variance = better alignment
-  const mean = projections.reduce((a, b) => a + b, 0) / height
-  let totalVariance = 0
-  for (const p of projections) {
-    totalVariance += (p - mean) ** 2
-  }
-
-  return -totalVariance // Negative because we want to maximize
-}
-
-export function detectSkewAngle(imageData: ImageData): number {
-  const { data, width, height } = imageData
-
-  // Convert to binary
-  const binary = new Uint8Array(width * height)
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4
-      binary[y * width + x] = data[idx] < 128 ? 1 : 0
-    }
-  }
-
-  // Precompute cos/sin for angles -15° to +15° in 1° steps
-  const angleSteps = 31
-  const angleMin = -15
-  const cosTable = new Float32Array(angleSteps)
-  const sinTable = new Float32Array(angleSteps)
-  for (let i = 0; i < angleSteps; i++) {
-    const radians = (angleMin + i) * Math.PI / 180
-    cosTable[i] = Math.cos(radians)
-    sinTable[i] = Math.sin(radians)
-  }
-
-  let bestAngle = 0
-  let bestScore = -Infinity
-
-  for (let i = 0; i < angleSteps; i++) {
-    const score = evaluateProjectionFast(binary, width, height, cosTable[i], sinTable[i])
-    if (score > bestScore) {
-      bestScore = score
-      bestAngle = angleMin + i
-    }
-  }
-
-  return bestAngle
-}
-
-export function rotateImage(imageData: ImageData, angle: number): ImageData {
-  if (Math.abs(angle) < 0.5) return imageData
-
-  const { data, width, height } = imageData
-  const radians = angle * Math.PI / 180
-  const cos = Math.cos(radians)
-  const sin = Math.sin(radians)
-
-  const newWidth = Math.round(Math.abs(width * cos) + Math.abs(height * sin)) + 2
-  const newHeight = Math.round(Math.abs(height * cos) + Math.abs(width * sin)) + 2
-
-  const result = new ImageData(newWidth, newHeight)
-  const cx = width / 2
-  const cy = height / 2
-  const newCx = newWidth / 2
-  const newCy = newHeight / 2
-
-  for (let y = 0; y < newHeight; y++) {
-    for (let x = 0; x < newWidth; x++) {
-      const dx = x - newCx
-      const dy = y - newCy
-      const srcX = Math.round(dx * cos + dy * sin + cx)
-      const srcY = Math.round(-dx * sin + dy * cos + cy)
-
-      if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
-        const srcIdx = (srcY * width + srcX) * 4
-        const dstIdx = (y * newWidth + x) * 4
-        result.data[dstIdx] = data[srcIdx]
-        result.data[dstIdx + 1] = data[srcIdx + 1]
-        result.data[dstIdx + 2] = data[srcIdx + 2]
-        result.data[dstIdx + 3] = data[srcIdx + 3] || 255
-      }
-    }
-  }
-
-  return result
-}
-
-export function applyDeskew(imageData: ImageData): DeskewResult {
-  const angle = detectSkewAngle(imageData)
-  const corrected = rotateImage(imageData, angle)
-  return { angle, corrected }
-}
-
-// ─── Morphological operations ─────────────────────────────────────
-
-function _getMorphKernel(size: number): [number, number][] {
-  return _getSquareKernel(size, _morphKernelCache)
-}
-
-function _morphologicalOp(
-  imageData: ImageData,
-  size: number,
-  accumulate: (current: number, neighbor: number) => number,
-  initial: number,
-): ImageData {
-  const { data, width, height } = imageData
-  const result = new ImageData(width, height)
-  const kernel = _getMorphKernel(size)
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let acc = initial
-      forEachNeighbor(x, y, width, height, kernel, (_nx, _ny, idx) => {
-        acc = accumulate(acc, data[idx])
-      })
-      const ri = (y * width + x) * 4
-      result.data[ri] = acc
-      result.data[ri + 1] = acc
-      result.data[ri + 2] = acc
-      result.data[ri + 3] = 255
-    }
-  }
-  return result
-}
-
-export function morphologicalErode(imageData: ImageData, size: number): ImageData {
-  return _morphologicalOp(imageData, size, Math.min, 255)
-}
-
-export function morphologicalDilate(imageData: ImageData, size: number): ImageData {
-  return _morphologicalOp(imageData, size, Math.max, 0)
-}
-
-export function morphOpen(imageData: ImageData, size: number = 1): ImageData {
-  const eroded = morphologicalErode(imageData, size)
-  return morphologicalDilate(eroded, size)
 }

@@ -24,17 +24,17 @@ import {
   Pipeline,
   SceneDetect,
   getCalibrator,
-  langToScript,
 } from '@/core'
-import { pixelLuma } from '@/utils/math'
+import { langToScript } from '@/utils/text'
+import { extractFrameMetrics } from '@/utils/detection'
 import { normalizeROI } from '@/utils/image'
 import type { ROI } from '@/types/video'
 
 /**
  * 将 SubtitleLite 转换为 SubtitleItem 的工厂函数
- * 消除两处重复的对象字面量创建代码
+ * 优化：重命名为 createSubtitleItem，更符合工厂函数命名惯例
  */
-function _toSubtitleItem(
+function createSubtitleItem(
   s: SubtitleLite,
   i: number,
   lang: string,
@@ -59,44 +59,23 @@ function _toSubtitleItem(
 
 
 /**
- * Computes ROI region variance to detect likely empty (solid-color) regions.
+ * 检测 ROI 区域是否为纯色（方差低于阈值）。
+ * 优化：复用 extractFrameMetrics 消除重复的像素遍历+方差计算逻辑。
  * Exported for unit testing.
  */
-export function _isRoiRegionLikelyEmpty(
+export function isRoiRegionLikelyEmpty(
   frameData: { data: Uint8ClampedArray; width: number; height: number },
   roi: { x: number; y: number; width: number; height: number },
   threshold = 100,
 ): boolean {
-  const { data, width, height } = frameData
+  const { width, height } = frameData
+  // ROI 完全越界时直接返回
+  // 优化：复用 @/utils/image 的 normalizeROI，消除重复实现
+  const { x0, y0, xEnd, yEnd } = normalizeROI(roi, width, height)
+  if (xEnd <= x0 || yEnd <= y0) return false
 
-  // Convert percentage ROI to pixel coordinates with proper clamping
-  const { x0, y0, rw, rh, xEnd, yEnd } = normalizeROI(roi, width, height)
-
-  // Early exit if ROI is completely out of bounds
-  if (rw <= 0 || rh <= 0) return false
-
-  let sum = 0
-  let sumSq = 0
-  let count = 0
-
-  for (let y = y0; y < yEnd; y += 2) {
-    for (let x = x0; x < xEnd; x += 2) {
-      const idx = (y * width + x) * 4
-      // 灰度值 (ITU-R BT.601)
-      const gray = pixelLuma(data, idx)
-      sum += gray
-      sumSq += gray * gray
-      count++
-    }
-  }
-
-  if (count === 0) return false
-
-  const mean = sum / count
-  const variance = (sumSq / count) - mean * mean
-
-  // Variance < threshold → likely empty (solid background)
-  return variance < threshold
+  const metrics = extractFrameMetrics(frameData, roi)
+  return metrics.variance < threshold
 }
 
 export function useSubtitleExtractor() {
@@ -203,7 +182,7 @@ export function useSubtitleExtractor() {
       // ── ROI 预检测：跳过全黑/低方差帧（无字幕概率高）───
       let skipFrame = false
       try {
-        if (_isRoiRegionLikelyEmpty(frameData, roi)) {
+        if (isRoiRegionLikelyEmpty(frameData, roi)) {
           prevFrameData = frameData
           skipFrame = true
         }
@@ -276,14 +255,14 @@ export function useSubtitleExtractor() {
       const cleaned = pipeline.process(rawSubs)
       subtitleStore.setSubtitles(
         cleaned.map((s, i) =>
-          _toSubtitleItem(s, i, opts.languages[0], roi, 'sub-')
+          createSubtitleItem(s, i, opts.languages[0], roi, 'sub-')
         )
       )
     } else {
       // 无需后处理，直接设置
       subtitleStore.setSubtitles(
         rawSubs.map((s, i) =>
-          _toSubtitleItem(s, i, opts.languages[0], roi, `sub-raw-`)
+          createSubtitleItem(s, i, opts.languages[0], roi, `sub-raw-`)
         )
       )
     }
@@ -321,16 +300,6 @@ export function useSubtitleExtractor() {
     return true
   }
 
-  /**
-   * ROI 预检测：计算 ROI 区域的像素方差和亮度，跳过无字幕的高概率帧。
-   * 原理：字幕区域通常有中高频文字笔画（高方差），
-   *       纯色背景/Logo/黑边方差极低。
-   * 
-   * 注意：此函数导出用于单元测试，内部直接使用导出版本。
-   */
-  function isRoiRegionLikelyEmpty(frameData: ImageData, roi: { x: number; y: number; width: number; height: number }): boolean {
-    return _isRoiRegionLikelyEmpty(frameData, roi)
-  }
 
   return {
     isExtracting,

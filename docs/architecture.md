@@ -1,377 +1,250 @@
----
-title: CaptionFab 架构文档
----
+# CaptionFab 系统架构
 
-# CaptionFab 架构文档
-
-## 1. 系统概览
-
-CaptionFab 是一款基于 Tauri 2.x 的桌面字幕提取工具，前端 Vue 3 + TypeScript，后端 Rust + Tokio。核心设计原则：**前端承担计算密集型 OCR，后端专注系统级 I/O**。
-
-### 1.1 数据流向
-
-```
-Video File
-    │
-    ├─[Rust: video.rs]─► ffprobe / ffmpeg ─► Base64 PNG frame
-    │
-    ├─[Rust: scene.rs]─► scene_detect.py ─► SceneChange[]
-    │
-    └─[Vue WASM: EasyOCR/Tesseract.js]──► RawSubtitle[]
-          │
-          ├─[TS: Pipeline.ts Stage 0-4]──► CleanSubtitle[]
-          ├─[TS: Calibrator.ts]──────────► CalibratedSubtitle[]
-          └─[Rust: export.rs]────────────► SRT/VTT/ASS/JSON/CSV…
-```
-
-### 1.2 前端 / 后端职责划分
-
-| 职责 | 位置 | 说明 |
-|:---|:---|:---|
-| OCR 识别 | 前端 WASM | EasyOCR（PyTorch）、Tesseract.js（WASM）、PaddleOCR（Native）|
-| 字幕后处理 | 前端 TS | Pipeline.ts、Calibrator.ts，纯函数无副作用 |
-| 帧提取 | 后端 Rust | `extract_frame_at_time`，返回 Base64 PNG |
-| 元数据读取 | 后端 Rust | `get_video_metadata`，ffprobe → ffmpeg → 文件估算三层降级 |
-| 场景检测（前端）| 前端 TS | `SceneDetect.ts`，直方图 + 卡方，纯 JS |
-| 场景检测（后端）| 后端 Rust | `scene.rs`，调用 `scene_detect.py`（scenedetect 库）|
-| 字幕导出 | 后端 Rust | `export.rs`，9 格式，支持异步写入 |
-| 系统诊断 | 后端 Rust | `system.rs`，ffmpeg / ffprobe / tesseract 版本检测 |
+> 本文档描述 CaptionFab v4.0.0 的整体架构设计、模块职责和数据流。
 
 ---
 
-## 2. 前端架构（Vue 3 + TypeScript）
+## 系统概览
 
-### 2.1 目录结构
-
-```
-src/
-├── components/          # Vue SFC 组件（展示层）
-│   ├── common/          # Button、Modal、Tooltip
-│   ├── layout/          # ToolBar、SidePanel、VideoPreview
-│   │   └── tabs/        # Files / Progress / ROI / OCR / Export / Settings
-│   ├── video/           # ROISelector、Timeline
-│   └── subtitle/        # SubtitleList、ExportDialog
-├── composables/         # 组合式函数（逻辑层）
-│   ├── useSubtitleList.ts
-│   ├── useVideoPlayer.ts
-│   ├── useOCREngine.ts
-│   ├── useExtractor.ts
-│   └── useBatchProcessor.ts
-├── stores/              # Pinia 状态管理（数据层）
-│   ├── subtitle.ts
-│   ├── project.ts
-│   └── settings.ts
-└── core/               # 纯业务逻辑（可 Tree-shake，可独立测试）
-    ├── Pipeline.ts
-    ├── Exporter.ts
-    ├── SceneDetect.ts
-    ├── Calibrator.ts
-    └── index.ts
-```
-
-### 2.2 核心模块
-
-#### Pipeline.ts — OCR 后处理管道
-
-五阶段纯函数管道，设计目标：**零依赖、独立测试、可配置**。
+CaptionFab 是一个基于 Tauri 2.x 的桌面应用，采用 **前端 (Vue 3) + 后端 (Rust)** 的双进程架构。前端负责 UI 渲染和 OCR 处理，后端负责视频元数据提取、场景检测和文件 I/O。
 
 ```
-RawSubtitle[]
-  │
-  ▼ Stage 0: normalize
-  │  · CRLF / CR → LF
-  │  · trim 首尾空白
-  │  · 全角/半角标点规范化
-  │  · 压缩连续空行（3+ → 1）
-  │
-  ▼ Stage 1: filterJitter
-  │  · 短时间 + 低置信度 → 视为噪声
-  │  · 三连相同 → 合并；相邻高相似 → 吸收
-  │
-  ▼ Stage 2: mergeSplit
-  │  · 场景跳跃导致字幕分裂
-  │  · gap ≤ 1.5s + 相似度 ≥ 0.85 → 合并
-  │
-  ▼ Stage 3: mergeSimilar
-  │  · 时间接近（gap ≤ 0.5s）+ 相似度 ≥ 0.80 → 合并
-  │
-  ▼ Stage 4: computeEndTime
-     · 根据下一条字幕的 startTime 精确截断 endTime
-     · 最后一条保留原始 endTime
-
-CleanSubtitle[]
+┌──────────────────────────────────────────────────────────────────┐
+│                       CaptionFab v4.0.0                          │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │         前端进程 (WebView · Vue 3.5 · TypeScript)          │  │
+│  │                                                            │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │  │
+│  │  │ 组件层   │  │ 组合层   │  │ 核心层   │  │ 状态层   │  │  │
+│  │  │components│→│composables│→│  core/   │→│ stores/  │  │  │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │  │
+│  │       ↕              ↕             ↕                      │  │
+│  │  ┌──────────────────────────────────────────────────────┐ │  │
+│  │  │                    utils/                            │ │  │
+│  │  │  image · text · detection · lru-cache · time · math  │ │  │
+│  │  └──────────────────────────────────────────────────────┘ │  │
+│  └────────────────────────┬───────────────────────────────────┘  │
+│                           │ Tauri IPC (invoke)                   │
+│  ┌────────────────────────┴───────────────────────────────────┐  │
+│  │         后端进程 (Rust · Tokio 异步运行时)                  │  │
+│  │                                                            │  │
+│  │  commands/                                                  │  │
+│  │  ├─ video.rs      FFprobe 视频元数据                       │  │
+│  │  ├─ scene.rs      场景检测 (直方图 + 卡方检验)             │  │
+│  │  ├─ export.rs     9 种格式导出引擎                         │  │
+│  │  ├─ export_fmt.rs 格式化器 (SRT/VTT/ASS/SSA/JSON/CSV/TXT) │  │
+│  │  ├─ file.rs       文件对话框 + 读写                        │  │
+│  │  ├─ timestamp.rs  时间戳工具                               │  │
+│  │  ├─ ffmpeg.rs     FFmpeg 命令封装                          │  │
+│  │  └─ system.rs     系统依赖检测                             │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
 ```
-
-**性能优化**：
-- Levenshtein 距离结果三级缓存（`SimilarityCache` 实例级 → `textSimilarity` 函数级 → LRU trim）
-- 每阶段最多一次 `O(n log n)` 排序
-
-#### Calibrator.ts — 置信度校准
-
-多信号加权模型，v2 实现（`calibrateEnhanced`）包含 CJK 专项规则。设计原则：**纯函数、规则驱动、易于扩展**。
-
-```typescript
-// 惩罚因子（< 1.0 降低置信度）
-F_MIXED_SCRIPTS       = 0.78   // 混语种（同时含 CJK/Latin/Digit）
-F_TEXT_TOO_SHORT      = 0.82   // 字符数 ≤ 2
-F_REPEATED_CHAR       = 0.72   // 连续 3+ 相同字符
-F_ORPHANED_CJK        = 0.78   // CJK 字符前有空格（孤立 CJK）
-F_UNBALANCED_QUOTE    = 0.88   // 引号不成对
-F_ALL_CAPS            = 0.80   // 全大写（拉丁字母）
-F_ISOLATED_DIGIT      = 0.85   // 独立数字碎片
-F_TRAILING_COMMA      = 0.85   // 尾部逗号/分号（不完整句子）
-F_REPEATED_PUNCT      = 0.82   // 尾部重复标点
-F_LEADING_SPACE       = 0.88   // 首位空白或标点
-F_VERTICAL_BAR        = 0.70   // 竖线字符（OCR 典型错误）
-F_CJK_BIGRAM_ANOMALY  = 0.75   // 不可能/无意义的 CJK 字二元组
-F_CJK_LINE_BREAK      = 0.83   // 句中换行
-F_CJK_NUMBER          = 0.82   // CJK 文本含阿拉伯数字
-F_CONF_DEVIATION      = 0.84   // 原始置信度与文本质量严重不匹配
-F_EMPTY_AFTER_TRIM    = 0.50   // trim 后文本为空
-
-// 奖励因子（> 1.0 提升置信度）
-F_CHAR_DIVERSITY      = 1.06   // 字符多样性高
-F_SENTENCE_END        = 1.04   // 完整句子结尾（. ! ?）
-F_GOOD_LENGTH         = 1.05   // 合理字幕长度（3~100 字符）
-F_CJK_PUNCT_NORM      = 1.03   // CJK 全角标点已规范化
-
-→ 输出: calibrated_confidence ∈ [0.0, 1.0]
-```
-
-另有 `detectIssues()` 方法提供人工可读的问题描述与修正建议（括号不匹配、全角字符等）。
-
-#### SceneDetect.ts — 前端场景检测
-
-纯 TypeScript 实现，不依赖 Python：
-
-- **算法**：RGB 直方图（16 bins/通道 × 3 = 48 计数器）+ 卡方距离（χ²）
-- **复杂度**：O(n) 时间，48 计数器内存
-- **适用**：轻量级预览，快速跳帧定位
-- **鲁棒性**：对光照渐变有较好容忍度
 
 ---
 
-## 3. 后端架构（Rust + Tauri）
+## 前端架构
 
-### 3.1 命令模块一览
+### 分层设计
 
-```
-commands/
-├── mod.rs           # 模块声明 + 公开导出
-├── types.rs         # ROI、SceneChange、SubtitleItem、ExportFormat 等共享类型
-├── utils.rs         # 工具函数（TempFileGuard、find_script、run_command_with_timeout）
-├── video.rs         # get_video_metadata、extract_frame_at_time
-├── ffmpeg.rs        # FFmpeg/ffprobe 输出解析（内部模块，供 video/scene 使用）
-├── export.rs        # export_subtitles 入口
-├── export_fmt.rs   # 9 格式具体实现（SRT/VTT/ASS/SSA/JSON/CSV/TXT/LRC/SBV）
-├── timestamp.rs     # 时间戳格式化（SRT/VTT/SBV 等使用逗号分隔毫秒的格式）
-├── scene.rs         # detect_scenes（调用 scene_detect.py）
-├── file.rs          # 对话框、文件读写
-├── system.rs        # check_system_dependencies、get_tesseract_languages
-└── ocr.rs          # 占位文件（OCR 已移至前端 WASM，无实际命令）
-```
+| 层级 | 目录 | 职责 | 依赖方向 |
+|:-----|:-----|:-----|:---------|
+| **组件层** | `components/` | UI 渲染、用户交互 | → 组合层 |
+| **组合层** | `composables/` | 业务逻辑编排、状态管理 | → 核心层 + stores |
+| **核心层** | `core/` | 纯算法（管道、校准、场景检测、导出） | → utils |
+| **工具层** | `utils/` | 纯函数（图像处理、文本、缓存） | 无依赖 |
+| **状态层** | `stores/` | Pinia 全局状态 | 无依赖 |
 
-### 3.2 video.rs — 元数据与帧提取
+### 核心层 (`core/`)
 
-#### 元数据获取（三层降级）
+核心层包含所有业务算法，**零 DOM 依赖**，可独立测试。
 
-```
-get_video_metadata(path)
-  │
-  ├─[1] ffprobe -print_format json -show_format -show_streams
-  │    ✓ 精确 duration / fps / resolution / codec
-  │    ✗ ffprobe 不可用
-  │
-  ├─[2] ffmpeg -i <path> -f null -
-  │    ✓ 从 stderr 解析 duration / stream info
-  │    ✗ ffmpeg 不可用
-  │
-  └─[3] 文件大小 + 扩展名估算
-       · bitrate 经验值（mp4=2Mbps, mkv=3Mbps…）
-       · 返回默认值 1920×1080 @ 30fps
-       · 打印警告，建议安装 ffmpeg
-```
+| 模块 | 文件 | 职责 |
+|:-----|:-----|:-----|
+| **Pipeline** | `Pipeline.ts` | 五阶段后处理管道：标准化 → 去噪 → 合并分裂 → 相似度融合 → 时间校准 |
+| **Calibrator** | `Calibrator.ts` | 置信度校准引擎：规则引擎 + CJK n-gram 分析 + 竖线检测 |
+| **SceneDetect** | `SceneDetect.ts` | 场景检测：直方图差异 + 卡方检验，自动跳过无字幕帧 |
+| **Exporter** | `Exporter.ts` | 导出引擎：9 种格式（SRT/VTT/ASS/SSA/JSON/CSV/TXT/LRC/SBV） |
 
-#### 帧提取流程
+### 组合层 (`composables/`)
+
+| 模块 | 文件 | 职责 |
+|:-----|:-----|:-----|
+| **useExtractor** | `useExtractor.ts` | 字幕提取主流程编排（视频帧 → OCR → Pipeline → Store） |
+| **useOCREngine** | `useOCREngine.ts` | Tesseract.js 生命周期 + 多通道 OCR + 校准 |
+| **usePlayer** | `usePlayer.ts` | 视频播放控制（播放/暂停/跳转/截帧） |
+| **usePreprocessor** | `usePreprocessor.ts` | 图像预处理管道（灰度/对比度/模糊/二值化/形态学） |
+| **useBatchProcessor** | `useBatchProcessor.ts` | 批量处理队列（并发槽位管理） |
+| **useSubList** | `useSubList.ts` | 字幕列表 UI 状态（分页/搜索/选择） |
+| **useHotkeys** | `useHotkeys.ts` | 全局键盘快捷键 |
+| **useTheme** | `useTheme.ts` | 主题切换（暗色/亮色） |
+
+### 工具层 (`utils/`)
+
+工具层全部为**纯函数**，无副作用，无 Vue 依赖。
 
 ```
-extract_frame_at_time(path, timestamp_secs, crop_filter?)
-  │
-  ├─ canonicalize 路径（防止路径遍历）
-  ├─ 生成临时文件: captionfab_frame_{timestamp_ms}_{uuid}.png
-  ├─ TempFileGuard 注册析构（函数返回时自动清理）
-  │
-  └─ ffmpeg -ss {ts} -i {path} -vframes 1 [-vf {crop}] {temp}.png
-       │
-       └─► Base64 PNG data URI
+utils/
+├── image.ts           # 核心像素操作：灰度、对比度(LUT)、模糊、自适应阈值、缩放
+├── image-deskew.ts    # 文字倾斜矫正：投影方差法检测角度 + 旋转
+├── image-morph.ts     # 形态学操作：腐蚀、膨胀、开运算
+├── image-kernel.ts    # 共享内核工具：邻域遍历、方形内核生成
+├── text.ts            # CJK 检测、标点规范化、langToScript 映射
+├── lru-cache.ts       # 泛型 LRU 缓存（Pipeline 相似度计算复用）
+├── detection.ts       # 帧分析：方差/亮度/边缘密度提取、空帧检测
+├── confidence.ts      # 置信度等级划分 + 热力图颜色
+├── subtitleSearch.ts  # 字幕二分查找（O(log n) 时间点查询）
+├── math.ts            # 基础数学：clamp、pixelLuma
+├── time.ts            # 时间格式化
+├── constants.ts       # 常量定义
+├── lang.ts            # OCR 语言代码映射
+└── id.ts              # UUID 生成
 ```
 
-**安全措施**：
-- `-nostdin`：禁用交互模式（避免 CI 无终端死锁）
-- `-y`：自动覆盖输出文件（避免 prompt 阻塞）
-- 临时文件位于 `std::env::temp_dir()`，仅 temp 目录内清理
+### 状态层 (`stores/`)
 
-### 3.3 export.rs — 九格式导出
+| Store | 文件 | 职责 |
+|:------|:-----|:-----|
+| **useProjectStore** | `project.ts` | 视频文件状态、元数据、ROI 选区、播放状态 |
+| **useSubtitleStore** | `subtitle.ts` | 字幕列表、CRUD、O(1) 索引映射、撤销/重做、导出格式 |
+| **useSettingsStore** | `settings.ts` | 用户设置、localStorage 持久化、主题/语言 |
 
-#### 格式分类
-
-| 家族 | 格式 | 时间戳函数 |
-|:---|:---|:---|
-| Timed text | SRT, VTT, SBV | `export_timed_entries` + `format_timestamp_{srt/vtt/sbv}` |
-| Advanced subtitle | ASS, SSA | `export_ass_family` + `escape_ass_text` |
-| Lyric sync | LRC | 专用 `export_as_lrc` |
-| Data | JSON, CSV | 结构化序列化 |
-| Plain text | TXT | 行拼接 |
-
-#### 核心设计
-
-- **`export_timed_entries<F>`**：泛型高阶函数，注入时间戳格式化逻辑，实现 SRT / VTT / SBV 代码复用
-- **`export_ass_family`**：ASS / SSA 差异仅在 header template 和 dialogue prefix，合并实现
-- **RFC 4180 CSV**：嵌入引号转义、字段引用逻辑
-- **ASS 逃逸**：`\` → `\\`, `{` → `\{`, `}` → `\}`, `,` → `\,`, `\N` = 硬换行
-
-### 3.4 utils.rs — 工具函数
-
-| 函数 | 类型 | 说明 |
-|:---|:---|:---|
-| `TempFileGuard` | RAII struct | 析构时自动删除临时文件 |
-| `uuid_v4()` | free function | 生成随机 UUID 字符串 |
-| `find_python_binary()` | async | 从 PATH 查找 python3（缓存结果）|
-| `find_script(name)` | free function | 查找 `scene_detect.py`（bundled dev 三路径探测，缓存结果）|
-| `run_command_with_timeout()` | async | 带超时的命令执行 |
-| `parse_fps_from_fraction()` | free function | 解析 `"30000/1001"` → `29.97` |
-| `parse_stream_from_ffmpeg_output()` | free function | 从 ffmpeg stderr 提取 W/H/FPS |
-| `parse_duration_from_ffmpeg_output()` | free function | 从 ffmpeg stderr 提取 duration |
-
-**缓存策略**：
-- `CACHED_PYTHON`：`LazyLock<Result<PathBuf>>` — 进程级缓存
-- `SCRIPT_CACHE`：`LazyLock<Mutex<HashMap>>` — 脚本路径缓存
-
-### 3.5 scene.rs — 场景检测
+### 组件层 (`components/`)
 
 ```
-detect_scenes(video_path, config)
-  │
-  ├─ get_video_metadata(video_path)  → fps
-  │
-  └─ detect_scenes_scenedetect(video_path, threshold, min_scene_len)
-       │
-       ├─ find_python_binary()
-       ├─ find_script("scene_detect.py")
-       └─ python scene_detect.py {path} {threshold} {min_scene_len}
-            │
-            └─► Vec<f64> (timestamps)
-                 │
-                 └─► Vec<SceneChange> { frame_index, timestamp, similarity }
+components/
+├── common/                    # 通用 UI 组件
+│   ├── Button.vue             # 按钮（variant/size/loading）
+│   ├── Modal.vue              # 模态框
+│   ├── Toast.vue              # 通知提示
+│   ├── AboutDialog.vue        # 关于对话框
+│   └── ToggleSwitch.vue       # 开关
+├── layout/                    # 布局组件
+│   ├── Panel.vue              # 主面板（标签页容器）
+│   ├── Toolbar.vue            # 顶部工具栏
+│   ├── StatusBar.vue          # 底部状态栏
+│   ├── VideoPreview.vue       # 视频预览区
+│   ├── BatchProcessing.vue    # 批量处理面板
+│   ├── tabs/                  # 标签页面板
+│   │   ├── Files.vue          # 文件管理
+│   │   ├── ROI.vue            # ROI 选区
+│   │   ├── OCR.vue            # OCR 配置
+│   │   ├── Export.vue         # 导出设置
+│   │   ├── Progress.vue       # 进度显示
+│   │   └── Settings.vue       # 设置面板
+│   ├── batch/                 # 批量子组件
+│   └── video/                 # 视频子组件
+├── subtitle/                  # 字幕组件
+│   ├── List.vue               # 字幕列表
+│   ├── Card.vue               # 字幕卡片
+│   ├── SubExport.vue          # 导出面板
+│   └── card/                  # 卡片子组件
+└── video/                     # 视频组件
+    ├── TimelineController.vue # 时间轴控制器
+    ├── ROISelector.vue        # ROI 选区器
+    └── timeline/              # 时间轴子组件
 ```
-
-依赖 `scenedetect` Python 库，由前端用户安装。
 
 ---
 
-## 4. 命名规范
+## 后端架构
 
-### Rust 模块命名（snake_case）
+### 模块职责
+
+| 模块 | 文件 | 职责 | Tauri 命令 |
+|:-----|:-----|:-----|:-----------|
+| **视频** | `video.rs` | FFprobe 元数据提取（分辨率/帧率/时长/编码） | `get_video_metadata` |
+| **场景** | `scene.rs` | 直方图差异 + 卡方检验场景检测 | `detect_scenes` |
+| **导出** | `export.rs` | 9 种字幕格式写入 | `export_subtitles` |
+| **格式化** | `export_fmt.rs` | SRT/VTT/ASS/SSA/JSON/CSV/TXT/LRC/SBV 格式化 | — |
+| **文件** | `file.rs` | 文件对话框 + 文本读写 | `open_file_dialog` `save_file_dialog` `write_text_file` |
+| **FFmpeg** | `ffmpeg.rs` | FFmpeg 命令封装（帧提取/转码） | `extract_frame` |
+| **系统** | `system.rs` | 系统依赖检测（FFmpeg/Node/Python） | `check_dependencies` |
+| **时间** | `timestamp.rs` | SRT/VTT 时间戳格式化 | — |
+
+### 错误处理
+
+后端使用统一的 `AppError` 枚举，通过 `serde` 序列化后传递到前端：
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum AppError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("FFprobe error: {0}")]
+    FFprobe(String),
+    #[error("Export error: {0}")]
+    Export(String),
+    // ...
+}
+```
+
+---
+
+## 数据流
+
+### 字幕提取主流程
 
 ```
-commands/video.rs      ✓ 命令名词（video, export, scene）
-commands/utils.rs      ✓ 工具类
-commands/ocr.rs ✓ 占位说明
+用户点击"开始提取"
+        │
+        ▼
+useExtractor.startExtraction()
+        │
+        ├─→ usePlayer.seekToFrame(frame)     # 逐帧跳转
+        ├─→ usePreprocessor.preprocess()      # 图像预处理
+        │       灰度 → 对比度 → 模糊 → 二值化 → 形态学
+        ├─→ useOCREngine.processImageData()   # OCR 识别
+        │       Tesseract.js WASM → 文本 + 置信度
+        ├─→ Calibrator.calibrateEnhanced()    # 置信度校准
+        │       CJK n-gram · 竖线检测 · 标点规范化
+        ├─→ Pipeline.process()                # 后处理管道
+        │       标准化 → 去噪 → 合并 → 融合 → 时间校准
+        └─→ subtitleStore.addSubtitle()       # 写入状态
 ```
 
-### Rust 标识符
+### 视频导入流程
+
+```
+拖拽文件 / 选择文件
+        │
+        ▼
+useFileDrop.handleFileDrop()
+        │
+        ├─→ Tauri invoke: get_video_metadata
+        │       FFprobe → { width, height, fps, duration, codec }
+        ├─→ projectStore.setVideo(path, metadata)
+        └─→ usePlayer.loadVideo(path)
+                video.src = asset://localhost/...
+```
+
+---
+
+## 命名规范
 
 | 类型 | 规范 | 示例 |
-|:---|:---|:---|
-| 模块 / 文件 | snake_case | `video_processor` |
-| 公开函数 | snake_case | `get_video_metadata` |
-| 公开结构体 | PascalCase | `VideoMetadata` |
-| 公开枚举 | PascalCase | `ExportFormat` |
-| 私有函数 | snake_case | `get_video_metadata_ffprobe` |
-| 宏 | SCREAMING_SNAKE_CASE | `generate_handler!` |
-
-### TypeScript / Vue
-
-| 类型 | 规范 | 示例 |
-|:---|:---|:---|
-| 组件 | PascalCase | `SubtitleList.vue` |
-| Composables | camelCase, `use` 前缀 | `useSubtitleList.ts` |
-| 工具函数 | camelCase | `textSimilarity` |
-| 类型 / 接口 | PascalCase | `PipelineOptions` |
-| 常量 | SCREAMING_SNAKE_CASE | `DEFAULT_PIPELINE_OPTIONS` |
+|:-----|:-----|:-----|
+| 组件文件 | PascalCase.vue | `TimelineController.vue` |
+| Composable | useXxx.ts | `useExtractor.ts` |
+| 工具函数 | camelCase.ts | `lru-cache.ts`, `subtitleSearch.ts` |
+| Store | camelCase.ts | `subtitle.ts`, `project.ts` |
+| 类型文件 | camelCase.ts | `subtitle.ts`, `video.ts` |
+| Rust 模块 | snake_case.rs | `export_fmt.rs`, `timestamp.rs` |
+| 函数 | camelCase | `processMultiPass`, `calibrateEnhanced` |
+| 接口 | PascalCase | `SubtitleItem`, `PipelineOptions` |
+| 常量 | UPPER_SNAKE_CASE | `DEFAULT_PIPELINE_OPTIONS` |
 
 ---
 
-## 5. 前端 / 后端接口
+## 性能优化
 
-### 5.1 Tauri 命令列表
-
-| 命令 | 模块 | 输入 | 输出 |
-|:---|:---|:---|:---|
-| `get_video_metadata` | video | `{ path: string }` | `VideoMetadata` |
-| `extract_frame_at_time` | video | `{ path, timestamp_secs }` | `string` (Base64 PNG) |
-| `export_subtitles` | export | `{ subtitles, format, output_path }` | `string` (写出的路径) |
-| `detect_scenes` | scene | `{ video_path, config }` | `SceneChange[]` |
-| `check_system_dependencies` | system | — | `SystemCheckResult` |
-| `get_tesseract_languages` | system | — | `string[]` |
-| `open_file_dialog` | file | — | `string \| null` |
-| `save_file_dialog` | file | — | `string \| null` |
-| `read_text_file` | file | `{ path }` | `string` |
-| `write_text_file` | file | `{ path, content }` | `void` |
-| `get_file_info` | file | `{ path }` | `FileInfo` |
-
-### 5.2 共享类型（TypeScript ↔ Rust）
-
-```typescript
-// src-tauri/src/commands/types.rs  →  TypeScript
-interface ROI {
-  id: string;
-  name: string;
-  type: string;          // 'rect' | 'polygon' | ...
-  x: number; y: number;   // 左上角坐标（像素）
-  width: number; height: number; // 区域宽高
-  enabled: boolean;
-  unit: 'pixel' | 'percent'; // 坐标单位（默认 pixel）
-}
-
-interface VideoMetadata {
-  path: string;
-  width: number; height: number;
-  duration: number; fps: number; total_frames: number;
-  codec: string;
-}
-
-enum ExportFormat {
-  SRT = 'srt', WebVTT = 'vtt', ASS = 'ass', SSA = 'ssa',
-  JSON = 'json', TXT = 'txt', LRC = 'lrc', SBV = 'sbv', CSV = 'csv'
-}
-```
-
----
-
-## 6. 错误处理策略
-
-### Rust 端
-
-- 所有 `Result<T, String>` 返回 `String` 而非 `Box<dyn Error>`：便于 Tauri IPC 序列化
-- 错误信息带上下文：`"ffprobe exited with error: " + stderr`
-- 降级设计：metadata 三层降级（ffprobe → ffmpeg → 文件估算）
-
-### 前端端
-
-- OCR 引擎抽象接口 `OCREngine`：`init() → recognize(frame, roi) → Result<TextBlock[]>`
-- 引擎失败切换：Tesseract.js（最快）→ EasyOCR（更高精度）
-- 提取流程：`useExtractor.ts` 协调多引擎 + Pipeline 后处理，单步失败不中断全流程
-
----
-
-## 7. 性能考量
-
-| 优化点 | 策略 |
-|:---|:---|
-| 帧提取 | 后端 Rust + `tokio::process::Command`，30s 超时保护 |
-| OCR 并行 | 批处理模式（`useBatchProcessor.ts`），多帧并行送入 WASM |
-| 相似度计算 | 三级缓存（Pipeline 实例 / textSimilarity 函数 / 模块级 memo）|
-| 大字幕列表 | Vue 虚拟滚动（1000+ 条不卡 UI）|
-| 场景检测 | 前端轻量直方图（JS）优先，后端精确检测按需调用 |
-| 脚本查找 | LazyLock 缓存，仅首次查找 |
+| 优化项 | 策略 |
+|:-------|:-----|
+| 相似度计算 | LRU 缓存 (3000 条)，避免重复 Levenshtein 计算 |
+| 字幕查找 | 二分查找 O(log n)，利用 startTime 有序性 |
+| 图像预处理 | Buffer 池复用，减少 GC 压力 |
+| OCR | 多通道并行（不同缩放因子），高置信度提前退出 |
+| 帧分析 | 2px 步进采样，O(1) ROI 像素访问 |
+| 对比度增强 | 256 项预计算 LUT，O(1) 查表 |
