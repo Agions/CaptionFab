@@ -328,7 +328,7 @@ git push origin main --tags
 
 ## 10. 贡献指南
 
-详见 [CONTRIBUTING.md](../CONTRIBUTING.md)。
+详见 [CONTRIBUTING.md](/CONTRIBUTING.md)。
 
 **核心原则：**
 
