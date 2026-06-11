@@ -28,3 +28,4 @@ pub mod ocr;
 pub mod system;
 pub mod auto_roi;
 pub mod timestamp;
+pub mod gpu;

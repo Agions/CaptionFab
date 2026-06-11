@@ -11,7 +11,7 @@
 //! ## Supported Engines
 //!
 //! | Engine | Language | Purpose |
-//! |--------|----------|---------|
+//! |--------|----------|---------| 
 //! | PaddleOCR | Python | High-accuracy Chinese OCR |
 
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,14 @@ pub struct BBox {
 pub struct OCRLang {
     pub code: String,
     pub name: String,
+}
+
+/// Response from the Python OCR script, includes results and GPU info.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct OCRResponse {
+    results: Vec<OCRResult>,
+    #[allow(dead_code)]
+    gpu: serde_json::Value,
 }
 
 #[tauri::command]
@@ -79,10 +87,23 @@ async fn ocr_paddle(image_path: &str, lang: &str) -> Result<Vec<OCRResult>, Stri
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let results: Vec<OCRResult> = serde_json::from_str(&stdout)
-        .map_err(|e| format!("Failed to parse OCR output: {}\nOutput: {}", e, stdout))?;
+    
+    // Try to parse as new format (with results and gpu fields)
+    let results = if let Ok(response) = serde_json::from_str::<OCRResponse>(&stdout) {
+        tracing::info!(
+            "PaddleOCR returned {} results (GPU: {:?})", 
+            response.results.len(), 
+            response.gpu
+        );
+        response.results
+    } else {
+        // Fallback: try to parse as old format (plain array)
+        let results: Vec<OCRResult> = serde_json::from_str(&stdout)
+            .map_err(|e| format!("Failed to parse OCR output: {}\nOutput: {}", e, stdout))?;
+        tracing::info!("PaddleOCR returned {} results", results.len());
+        results
+    };
 
-    tracing::info!("PaddleOCR returned {} results", results.len());
     Ok(results)
 }
 

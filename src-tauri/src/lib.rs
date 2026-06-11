@@ -58,6 +58,7 @@ pub fn run() {
             commands::auto_roi::auto_detect_roi,
             commands::system::check_system_dependencies,
             commands::system::get_tesseract_languages,
+            commands::gpu::check_gpu_capability,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

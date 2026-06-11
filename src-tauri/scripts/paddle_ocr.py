@@ -39,7 +39,24 @@ def main():
         }
         paddle_lang = lang_map.get(lang, 'ch')
 
-        ocr = PaddleOCR(use_angle_cls=True, lang=paddle_lang, show_log=False)
+        # Check GPU availability
+        use_gpu = False
+        gpu_info = {}
+        try:
+            import paddle
+            if paddle.device.is_compiled_with_cuda() and paddle.device.cuda.device_count() > 0:
+                use_gpu = True
+                gpu_info['available'] = True
+                gpu_info['device_count'] = paddle.device.cuda.device_count()
+        except Exception:
+            pass
+
+        ocr = PaddleOCR(
+            use_angle_cls=True,
+            lang=paddle_lang,
+            show_log=False,
+            use_gpu=use_gpu,
+        )
         result = ocr.ocr(image_path, cls=True)
 
         outputs = []
@@ -66,7 +83,12 @@ def main():
                     }
                 })
 
-        print(json.dumps(outputs))
+        # Include GPU info in output
+        result_data = {
+            'results': outputs,
+            'gpu': gpu_info
+        }
+        print(json.dumps(result_data))
 
     except ImportError:
         print(json.dumps({"error": "PaddleOCR not installed. Run: pip install paddleocr paddlepaddle"}))
