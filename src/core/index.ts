@@ -21,3 +21,6 @@ export type { ExportResult } from './Exporter'
 
 export { Calibrator, getCalibrator, langToScript } from './Calibrator'
 export type { CalibrationResult, CalibrationSignal, Script } from './Calibrator'
+
+export { AICorrector } from './AICorrector'
+export type { AICorrectorConfig, CorrectionResult } from './AICorrector'
