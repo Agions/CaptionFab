@@ -13,6 +13,7 @@
 //! | `ffmpeg` | FFmpeg / ffprobe 输出解析 |
 //! | `file` | 文件操作（对话框、读写） |
 //! | `system` | 系统依赖检查（ffmpeg、tesseract）|
+//! | `ocr` | OCR 识别（调用 paddle_ocr.py）|
 //! | `timestamp` | 时间戳格式化（SRT/VTT/ASS/SSA/SBV）|
 
 pub mod types;
@@ -23,5 +24,6 @@ pub mod export;
 pub mod export_fmt;
 pub mod ffmpeg;
 pub mod file;
+pub mod ocr;
 pub mod system;
 pub mod timestamp;
