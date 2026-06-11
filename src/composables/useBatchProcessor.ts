@@ -15,6 +15,9 @@ export interface BatchJob {
   error?: string
   startedAt?: Date
   completedAt?: Date
+  priority: 'low' | 'normal' | 'high'
+  retryCount: number
+  maxRetries: number
 }
 
 export interface BatchOptions {
@@ -26,6 +29,8 @@ export interface BatchOptions {
   sceneThreshold: number
   confidenceThreshold: number
   maxConcurrency?: number
+  processingMode: 'fast' | 'standard' | 'precise'
+  aiCorrection: boolean
 }
 
 export function useBatchProcessor() {
@@ -79,10 +84,14 @@ export function useBatchProcessor() {
       inputPath,
       outputPath: options.outputDir,
       status: 'pending',
-      progress: 0
+      progress: 0,
+      priority: 'normal',
+      retryCount: 0,
+      maxRetries: 3,
     }))
 
     jobs.value.push(...newJobs)
+    sortJobsByPriority()
     return newJobs
   }
 
@@ -150,92 +159,110 @@ export function useBatchProcessor() {
   }
 
   async function processJob(job: BatchJob, options: BatchOptions) {
-    const jobStart = Date.now()
-
-    // 1. Get video metadata via Tauri backend
-    job.progress = 5
-    job.stageLabel = '读取视频元数据'
-    const videoMeta = await invoke<{
-      path: string
-      width: number
-      height: number
-      duration: number
-      fps: number
-      total_frames: number
-      codec: string
-    }>('get_video_metadata', { path: job.inputPath })
-
-    if (!videoMeta || videoMeta.duration <= 0) {
-      throw new Error('Failed to read video metadata')
-    }
-
-    // 2. Initialize OCR engine
-    job.progress = 10
-    job.stageLabel = '初始化 OCR 引擎'
-    const langs = resolveOcrLanguages(options.languages[0])
-
-    const ocr = useOCREngine()
-    await ocr.init(options.ocrEngine, langs)
-
     try {
-      // 3. Extract frames and process OCR
-      job.progress = 30
-      job.stageLabel = '检测场景变化'
-      // Note: This is a simplified version - full implementation would
-      // use the video element to capture frames and run OCR on each
+      const jobStart = Date.now()
 
-      // For batch processing, we use the Tauri backend to extract frames
-      // and process them via OCR
-      const sceneChanges = await invoke<number[]>('detect_scenes', {
-        videoPath: job.inputPath,
-        config: {
-          threshold: options.sceneThreshold,
-          min_scene_length: 30,
-          frame_interval: 1
-        }
-      })
+      // Use PROCESSING_MODES for settings based on processingMode
+      const { PROCESSING_MODES } = await import('@/types/video')
+      const modeConfig = PROCESSING_MODES[options.processingMode]
+      const frameInterval = modeConfig.frameInterval
+      const multiPass = modeConfig.multiPass
 
-      job.progress = 60
-      job.stageLabel = '提取帧并进行 OCR'
+      // 1. Get video metadata via Tauri backend
+      job.progress = 5
+      job.stageLabel = '读取视频元数据'
+      const videoMeta = await invoke<{
+        path: string
+        width: number
+        height: number
+        duration: number
+        fps: number
+        total_frames: number
+        codec: string
+      }>('get_video_metadata', { path: job.inputPath })
 
-      // Process each detected scene
-      const totalScenes = sceneChanges.length || 1
-      for (let i = 0; i < totalScenes; i++) {
-        if (job.status === 'cancelled') {
-          throw new Error('Job cancelled')
-        }
-
-        const timestamp = sceneChanges[i] / videoMeta.fps
-        job.stageLabel = `处理场景 ${i + 1}/${totalScenes}`
-
-        // Extract frame at this timestamp (result used for OCR in full implementation)
-        await invoke<string>('extract_frame_at_time', {
-          path: job.inputPath,
-          timestampSecs: timestamp
-        })
-
-        job.progress = 60 + Math.round((i / totalScenes) * 30)
+      if (!videoMeta || videoMeta.duration <= 0) {
+        throw new Error('Failed to read video metadata')
       }
 
-      // 4. Export subtitles in requested formats
-      job.progress = 95
-      job.stageLabel = '导出字幕'
+      // 2. Initialize OCR engine
+      job.progress = 10
+      job.stageLabel = '初始化 OCR 引擎'
+      const langs = resolveOcrLanguages(options.languages[0])
 
-      const baseName = job.inputPath.split('/').pop()?.replace(/\.[^.]+$/, '') || 'subtitle'
+      const ocr = useOCREngine()
+      await ocr.init(options.ocrEngine, langs)
 
-      for (const format of options.formats) {
-        await invoke('export_subtitles', {
-          subtitles: [], // Would pass actual extracted subtitles here
-          format,
-          outputPath: `${options.outputDir}/${baseName}.${format}`
+      try {
+        // 3. Extract frames and process OCR using mode-specific settings
+        job.progress = 30
+        job.stageLabel = '检测场景变化'
+        // Note: This is a simplified version - full implementation would
+        // use the video element to capture frames and run OCR on each
+
+        // For batch processing, we use the Tauri backend to extract frames
+        // and process them via OCR
+        const sceneChanges = await invoke<number[]>('detect_scenes', {
+          videoPath: job.inputPath,
+          config: {
+            threshold: options.sceneThreshold,
+            min_scene_length: 30,
+            frame_interval: frameInterval,
+            multi_pass: multiPass
+          }
         })
-      }
 
-      // Update average processing time
-      updateAvgProcessingTime(Date.now() - jobStart)
-    } finally {
-      // Clean up OCR engine to prevent Tesseract Worker memory leak
-      await ocr.terminate()
+        job.progress = 60
+        job.stageLabel = '提取帧并进行 OCR'
+
+        // Process each detected scene
+        const totalScenes = sceneChanges.length || 1
+        for (let i = 0; i < totalScenes; i++) {
+          if (job.status === 'cancelled') {
+            throw new Error('Job cancelled')
+          }
+
+          const timestamp = sceneChanges[i] / videoMeta.fps
+          job.stageLabel = `处理场景 ${i + 1}/${totalScenes}`
+
+          // Extract frame at this timestamp (result used for OCR in full implementation)
+          await invoke<string>('extract_frame_at_time', {
+            path: job.inputPath,
+            timestampSecs: timestamp
+          })
+
+          job.progress = 60 + Math.round((i / totalScenes) * 30)
+        }
+
+        // 4. Export subtitles in requested formats
+        job.progress = 95
+        job.stageLabel = '导出字幕'
+
+        const baseName = job.inputPath.split('/').pop()?.replace(/\.[^.]+$/, '') || 'subtitle'
+
+        for (const format of options.formats) {
+          await invoke('export_subtitles', {
+            subtitles: [], // Would pass actual extracted subtitles here
+            format,
+            outputPath: `${options.outputDir}/${baseName}.${format}`
+          })
+        }
+
+        // Update average processing time
+        updateAvgProcessingTime(Date.now() - jobStart)
+      } finally {
+        // Clean up OCR engine to prevent Tesseract Worker memory leak
+        await ocr.terminate()
+      }
+    } catch (error) {
+      if (job.retryCount < job.maxRetries) {
+        job.retryCount++
+        job.status = 'pending'
+        job.error = `重试 ${job.retryCount}/${job.maxRetries}`
+        jobs.value.push({ ...job })
+      } else {
+        throw error
+      }
     }
   }
 
@@ -247,7 +274,11 @@ export function useBatchProcessor() {
       currentJob.value.status = 'cancelled'
     }
   }
-
+  // Sort jobs by priority (high → normal → low)
+  function sortJobsByPriority() {
+    const priorityOrder = { high: 0, normal: 1, low: 2 }
+    jobs.value.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+  }
   // Clear completed jobs
   function clearCompleted() {
     jobs.value = jobs.value.filter(j =>
