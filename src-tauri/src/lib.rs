@@ -55,6 +55,7 @@ pub fn run() {
             commands::scene::detect_scenes,
             commands::ocr::ocr_recognize,
             commands::ocr::ocr_get_languages,
+            commands::auto_roi::auto_detect_roi,
             commands::system::check_system_dependencies,
             commands::system::get_tesseract_languages,
         ])
