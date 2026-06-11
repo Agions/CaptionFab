@@ -49,14 +49,16 @@ export interface SubtitleEdit {
  * Supported export formats.
  * @see src/core/Exporter
  */
-export type ExportFormat = 'srt' | 'vtt' | 'ass' | 'ssa' | 'json' | 'txt' | 'lrc' | 'sbv' | 'csv'
+export type ExportFormat = 'srt' | 'vtt' | 'vtt_styled' | 'ass' | 'ssa' | 'json' | 'jsonl' | 'txt' | 'lrc' | 'sbv' | 'csv'
 
 export interface ExportFormats {
   srt: boolean
   vtt: boolean
+  vtt_styled: boolean
   ass: boolean
   ssa: boolean
   json: boolean
+  jsonl: boolean
   txt: boolean
   lrc: boolean
   sbv: boolean
