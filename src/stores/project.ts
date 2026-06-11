@@ -52,6 +52,11 @@ export const useProjectStore = defineStore('project', () => {
     mergeThreshold: DEFAULT_MERGE_THRESHOLD,
     sceneThreshold: DEFAULT_SCENE_THRESHOLD,
     frameInterval: DEFAULT_FRAME_INTERVAL,
+    // AI Correction
+    aiCorrection: false,
+    aiEndpoint: 'http://localhost:11434/v1/chat/completions',
+    aiApiKey: '',
+    aiModel: 'llama3',
   })
   
   // Computed

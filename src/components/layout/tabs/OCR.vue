@@ -30,6 +30,27 @@ const subtitleStore = useSubtitleStore()
 const belowThresholdCount = computed(() =>
   subtitleStore.subtitles.filter(s => s.confidence < confidenceThreshold.value / 100).length
 )
+
+// AI Correction settings — direct store binding
+const aiCorrection = computed({
+  get: () => projectStore.extractOptions.aiCorrection,
+  set: (val: boolean) => { projectStore.extractOptions.aiCorrection = val },
+})
+
+const aiEndpoint = computed({
+  get: () => projectStore.extractOptions.aiEndpoint,
+  set: (val: string) => { projectStore.extractOptions.aiEndpoint = val },
+})
+
+const aiApiKey = computed({
+  get: () => projectStore.extractOptions.aiApiKey,
+  set: (val: string) => { projectStore.extractOptions.aiApiKey = val },
+})
+
+const aiModel = computed({
+  get: () => projectStore.extractOptions.aiModel,
+  set: (val: string) => { projectStore.extractOptions.aiModel = val },
+})
 </script>
 
 <template>
@@ -234,5 +255,74 @@ const belowThresholdCount = computed(() =>
         当前设置下，将排除 <strong>{{ belowThresholdCount }}</strong> 条低于 {{ confidenceThreshold }}% 的字幕
       </div>
     </div>
+
+    <!-- AI Correction -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg viewBox="0 0 16 16" fill="none" class="section-icon">
+            <path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>AI 校对</span>
+        </div>
+        <ToggleSwitch v-model="aiCorrection" />
+      </div>
+
+      <div v-if="aiCorrection" class="ai-settings">
+        <div class="setting-row">
+          <label>API 端点</label>
+          <input v-model="aiEndpoint" type="text" placeholder="http://localhost:11434/v1/chat/completions" />
+        </div>
+        <div class="setting-row">
+          <label>API Key</label>
+          <input v-model="aiApiKey" type="password" placeholder="可选" />
+        </div>
+        <div class="setting-row">
+          <label>模型</label>
+          <input v-model="aiModel" type="text" placeholder="llama3" />
+        </div>
+        <div class="ai-hint">
+          💡 支持 OpenAI 兼容 API（如 Ollama、vLLM、OpenAI）
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.ai-settings {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.setting-row label {
+  min-width: 80px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.setting-row input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.ai-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+</style>

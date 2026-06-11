@@ -78,6 +78,11 @@ export interface ExtractOptions {
   // Frame processing
   sceneThreshold: number   // 0-1, chi-square threshold for scene detection
   frameInterval: number     // process every N frames
+  // AI Correction
+  aiCorrection: boolean
+  aiEndpoint: string
+  aiApiKey: string
+  aiModel: string
 }
 
 export type OCREngine = 'paddle' | 'easyocr' | 'tesseract'

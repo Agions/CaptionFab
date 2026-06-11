@@ -28,6 +28,7 @@ import {
 import { langToScript } from '@/utils/text'
 import { extractFrameMetrics } from '@/utils/detection'
 import { normalizeROI } from '@/utils/image'
+import { AICorrector } from '@/core/AICorrector'
 import type { ROI } from '@/types/video'
 
 /**
@@ -265,6 +266,32 @@ export function useSubtitleExtractor() {
           createSubtitleItem(s, i, opts.languages[0], roi, `sub-raw-`)
         )
       )
+    }
+
+    // ── AI Correction（可选）─────────────────────────────────
+    if (opts.aiCorrection && subtitleStore.subtitles.length > 0) {
+      try {
+        const corrector = new AICorrector({
+          apiEndpoint: opts.aiEndpoint,
+          apiKey: opts.aiApiKey,
+          model: opts.aiModel,
+          temperature: 0.3,
+          maxTokens: 1000,
+        })
+
+        const texts = subtitleStore.subtitles.map(s => s.text)
+        const results = await corrector.correctBatch(texts)
+
+        // Apply corrections with confidence threshold
+        for (let i = 0; i < subtitleStore.subtitles.length; i++) {
+          if (results[i].confidence > 0.7) {
+            subtitleStore.subtitles[i].text = results[i].corrected
+          }
+        }
+        console.log(`[Extractor] AI correction applied to ${results.filter(r => r.confidence > 0.7).length} subtitles`)
+      } catch (e) {
+        console.error('[Extractor] AI correction failed:', e)
+      }
     }
 
     subtitleStore.finishExtraction()
