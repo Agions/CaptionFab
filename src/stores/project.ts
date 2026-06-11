@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { VideoMetadata, ROI, ExtractOptions, OCREngine } from '@/types/video'
+import type { VideoMetadata, ROI, ExtractOptions, OCREngine, ProcessingMode } from '@/types/video'
 import { ROI_PRESETS } from '@/types/video'
 import { clamp } from '@/utils/math'
 import {
@@ -46,6 +46,7 @@ export const useProjectStore = defineStore('project', () => {
     ocrEngine: DEFAULT_OCR_ENGINE,
     languages: [...DEFAULT_LANGUAGES],
     confidenceThreshold: DEFAULT_CONFIDENCE_THRESHOLD,
+    processingMode: 'standard' as ProcessingMode,
     multiPass: true,
     postProcess: true,
     mergeSubtitles: true,

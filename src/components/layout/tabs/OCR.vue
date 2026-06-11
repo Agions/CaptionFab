@@ -4,8 +4,18 @@ import { useOCR } from '@/composables/useOCR'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useProjectStore } from '@/stores/project'
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
+import { PROCESSING_MODES } from '@/types/video'
+import type { ProcessingMode } from '@/types/video'
 
 const projectStore = useProjectStore()
+
+const selectedMode = computed({
+  get: () => projectStore.extractOptions.processingMode,
+  set: (val: ProcessingMode) => {
+    projectStore.extractOptions.processingMode = val
+  },
+})
+
 const {
   ocrEngines,
   selectedEngine,
@@ -76,6 +86,25 @@ const aiModel = computed({
         />
       </div>
       <span class="meter-value">{{ estimatedAccuracy }}%</span>
+    </div>
+
+    <!-- Processing Mode Selection -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">处理模式</span>
+      </div>
+      <div class="mode-grid">
+        <button
+          v-for="(mode, key) in PROCESSING_MODES"
+          :key="key"
+          :class="['mode-card', { active: selectedMode === key }]"
+          @click="selectedMode = key as ProcessingMode"
+        >
+          <span class="mode-icon">{{ mode.icon }}</span>
+          <span class="mode-name">{{ mode.name }}</span>
+          <span class="mode-desc">{{ mode.description }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Engine Selection -->
@@ -290,6 +319,53 @@ const aiModel = computed({
 </template>
 
 <style scoped>
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.mode-card:hover {
+  border-color: var(--color-primary);
+  background: var(--bg-primary);
+}
+
+.mode-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-ghost, rgba(99, 102, 241, 0.08));
+}
+
+.mode-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mode-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mode-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
 .ai-settings {
   margin-top: 12px;
   padding: 12px;

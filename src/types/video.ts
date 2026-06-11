@@ -70,6 +70,7 @@ export interface ExtractOptions {
   ocrEngine: OCREngine
   languages: string[]
   confidenceThreshold: number
+  processingMode: ProcessingMode
   // Advanced OCR
   multiPass: boolean
   postProcess: boolean
@@ -84,6 +85,38 @@ export interface ExtractOptions {
   aiApiKey: string
   aiModel: string
 }
+
+export const PROCESSING_MODES = {
+  fast: {
+    name: '快速模式',
+    description: '跳帧更多，速度快，可能遗漏少量字幕',
+    icon: '🚀',
+    frameInterval: 3,
+    multiPass: false,
+    sceneThreshold: 0.4,
+    confidenceThreshold: 0.6,
+  },
+  standard: {
+    name: '标准模式',
+    description: '平衡速度与准确率（推荐）',
+    icon: '⚖️',
+    frameInterval: 2,
+    multiPass: false,
+    sceneThreshold: 0.3,
+    confidenceThreshold: 0.5,
+  },
+  precise: {
+    name: '精准模式',
+    description: '逐帧检测，最准确，速度较慢',
+    icon: '🎯',
+    frameInterval: 1,
+    multiPass: true,
+    sceneThreshold: 0.2,
+    confidenceThreshold: 0.4,
+  },
+} as const
+
+export type ProcessingMode = keyof typeof PROCESSING_MODES
 
 export type OCREngine = 'paddle' | 'easyocr' | 'tesseract'
 
