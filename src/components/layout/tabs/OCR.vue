@@ -8,6 +8,7 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 const projectStore = useProjectStore()
 const {
   ocrEngines,
+  selectedEngine,
   languageOptions,
   multiPass,
   postProcess,
@@ -65,8 +66,8 @@ const belowThresholdCount = computed(() =>
         <button
           v-for="engine in ocrEngines"
           :key="engine.id"
-          :class="['engine-card', { active: projectStore.extractOptions.ocrEngine === engine.id }]"
-          @click="projectStore.extractOptions.ocrEngine = engine.id"
+          :class="['engine-card', { active: selectedEngine === engine.id }]"
+          @click="selectedEngine = engine.id"
         >
           <div class="engine-header">
             <div class="engine-avatar" :class="'avatar-' + engine.id">
