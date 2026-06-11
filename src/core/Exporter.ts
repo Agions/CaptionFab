@@ -273,6 +273,29 @@ export function exportJSONL(subs: SubtitleItem[]): string {
   })).join('\n') + '\n'
 }
 
+// ─── Bilingual Export (双语字幕) ──────────────────────────────────────
+export function exportBilingualSRT(subs: SubtitleItem[]): string {
+  if (!subs?.length) return ''
+  return subs.map((sub, i) => {
+    const start = tsSRT(sub.startTime)
+    const end = tsSRT(sub.endTime)
+    const text = sub.translatedText ? `${sub.text}\n${sub.translatedText}` : sub.text
+    return `${i + 1}\n${start} --> ${end}\n${text}`
+  }).join('\n\n') + '\n'
+}
+
+export function exportBilingualVTT(subs: SubtitleItem[]): string {
+  if (!subs?.length) return 'WEBVTT\n\n'
+  const header = 'WEBVTT\n\n'
+  const body = subs.map(sub => {
+    const start = tsVTT(sub.startTime)
+    const end = tsVTT(sub.endTime)
+    const text = sub.translatedText ? `${sub.text}\n${sub.translatedText}` : sub.text
+    return `${start} --> ${end}\n${text}`
+  }).join('\n\n')
+  return header + body + '\n'
+}
+
 // ─── Exporter 主类 ─────────────────────────────────────────────────
 export interface ExportResult {
   format: ExportFormat

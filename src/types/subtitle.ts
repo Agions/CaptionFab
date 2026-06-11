@@ -30,6 +30,7 @@ export interface SubtitleItem {
   text: string
   confidence: number     // 0-1
   language?: string
+  translatedText?: string // bilingual translation
   roi: ROI
   thumbnailUrls: string[]
   edited: boolean         // has been manually edited
