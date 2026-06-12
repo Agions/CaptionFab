@@ -16,6 +16,7 @@ import { ref } from 'vue'
 import { useProjectStore } from '@/stores/project'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { ERR_NO_VIDEO } from '@/utils/constants'
+import { PROCESSING_MODES } from '@/types/video'
 import { useVideoPlayer } from './usePlayer'
 import { useOCREngine } from './useOCREngine'
 import type { OCRConfig } from '@/types/video'
@@ -28,6 +29,7 @@ import {
 import { langToScript } from '@/utils/text'
 import { extractFrameMetrics } from '@/utils/detection'
 import { normalizeROI } from '@/utils/image'
+import { AICorrector } from '@/core/AICorrector'
 import type { ROI } from '@/types/video'
 
 /**
@@ -104,12 +106,18 @@ export function useSubtitleExtractor() {
 
     const opts = projectStore.extractOptions
     const roi = projectStore.selectedROI
-    const frameInterval = opts.frameInterval
+
+    // Resolve processing mode presets
+    const modeConfig = PROCESSING_MODES[opts.processingMode]
+    const effectiveFrameInterval = modeConfig.frameInterval
+    const effectiveMultiPass = modeConfig.multiPass
+    const effectiveSceneThreshold = modeConfig.sceneThreshold
+    const effectiveConfThreshold = modeConfig.confidenceThreshold
 
     // 初始化管道
     pipeline = new Pipeline({
       jitterMinDuration: 0.3,
-      jitterMaxConfidence: opts.confidenceThreshold,
+      jitterMaxConfidence: effectiveConfThreshold,
       splitMaxGap: 1.5,
       splitSimilarityThreshold: opts.mergeThreshold,
       similarMaxGap: 0.5,
@@ -118,7 +126,7 @@ export function useSubtitleExtractor() {
 
     // 初始化场景检测器
     sceneDetector = new SceneDetect({
-      threshold: opts.sceneThreshold,
+      threshold: effectiveSceneThreshold,
     })
 
     isExtracting.value = true
@@ -129,7 +137,7 @@ export function useSubtitleExtractor() {
     // 提取循环外预计算（避免每帧重复计算）
     const fps = projectStore.videoMeta.fps
     const lang = opts.languages[0]
-    const confThreshold = opts.confidenceThreshold
+    const confThreshold = effectiveConfThreshold
 
     // 统一的校准+验证 — 提升到循环外，避免每帧重新创建函数对象
     const _calibrateAndValidate = (
@@ -171,7 +179,7 @@ export function useSubtitleExtractor() {
       if (!isExtracting.value) break
 
       // ── 帧间隔跳帧（优先检查，避免无效帧捕获）───────────
-      if (frameIndex % opts.frameInterval !== 0) {
+      if (frameIndex % effectiveFrameInterval !== 0) {
         continue
       }
 
@@ -208,7 +216,7 @@ export function useSubtitleExtractor() {
       try {
         let result: { text: string; confidence: number } | null = null
 
-        if (opts.multiPass && opts.postProcess) {
+        if (effectiveMultiPass && opts.postProcess) {
           // 多通道 OCR
           const passes = await ocrEngine.processMultiPass(frameData, ocrConfig, {
             multiPass: true,
@@ -228,7 +236,7 @@ export function useSubtitleExtractor() {
 
         if (result) {
           const timestamp = frameIndex / fps
-          const frameDuration = Math.max(frameInterval / fps, 2)
+          const frameDuration = Math.max(effectiveFrameInterval / fps, 2)
 
           rawSubs.push({
             startTime: timestamp,
@@ -265,6 +273,32 @@ export function useSubtitleExtractor() {
           createSubtitleItem(s, i, opts.languages[0], roi, `sub-raw-`)
         )
       )
+    }
+
+    // ── AI Correction（可选）─────────────────────────────────
+    if (opts.aiCorrection && subtitleStore.subtitles.length > 0) {
+      try {
+        const corrector = new AICorrector({
+          apiEndpoint: opts.aiEndpoint,
+          apiKey: opts.aiApiKey,
+          model: opts.aiModel,
+          temperature: 0.3,
+          maxTokens: 1000,
+        })
+
+        const texts = subtitleStore.subtitles.map(s => s.text)
+        const results = await corrector.correctBatch(texts)
+
+        // Apply corrections with confidence threshold
+        for (let i = 0; i < subtitleStore.subtitles.length; i++) {
+          if (results[i].confidence > 0.7) {
+            subtitleStore.subtitles[i].text = results[i].corrected
+          }
+        }
+        console.log(`[Extractor] AI correction applied to ${results.filter(r => r.confidence > 0.7).length} subtitles`)
+      } catch (e) {
+        console.error('[Extractor] AI correction failed:', e)
+      }
     }
 
     subtitleStore.finishExtraction()

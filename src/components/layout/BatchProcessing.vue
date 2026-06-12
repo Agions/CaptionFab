@@ -33,7 +33,9 @@ const options = ref<BatchOptions>({
   ocrEngine: 'tesseract',
   languages: ['ch'],
   sceneThreshold: 0.3,
-  confidenceThreshold: 0.7
+  confidenceThreshold: 0.7,
+  processingMode: 'standard',
+  aiCorrection: false,
 })
 
 function addToBatchAndStart() {

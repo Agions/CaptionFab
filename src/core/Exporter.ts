@@ -210,6 +210,92 @@ function formatCSV(subs: SubtitleItem[]): string {
   return CSV_HEADER + rows
 }
 
+// ─── WebVTT with Styles ──────────────────────────────────────────
+export interface VTTStyle {
+  background?: string
+  color?: string
+  fontSize?: string
+  fontFamily?: string
+}
+
+export function exportVTTWithStyle(subs: SubtitleItem[], style: VTTStyle = {}): string {
+  const {
+    background = 'rgba(0,0,0,0.8)',
+    color = 'white',
+    fontSize = '1.2em',
+    fontFamily = 'sans-serif',
+  } = style
+
+  if (!subs?.length) {
+    return `WEBVTT
+
+STYLE
+::cue {
+  background: ${background};
+  color: ${color};
+  font-size: ${fontSize};
+  font-family: ${fontFamily};
+  line-height: 1.4;
+}
+
+`
+  }
+
+  const header = `WEBVTT
+
+STYLE
+::cue {
+  background: ${background};
+  color: ${color};
+  font-size: ${fontSize};
+  font-family: ${fontFamily};
+  line-height: 1.4;
+}
+`
+
+  const body = subs.map(sub => {
+    const start = tsVTT(sub.startTime)
+    const end = tsVTT(sub.endTime)
+    return `${start} --> ${end}\n${sub.text}`
+  }).join('\n\n')
+
+  return header + body + '\n'
+}
+
+// ─── JSONL (Line-delimited JSON) ──────────────────────────────────
+export function exportJSONL(subs: SubtitleItem[]): string {
+  if (!subs?.length) return ''
+  return subs.map(sub => JSON.stringify({
+    start: Math.round(sub.startTime * 1000) / 1000,
+    end: Math.round(sub.endTime * 1000) / 1000,
+    text: sub.text,
+    confidence: Math.round(sub.confidence * 100) / 100,
+  })).join('\n') + '\n'
+}
+
+// ─── Bilingual Export (双语字幕) ──────────────────────────────────────
+export function exportBilingualSRT(subs: SubtitleItem[]): string {
+  if (!subs?.length) return ''
+  return subs.map((sub, i) => {
+    const start = tsSRT(sub.startTime)
+    const end = tsSRT(sub.endTime)
+    const text = sub.translatedText ? `${sub.text}\n${sub.translatedText}` : sub.text
+    return `${i + 1}\n${start} --> ${end}\n${text}`
+  }).join('\n\n') + '\n'
+}
+
+export function exportBilingualVTT(subs: SubtitleItem[]): string {
+  if (!subs?.length) return 'WEBVTT\n\n'
+  const header = 'WEBVTT\n\n'
+  const body = subs.map(sub => {
+    const start = tsVTT(sub.startTime)
+    const end = tsVTT(sub.endTime)
+    const text = sub.translatedText ? `${sub.text}\n${sub.translatedText}` : sub.text
+    return `${start} --> ${end}\n${text}`
+  }).join('\n\n')
+  return header + body + '\n'
+}
+
 // ─── Exporter 主类 ─────────────────────────────────────────────────
 export interface ExportResult {
   format: ExportFormat
@@ -221,9 +307,11 @@ export class Exporter {
   private readonly FORMATTERS: Record<ExportFormat, (subs: SubtitleItem[]) => string> = {
     srt: formatSRT,
     vtt: formatVTT,
+    vtt_styled: (subs) => exportVTTWithStyle(subs),
     ass: formatASS,
     ssa: formatSSA,
     json: formatJSON,
+    jsonl: exportJSONL,
     txt: formatTXT,
     lrc: formatLRC,
     sbv: formatSBV,

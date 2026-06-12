@@ -30,6 +30,7 @@ export interface SubtitleItem {
   text: string
   confidence: number     // 0-1
   language?: string
+  translatedText?: string // bilingual translation
   roi: ROI
   thumbnailUrls: string[]
   edited: boolean         // has been manually edited
@@ -49,14 +50,16 @@ export interface SubtitleEdit {
  * Supported export formats.
  * @see src/core/Exporter
  */
-export type ExportFormat = 'srt' | 'vtt' | 'ass' | 'ssa' | 'json' | 'txt' | 'lrc' | 'sbv' | 'csv'
+export type ExportFormat = 'srt' | 'vtt' | 'vtt_styled' | 'ass' | 'ssa' | 'json' | 'jsonl' | 'txt' | 'lrc' | 'sbv' | 'csv'
 
 export interface ExportFormats {
   srt: boolean
   vtt: boolean
+  vtt_styled: boolean
   ass: boolean
   ssa: boolean
   json: boolean
+  jsonl: boolean
   txt: boolean
   lrc: boolean
   sbv: boolean

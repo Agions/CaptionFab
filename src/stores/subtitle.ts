@@ -23,9 +23,11 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   const exportFormats = shallowRef<ExportFormats>({
     srt: true,
     vtt: false,
+    vtt_styled: false,
     ass: false,
     ssa: false,
     json: true,
+    jsonl: false,
     txt: false,
     lrc: false,
     sbv: false,

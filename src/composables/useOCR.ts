@@ -34,7 +34,18 @@ export function useOCR() {
       speed: '快',
       accuracy: '高',
       langs: 80,
-      description: '支持80+语言，适合字幕识别',
+      description: '支持80+语言，中文识别准确率95%+',
+    },
+    {
+      id: 'tesseract',
+      name: 'Tesseract.js',
+      shortName: 'TS',
+      tech: '传统算法',
+      recommended: false,
+      speed: '慢',
+      accuracy: '中',
+      langs: 100,
+      description: '纯JS实现，无需外部依赖',
     },
     {
       id: 'easyocr',
@@ -46,17 +57,6 @@ export function useOCR() {
       accuracy: '高',
       langs: 40,
       description: '支持40+语言，GPU加速',
-    },
-    {
-      id: 'tesseract',
-      name: 'Tesseract.js',
-      shortName: 'TS',
-      tech: '传统算法',
-      recommended: false,
-      speed: '慢',
-      accuracy: '中',
-      langs: 100,
-      description: '纯JS实现，无需服务器',
     },
   ]
 
@@ -82,6 +82,13 @@ export function useOCR() {
     get: () => Math.round(projectStore.extractOptions.confidenceThreshold * 100),
     set: (val: number) => {
       projectStore.extractOptions.confidenceThreshold = val / 100
+    },
+  })
+
+  const selectedEngine = computed({
+    get: () => projectStore.extractOptions.ocrEngine || 'paddle',
+    set: (val: OCREngine) => {
+      projectStore.extractOptions.ocrEngine = val
     },
   })
 
@@ -129,7 +136,7 @@ export function useOCR() {
 
   // 预估准确率
   const estimatedAccuracy = computed(() => {
-    const engine = projectStore.extractOptions.ocrEngine
+    const engine = selectedEngine.value
     const baseAccuracy = { paddle: 92, easyocr: 90, tesseract: 78 }[engine] ?? 80
     let adjusted = baseAccuracy
     if (multiPass.value) adjusted += 3
@@ -144,6 +151,7 @@ export function useOCR() {
 
   return {
     ocrEngines,
+    selectedEngine,
     languageOptions,
     multiPass,
     postProcess,

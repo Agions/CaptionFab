@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useSettings } from '@/composables/useSettings'
 import { useProjectStore } from '@/stores/project'
+import { useGPU } from '@/composables/useGPU'
 
 const { localSettings, systemDeps, handleThemeChange } = useSettings()
 const projectStore = useProjectStore()
+const { gpuInfo, isLoading, checkGPU, formatMemory } = useGPU()
 </script>
 
 <template>
@@ -166,6 +168,37 @@ const projectStore = useProjectStore()
           <span class="dep-icon">{{ dep.installed ? '✓' : '✗' }}</span>
           <span class="dep-name">{{ dep.name }}</span>
           <span class="dep-status">{{ dep.installed ? '已安装' : '未安装' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" v-if="gpuInfo.available">
+      <div class="section-header">
+        <span class="section-title">GPU 加速</span>
+        <button
+          class="refresh-btn"
+          @click="checkGPU"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '检测中...' : '刷新' }}
+        </button>
+      </div>
+      <div class="gpu-info">
+        <div class="gpu-detail">
+          <span class="gpu-label">状态</span>
+          <span class="gpu-value gpu-ok">✓ CUDA 可用</span>
+        </div>
+        <div class="gpu-detail" v-if="gpuInfo.deviceCount">
+          <span class="gpu-label">设备数量</span>
+          <span class="gpu-value">{{ gpuInfo.deviceCount }}</span>
+        </div>
+        <div class="gpu-detail" v-if="gpuInfo.deviceName">
+          <span class="gpu-label">设备名称</span>
+          <span class="gpu-value">{{ gpuInfo.deviceName }}</span>
+        </div>
+        <div class="gpu-detail" v-if="gpuInfo.memoryTotal">
+          <span class="gpu-label">显存</span>
+          <span class="gpu-value">{{ formatMemory(gpuInfo.memoryTotal) }}</span>
         </div>
       </div>
     </div>
