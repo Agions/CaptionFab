@@ -12,7 +12,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { useVideoStore } from './video'
 import { useExtractionStore } from './extraction'
-import type { VideoMetadata, ROI, ExtractOptions, OCREngine, ProcessingMode } from '@/types/video'
 
 export const useProjectStore = defineStore('project', () => {
   const video = useVideoStore()
