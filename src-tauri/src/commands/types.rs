@@ -40,22 +40,6 @@ impl Default for ROI {
     }
 }
 
-impl ROI {
-    /// Convert ROI coordinates to absolute pixels given image dimensions.
-    pub fn to_pixels(&self, img_width: u32, img_height: u32) -> (u32, u32, u32, u32) {
-        let (x, y, w, h) = match self.unit.as_str() {
-            "pixel" => (self.x, self.y, self.width, self.height),
-            _ => (
-                (self.x as f32 / 100.0 * img_width as f32) as u32,
-                (self.y as f32 / 100.0 * img_height as f32) as u32,
-                (self.width as f32 / 100.0 * img_width as f32) as u32,
-                (self.height as f32 / 100.0 * img_height as f32) as u32,
-            ),
-        };
-        (x, y, w, h)
-    }
-}
-
 /// A single subtitle entry with timing and text.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubtitleItem {

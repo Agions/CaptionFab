@@ -14,10 +14,8 @@
 //! | fraction string | [`parse_fps_from_fraction`] | `f64` (fps) |
 //! | time string | [`parse_time_to_seconds`] | `f64` (seconds) |
 
-use serde::{Deserialize, Serialize};
 
 // Re-export so callers can get VideoMetadata without pulling in video.rs
-pub use super::video::VideoMetadata;
 
 /// Parse frame rate from ffprobe's "30000/1001" fraction string.
 /// Returns fps as f64, or 30.0 as fallback.

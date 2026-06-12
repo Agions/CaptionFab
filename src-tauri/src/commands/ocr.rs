@@ -1,23 +1,21 @@
-//! OCR recognition module.
+//! OCR recognition module — pure Rust ONNX inference engine.
 //!
-//! Provides OCR capabilities via PaddleOCR (Python script).
+//! Replaces the Python PaddleOCR subprocess with a Rust-native pipeline
+//! using the `ort` crate and PaddleOCR PP-OCRv6 ONNX models.
 //!
 //! ## Architecture
 //!
 //! ```text
-//! Image File -> paddle_ocr.py -> PaddleOCR -> OCRResult[]
+//! Image File → image::open → DynamicImage → ocr_engine::OcrEngine::recognize → OCRResult[]
 //! ```
 //!
-//! ## Supported Engines
+//! ## Performance
 //!
-//! | Engine | Language | Purpose |
-//! |--------|----------|---------| 
-//! | PaddleOCR | Python | High-accuracy Chinese OCR |
+//! - **LRU Cache**: Frame hash → OCR result, configurable capacity (default 256)
+//! - **Model Warmup**: Call `OcrEngine::warmup()` on app startup
+//! - **GPU**: Automatic CUDA/CPU provider selection via ONNX Runtime
 
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-
-use super::utils::{find_python_binary, find_script};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OCRResult {
@@ -40,21 +38,17 @@ pub struct OCRLang {
     pub name: String,
 }
 
-/// Response from the Python OCR script, includes results and GPU info.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct OCRResponse {
-    results: Vec<OCRResult>,
-    #[allow(dead_code)]
-    gpu: serde_json::Value,
-}
-
+/// Recognise text in an image using the native Rust OCR engine.
+///
+/// Loads the image, runs it through the ONNX-based OCR pipeline,
+/// and returns detected text regions with bounding boxes.
 #[tauri::command]
 pub async fn ocr_recognize(
     image_path: String,
     lang: String,
     engine: String,
 ) -> Result<Vec<OCRResult>, String> {
-    let path = Path::new(&image_path);
+    let path = std::path::Path::new(&image_path);
     if !path.exists() {
         return Err(format!("File not found: {}", image_path));
     }
@@ -62,51 +56,28 @@ pub async fn ocr_recognize(
     tracing::info!("OCR recognize: {} (lang={}, engine={})", image_path, lang, engine);
 
     match engine.as_str() {
-        "paddle" => ocr_paddle(&image_path, &lang).await,
-        _ => Err(format!("Unknown OCR engine: {}. Supported: paddle", engine)),
+        "paddle" | "native" => ocr_native(&image_path, &lang).await,
+        _ => Err(format!("Unknown OCR engine: {}. Supported: native", engine)),
     }
 }
 
-async fn ocr_paddle(image_path: &str, lang: &str) -> Result<Vec<OCRResult>, String> {
-    let python = find_python_binary().await?;
-    let script = find_script("paddle_ocr.py")?;
+async fn ocr_native(image_path: &str, lang: &str) -> Result<Vec<OCRResult>, String> {
+    // Load image in a blocking task (image I/O + OCR inference are CPU-bound)
+    let path = image_path.to_owned();
+    let lang = lang.to_owned();
 
-    let script_path = script.to_str().ok_or_else(|| {
-        format!("paddle_ocr.py path is not valid UTF-8: {:?}", script)
-    })?;
+    tokio::task::spawn_blocking(move || {
+        let img = image::open(&path)
+            .map_err(|e| format!("Failed to open image '{}': {}", path, e))?;
 
-    let output = tokio::process::Command::new(&python)
-        .args([script_path, image_path, lang])
-        .output()
-        .await
-        .map_err(|e| format!("Failed to run paddle_ocr.py: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("paddle_ocr.py failed: {}", stderr));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    
-    // Try to parse as new format (with results and gpu fields)
-    let results = if let Ok(response) = serde_json::from_str::<OCRResponse>(&stdout) {
-        tracing::info!(
-            "PaddleOCR returned {} results (GPU: {:?})", 
-            response.results.len(), 
-            response.gpu
-        );
-        response.results
-    } else {
-        // Fallback: try to parse as old format (plain array)
-        let results: Vec<OCRResult> = serde_json::from_str(&stdout)
-            .map_err(|e| format!("Failed to parse OCR output: {}\nOutput: {}", e, stdout))?;
-        tracing::info!("PaddleOCR returned {} results", results.len());
-        results
-    };
-
-    Ok(results)
+        let results = super::ocr_engine::OcrEngine::recognize(&img, &lang)?;
+        Ok(results)
+    })
+    .await
+    .map_err(|e| format!("OCR task panic: {e}"))?
 }
 
+/// Return the list of supported OCR languages.
 #[tauri::command]
 pub async fn ocr_get_languages() -> Vec<OCRLang> {
     vec![

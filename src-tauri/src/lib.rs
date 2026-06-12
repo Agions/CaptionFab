@@ -40,6 +40,15 @@ pub fn run() {
 
     info!("Starting CaptionFab v{}", env!("CARGO_PKG_VERSION"));
 
+    // Warm up the ONNX OCR engine on startup (non-blocking background task)
+    info!("Warming up OCR engine...");
+    tauri::async_runtime::spawn(async {
+        match commands::ocr_engine::OcrEngine::warmup() {
+            Ok(_) => info!("OCR engine warmup complete"),
+            Err(e) => tracing::warn!("OCR engine warmup skipped: {}", e),
+        }
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())

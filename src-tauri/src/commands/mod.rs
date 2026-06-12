@@ -5,7 +5,7 @@
 //! | 模块 | 说明 |
 //! |------|------|
 //! | `types` | 共享数据类型（ROI） |
-//! | `utils` | 工具函数（临时文件、UUID、Python 查找） |
+//! | `utils` | 工具函数（临时文件、UUID） |
 //! | `video` | 视频元数据 + 帧提取 |
 //! | `scene` | 场景检测（Rust 原生 FFmpeg） |
 //! | `export` | 导出命令入口 + 公共类型 |
@@ -13,10 +13,11 @@
 //! | `ffmpeg` | FFmpeg / ffprobe 输出解析 |
 //! | `file` | 文件操作（对话框、读写） |
 //! | `system` | 系统依赖检查（ffmpeg、tesseract）|
-//! | `ocr` | OCR 识别（调用 paddle_ocr.py）|
+//! | `ocr` | OCR 识别（Rust 原生 ONNX）|
+//! | `ocr_engine` | Rust 原生 OCR 引擎（ort + ONNX）|
 //! | `auto_roi` | 自动 ROI 检测（Rust 原生 image crate）|
 //! | `timestamp` | 时间戳格式化（SRT/VTT/ASS/SSA/SBV）|
-//! | `gpu` | GPU 检测（Python inline）|
+//! | `gpu` | GPU 检测（ONNX Runtime 原生）|
 pub mod types;
 pub mod utils;
 pub mod video;
@@ -26,6 +27,7 @@ pub mod export_fmt;
 pub mod ffmpeg;
 pub mod file;
 pub mod ocr;
+pub mod ocr_engine;
 pub mod system;
 pub mod auto_roi;
 pub mod timestamp;

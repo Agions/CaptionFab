@@ -7,11 +7,12 @@
 **智能硬编码字幕提取工具** — 从视频中精准提取字幕，支持 9 种专业格式输出
 
 [![Version](https://img.shields.io/github/v/release/Agions/CaptionFab?style=flat-square&color=0EA5E9)](https://github.com/Agions/CaptionFab/releases)
-[![Tests](https://img.shields.io/badge/tests-193%20passed-10B981?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
+[![Tests](https://img.shields.io/badge/tests-516%20passed-10B981?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
 [![License](https://img.shields.io/github/license/Agions/CaptionFab?style=flat-square&color=10B981)](https://github.com/Agions/CaptionFab/blob/main/LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2.x-blue?style=flat-square&logo=tauri)](https://tauri.app)
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square&logo=vue.js)](https://vuejs.org)
 [![Rust](https://img.shields.io/badge/Rust-2021-dea584?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![ONNX](https://img.shields.io/badge/ONNX-Runtime-blue?style=flat-square&logo=onnx)](https://onnxruntime.ai)
 
 </div>
 
@@ -21,15 +22,15 @@
 
 | 特性 | 说明 |
 |:-----|:-----|
-| 🤖 **多引擎 OCR** | Tesseract.js (WASM) — 100+ 语言，浏览器端运行，零外部依赖 |
-| ⚡ **五阶段后处理管道** | 标准化 → 去噪 → 合并分裂 → 相似度融合 → 时间校准 |
-| 📦 **9 种导出格式** | SRT · VTT · ASS · SSA · JSON · CSV · TXT · LRC · SBV |
-| 🎬 **智能场景检测** | 直方图 + 卡方检验，自动跳过无字幕帧，减少 60% 无效 OCR |
-| 🔧 **纯 Rust 后端** | Tokio 异步 I/O，所有文件/视频操作非阻塞 |
-| 🛡️ **置信度校准引擎** | CJK n-gram 分析、竖线检测、标点规范化，可视化质量信号 |
-| 📐 **ROI 预设** | 底部 · 顶部 · 左侧 · 右侧 · 中间 · 自定义 — 一键切换 |
-| 📹 **广泛视频格式** | MP4 · MKV · AVI · MOV · WebM · M4V · WMV · FLV · 3GP |
-| 🎨 **暗色/亮色主题** | 跟随系统或手动切换，设置持久化到 localStorage |
+|| 🤖 **Rust 原生 OCR** | ONNX Runtime + PP-OCRv6，零 Python 依赖，GPU 加速，256 帧 LRU 缓存 |
+|| ⚡ **五阶段后处理管道** | 标准化 → 去噪 → 合并分裂 → 相似度融合 → 时间校准 |
+|| 📦 **9 种导出格式** | SRT · VTT · ASS · SSA · JSON · CSV · TXT · LRC · SBV |
+|| 🎬 **智能场景检测** | FFmpeg select filter + Rust 原生实现，减少 60% 无效 OCR |
+|| 🔧 **纯 Rust 后端** | Tokio 异步 I/O，无 Python 依赖，模型预热启动 |
+|| 🛡️ **置信度校准引擎** | CJK n-gram 分析、竖线检测、标点规范化，可视化质量信号 |
+|| 📐 **ROI 预设** | 底部 · 顶部 · 左侧 · 右侧 · 中间 · 自定义 — 一键切换 |
+|| 📹 **广泛视频格式** | MP4 · MKV · AVI · MOV · WebM · M4V · WMV · FLV · 3GP |
+|| 🎨 **暗色/亮色主题** | 跟随系统或手动切换，设置持久化到 localStorage |
 
 ---
 

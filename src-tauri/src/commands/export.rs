@@ -4,7 +4,6 @@
 //! The [`export_fmt`] module owns all format logic; this module
 //! only handles Tauri command registration and async file I/O.
 
-use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 pub use super::types::{ExportFormat, SubtitleItem};
