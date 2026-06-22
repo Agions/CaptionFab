@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, inject } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { formatFrameToTime } from '@/utils/time'
-import TimelineRuler from './timeline/TimelineRuler.vue'
-import TimelineMarkerLayer from './timeline/TimelineMarkerLayer.vue'
-import TimelinePlayhead from './timeline/TimelinePlayhead.vue'
-import TimelineTooltip from './timeline/TimelineTooltip.vue'
+import TimelineRuler from './timeline/timeline-ruler.vue'
+import TimelineMarkerLayer from './timeline/timeline-marker-layer.vue'
+import TimelinePlayhead from './timeline/timeline-playhead.vue'
+import TimelineTooltip from './timeline/timeline-tooltip.vue'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 const subtitleStore = useSubtitleStore()
 
 const emit = defineEmits<{
@@ -125,7 +125,7 @@ function handleTimelineKeydown(e: KeyboardEvent) {
       if (focusedMarkerIndex.value > 0) {
         focusedMarkerIndex.value--
       } else {
-        const currentFrame = projectStore.currentFrame
+        const currentFrame = videoStore.currentFrame
         const prevMarker = [...subtitleMarkers.value].reverse().find(m => m.endFrame < currentFrame - 1)
         if (prevMarker) emit('seek', Math.max(0, prevMarker.frame - 1))
         else emit('seek', Math.max(0, currentFrame - fps.value))
@@ -136,7 +136,7 @@ function handleTimelineKeydown(e: KeyboardEvent) {
       if (focusedMarkerIndex.value < subtitleMarkers.value.length - 1) {
         focusedMarkerIndex.value++
       } else {
-        const currentFrame = projectStore.currentFrame
+        const currentFrame = videoStore.currentFrame
         const nextMarker = subtitleMarkers.value.find(m => m.frame > currentFrame + 1)
         if (nextMarker) emit('seek', nextMarker.frame)
         else emit('seek', Math.min(totalFrames.value - 1, currentFrame + fps.value))
@@ -170,8 +170,8 @@ function handleTimelineKeydown(e: KeyboardEvent) {
 }
 
 // Computed
-const totalFrames = computed(() => projectStore.videoMeta?.totalFrames ?? 0)
-const fps = computed(() => projectStore.videoMeta?.fps ?? 30)
+const totalFrames = computed(() => videoStore.videoMeta?.totalFrames ?? 0)
+const fps = computed(() => videoStore.videoMeta?.fps ?? 30)
 
 const subtitleMarkers = computed(() => {
   return subtitleStore.subtitles.map(sub => ({
@@ -184,7 +184,7 @@ const subtitleMarkers = computed(() => {
 
 const playheadPosition = computed(() => {
   if (totalFrames.value === 0) return 0
-  return (projectStore.currentFrame / totalFrames.value) * 100
+  return (videoStore.currentFrame / totalFrames.value) * 100
 })
 
 function handleTimelineClick(e: MouseEvent) {
@@ -206,9 +206,9 @@ function zoomIn() { zoomLevel.value = Math.min(zoomLevel.value * 1.5, 10) }
 function zoomOut() { zoomLevel.value = Math.max(zoomLevel.value / 1.5, 0.1) }
 function resetZoom() { zoomLevel.value = 1 }
 
-const currentTime = computed(() => formatFrameToTime(projectStore.currentFrame, fps.value))
+const currentTime = computed(() => formatFrameToTime(videoStore.currentFrame, fps.value))
 const totalTime = computed(() => formatFrameToTime(totalFrames.value, fps.value))
-const currentFrame = computed(() => projectStore.currentFrame)
+const currentFrame = computed(() => videoStore.currentFrame)
 const subtitleCount = computed(() => subtitleStore.totalCount)
 </script>
 
@@ -241,13 +241,13 @@ const subtitleCount = computed(() => subtitleStore.totalCount)
 
     <!-- Body -->
     <div class="timeline-body">
-      <TimelineRuler :total-frames="totalFrames" :fps="fps" />
+      <timeline-ruler :total-frames="totalFrames" :fps="fps" />
 
       <div
         class="timeline-track"
         tabindex="0"
         role="slider"
-        :aria-valuenow="projectStore.currentFrame"
+        :aria-valuenow="videoStore.currentFrame"
         :aria-valuemin="0"
         :aria-valuemax="totalFrames"
         aria-label="Timeline navigation"
@@ -257,21 +257,21 @@ const subtitleCount = computed(() => subtitleStore.totalCount)
         @keydown="handleTimelineKeydown"
         ref="timelineRef"
       >
-        <TimelineMarkerLayer
+        <timeline-marker-layer
           :markers="subtitleMarkers"
           :selected-id="subtitleStore.selectedId"
           :total-frames="totalFrames"
           @select="handleMarkerClick"
         />
 
-        <TimelinePlayhead
+        <timeline-playhead
           :position="playheadPosition"
           :is-dragging="isDragging"
           @mousedown="handlePlayheadMouseDown"
         />
       </div>
 
-      <TimelineTooltip
+      <timeline-tooltip
         v-if="isHovering || isDragging"
         :hover-frame="hoverFrame"
         :total-frames="totalFrames"

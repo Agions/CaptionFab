@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { useROI } from '@/composables/useROI'
+import { useVideoStore } from '@/stores/video'
 import { useAutoROI } from '@/composables/useAutoROI'
-import { useProjectStore } from '@/stores/project'
 
 const { roiPresets, selectedROI, selectPreset } = useROI()
 const { isDetecting, detectedROI, error: autoROIError, detectROI, applyDetectedROI } = useAutoROI()
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 
 function handleAutoDetect() {
-  if (!projectStore.videoPath) return
-  detectROI(projectStore.videoPath, projectStore.currentTime)
+  if (!videoStore.videoPath) return
+  detectROI(videoStore.videoPath, videoStore.currentTime)
 }
 </script>
 
@@ -24,7 +24,7 @@ function handleAutoDetect() {
       <div class="auto-detect-card">
         <button
           class="btn btn-primary btn-detect"
-          :disabled="!projectStore.videoPath || isDetecting"
+          :disabled="!videoStore.videoPath || isDetecting"
           @click="handleAutoDetect"
         >
           <span v-if="isDetecting" class="spinner" />

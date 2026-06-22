@@ -35,7 +35,7 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
     let path_obj = Path::new(&path);
 
     if !path_obj.exists() {
-        return Err(format!("File not found: {}", path));
+        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, path));
     }
 
     // Try to use ffprobe for real metadata
@@ -100,11 +100,12 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
 
 /// Get video metadata using ffmpeg (async, fallback when ffprobe unavailable)
 async fn get_video_metadata_ffmpeg(path: &str) -> Result<VideoMetadata, String> {
-    let output = tokio::process::Command::new("ffmpeg")
-        .args(["-i", path, "-f", "null", "-"])
-        .output()
-        .await
-        .map_err(|e| format!("Failed to run ffmpeg: {}", e))?;
+    let output = run_command_with_timeout(
+        "ffmpeg",
+        &["-i", path, "-f", "null", "-"],
+        std::time::Duration::from_secs(30),
+    )
+    .await?;
 
     // ffmpeg outputs metadata to stderr
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -135,17 +136,18 @@ async fn get_video_metadata_ffmpeg(path: &str) -> Result<VideoMetadata, String> 
 }
 
 async fn get_video_metadata_ffprobe(path: &str) -> Result<VideoMetadata, String> {
-    let output = tokio::process::Command::new("ffprobe")
-        .args([
+    let output = run_command_with_timeout(
+        "ffprobe",
+        &[
             "-v", "quiet",
             "-print_format", "json",
             "-show_format",
             "-show_streams",
             path,
-        ])
-        .output()
-        .await
-        .map_err(|e| format!("Failed to run ffprobe: {}", e))?;
+        ],
+        std::time::Duration::from_secs(30),
+    )
+    .await?;
 
     if !output.status.success() {
         return Err("ffprobe exited with error".to_string());

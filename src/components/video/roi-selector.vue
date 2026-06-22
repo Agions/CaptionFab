@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 
 const props = defineProps<{
   videoWidth: number
@@ -11,12 +11,15 @@ const emit = defineEmits<{
   (e: 'update', roi: { x: number; y: number; width: number; height: number }): void
 }>()
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 
 const containerRef = ref<HTMLElement | null>(null)
 const isSelecting = ref(false)
 const startPos = ref({ x: 0, y: 0 })
 const currentPos = ref({ x: 0, y: 0 })
+// rAF throttle: 批量处理高频 mousemove，避免每帧触发响应式更新
+let _rafId: number | null = null
+let _pendingMouseEvent: MouseEvent | null = null
 
 const selection = computed(() => {
   if (!isSelecting.value) return null
@@ -34,7 +37,7 @@ const selection = computed(() => {
   }
 })
 
-const currentROI = computed(() => projectStore.selectedROI)
+const currentROI = computed(() => videoStore.selectedROI)
 
 function handleMouseDown(e: MouseEvent) {
   if (!containerRef.value) return
@@ -49,13 +52,21 @@ function handleMouseDown(e: MouseEvent) {
 }
 
 function handleMouseMove(e: MouseEvent) {
-  if (!isSelecting.value || !containerRef.value) return
+  // rAF throttle: 只保存最新事件，等下一帧统一处理
+  _pendingMouseEvent = e
+  if (_rafId !== null) return
+  _rafId = requestAnimationFrame(() => {
+    _rafId = null
+    const ev = _pendingMouseEvent
+    _pendingMouseEvent = null
+    if (!ev || !isSelecting.value || !containerRef.value) return
 
-  const rect = containerRef.value.getBoundingClientRect()
-  currentPos.value = {
-    x: Math.max(0, Math.min(e.clientX - rect.left, props.videoWidth)),
-    y: Math.max(0, Math.min(e.clientY - rect.top, props.videoHeight))
-  }
+    const rect = containerRef.value.getBoundingClientRect()
+    currentPos.value = {
+      x: Math.max(0, Math.min(ev.clientX - rect.left, props.videoWidth)),
+      y: Math.max(0, Math.min(ev.clientY - rect.top, props.videoHeight)),
+    }
+  })
 }
 
 function handleMouseUp() {
@@ -65,7 +76,7 @@ function handleMouseUp() {
   if (selection.value.width > 1 && selection.value.height > 1) {
     emit('update', selection.value)
 
-    projectStore.updateROI({
+    videoStore.updateROI({
       x: selection.value.x,
       y: selection.value.y,
       width: selection.value.width,
@@ -89,6 +100,12 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  // 清理 rAF，防止组件卸载后回调执行
+  if (_rafId !== null) {
+    cancelAnimationFrame(_rafId)
+    _rafId = null
+    _pendingMouseEvent = null
+  }
 })
 </script>
 

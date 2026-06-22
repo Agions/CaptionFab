@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { type ExportFormat } from '@/core'
-import Modal from '@/components/common/Modal.vue'
-import Button from '@/components/common/Button.vue'
+import Modal from '@/components/common/modal.vue'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { saveFileDialog, writeTextFile } from '@/utils/file'
 import { useNotification } from '@/composables/useNotification'
@@ -98,7 +97,7 @@ async function handleExport() {
 </script>
 
 <template>
-  <Modal :open="isOpen" title="导出字幕" size="md" @close="close">
+  <modal :open="isOpen" title="导出字幕" size="md" @close="close">
     <div class="export-content">
       <p class="export-info">
         共 {{ subtitleStore.totalCount }} 条字幕将被导出
@@ -130,12 +129,12 @@ async function handleExport() {
     </div>
 
     <template #footer>
-      <Button variant="secondary" @click="close">取消</Button>
-      <Button variant="primary" :loading="isExporting" @click="handleExport">
+      <button variant="secondary" @click="close">取消</button>
+      <button variant="primary" :loading="isExporting" @click="handleExport">
         导出 {{ selectedFormats.length }} 个格式
-      </Button>
+      </button>
     </template>
-  </Modal>
+  </modal>
 </template>
 
 <style lang="scss" scoped>

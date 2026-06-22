@@ -9,21 +9,18 @@
  */
 
 // Re-export all public APIs
-export { Pipeline, DEFAULT_PIPELINE_OPTIONS } from './Pipeline'
+export { Pipeline } from './Pipeline'
 export type { PipelineOptions } from './Pipeline'
 
-export { SceneDetect, DEFAULT_SCENE_DETECTOR_OPTIONS } from './SceneDetect'
+export { SceneDetect } from './SceneDetect'
 export type { SceneDetectOptions } from './SceneDetect'
 
 export { Exporter, getExporter } from './Exporter'
 export type { ExportFormat } from '@/types/subtitle'
-export type { ExportResult } from './Exporter'
 
 export { Calibrator, getCalibrator, langToScript } from './Calibrator'
-export type { CalibrationResult, CalibrationSignal, Script } from './Calibrator'
 
 export { AICorrector } from './AICorrector'
-export type { AICorrectorConfig, CorrectionResult } from './AICorrector'
 
 export { Translator } from './Translator'
-export type { TranslatorConfig, TranslationResult } from './Translator'
+export type { TranslatorConfig } from '@/core/Translator'

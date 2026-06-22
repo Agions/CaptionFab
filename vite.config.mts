@@ -35,6 +35,15 @@ export default defineConfig({
     // 优化：智能分包策略，减少初始加载体积
     rollupOptions: {
       output: {
+        // 固定 assetFileNames，改善长期缓存命中率
+        assetFileNames: (assetInfo) => {
+          const name = typeof assetInfo.name === 'string' ? assetInfo.name : ''
+          const ext = name.split('.').pop() || ''
+          if (ext === 'css') return 'assets/[name]-[hash][extname]'
+          if (ext === 'woff' || ext === 'woff2') return 'assets/fonts/[name]-[hash][extname]'
+          if (ext === 'png' || ext === 'jpg' || ext === 'svg' || ext === 'gif') return 'assets/images/[name]-[hash][extname]'
+          return 'assets/[name]-[hash][extname]'
+        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
             // OCR 引擎：WASM 体积大，独立 chunk 支持按需加载

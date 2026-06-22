@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
+import { useExtractionStore } from '@/stores/extraction'
 import { useSubtitleStore } from '@/stores/subtitle'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
+const extractionStore = useExtractionStore()
 const subtitleStore = useSubtitleStore()
 
-const fps = computed(() => projectStore.videoMeta?.fps ?? 0)
+const fps = computed(() => videoStore.videoMeta?.fps ?? 0)
 const resolution = computed(() => {
-  if (!projectStore.videoMeta) return 'N/A'
-  return `${projectStore.videoMeta.width} × ${projectStore.videoMeta.height}`
+  if (!videoStore.videoMeta) return 'N/A'
+  return `${videoStore.videoMeta.width} × ${videoStore.videoMeta.height}`
 })
-const ocrEngine = computed(() => projectStore.extractOptions.ocrEngine)
+const ocrEngine = computed(() => extractionStore.extractOptions.ocrEngine)
 
 const memoryUsage = computed(() => {
   const subCount = subtitleStore.totalCount
@@ -32,7 +34,7 @@ const statusText = computed(() => {
     <div class="status-left">
       <span class="status-item">
         <span class="label">帧:</span>
-        <span class="value mono">#{{ projectStore.currentFrame }}</span>
+        <span class="value mono">#{{ videoStore.currentFrame }}</span>
       </span>
       <span class="divider" />
       <span class="status-item">

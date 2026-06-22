@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { openFileDialog, saveFileDialog, writeTextFile } from '@/utils/file'
 import { useVideoPlayer } from '@/composables/usePlayer'
 import { getVideoMetadata } from '@/utils/video'
 import { useTheme } from '@/composables/useTheme'
 import { useNotification } from '@/composables/useNotification'
-import AboutDialog from '@/components/common/AboutDialog.vue'
+import AboutDialog from '@/components/common/about-dialog.vue'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 const subtitleStore = useSubtitleStore()
 const { error: notifyError } = useNotification()
 const { currentTheme, toggleTheme } = useTheme()
@@ -34,7 +34,7 @@ async function handleOpenFile() {
     isBusy.value = true
 
     const metadata = await getVideoMetadata(filePath)
-    projectStore.setVideo(filePath, metadata)
+    videoStore.setVideo(filePath, metadata)
 
     const filename = filePath.split('/').pop() || filePath.split('\\').pop() || 'video'
     projectName.value = filename.replace(/\.[^.]+$/, '')
@@ -74,7 +74,7 @@ async function handleSave() {
     const projectData = JSON.stringify({
       version: '3.6.0',
       projectName: projectName.value,
-      videoPath: projectStore.videoPath,
+      videoPath: videoStore.videoPath,
       subtitles
     }, null, 2)
 
@@ -264,7 +264,7 @@ function openAbout() {
     </div>
   </header>
 
-  <AboutDialog v-model:open="showAbout" />
+  <about-dialog v-model:open="showAbout" />
 </template>
 
 <style lang="scss" scoped>

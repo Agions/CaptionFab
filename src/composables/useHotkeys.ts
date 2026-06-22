@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useVideoPlayer } from './usePlayer'
 
@@ -13,7 +13,7 @@ export interface KeyboardShortcut {
 }
 
 export function useKeyboardShortcuts() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
   const subtitleStore = useSubtitleStore()
   const videoPlayer = useVideoPlayer()
   
@@ -31,16 +31,16 @@ export function useKeyboardShortcuts() {
     { key: 'ArrowRight', action: () => videoPlayer.seekRelative(1), description: '前进1帧' },
     { key: 'ArrowLeft', shift: true, action: () => videoPlayer.seekRelative(-10), description: '后退10帧' },
     { key: 'ArrowRight', shift: true, action: () => videoPlayer.seekRelative(10), description: '前进10帧' },
-    { key: 'Home', action: () => projectStore.setCurrentFrame(0), description: '跳到开头' },
+    { key: 'Home', action: () => videoPlayer.seekToFrame(0), description: '跳到开头' },
     { key: 'End', action: () => {
-      if (projectStore.videoMeta) {
-        projectStore.setCurrentFrame(projectStore.videoMeta.totalFrames - 1)
+      if (videoStore.videoMeta) {
+        videoStore.setCurrentFrame(videoStore.videoMeta.totalFrames - 1)
       }
     }, description: '跳到结尾' },
     
     // Volume
-    { key: 'ArrowUp', action: () => videoPlayer.setVolume(projectStore.volume + 0.1), description: '增加音量' },
-    { key: 'ArrowDown', action: () => videoPlayer.setVolume(projectStore.volume - 0.1), description: '减小音量' },
+    { key: 'ArrowUp', action: () => videoPlayer.setVolume(videoStore.volume + 0.1), description: '增加音量' },
+    { key: 'ArrowDown', action: () => videoPlayer.setVolume(videoStore.volume - 0.1), description: '减小音量' },
     { key: 'm', action: () => videoPlayer.toggleMute(), description: '静音' },
     
     // Subtitles
@@ -65,7 +65,7 @@ export function useKeyboardShortcuts() {
         const next = subtitleStore.subtitles.find(s => s.startFrame > current.startFrame)
         if (next) {
           subtitleStore.selectSubtitle(next.id)
-          projectStore.setCurrentFrame(next.startFrame)
+          videoStore.setCurrentFrame(next.startFrame)
         }
       }
     }, description: '下一条字幕' },
@@ -76,7 +76,7 @@ export function useKeyboardShortcuts() {
         const prev = [...subtitleStore.subtitles].reverse().find(s => s.startFrame < current.startFrame)
         if (prev) {
           subtitleStore.selectSubtitle(prev.id)
-          projectStore.setCurrentFrame(prev.startFrame)
+          videoStore.setCurrentFrame(prev.startFrame)
         }
       }
     }, description: '上一条字幕' },

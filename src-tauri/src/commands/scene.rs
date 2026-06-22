@@ -103,7 +103,7 @@ pub async fn detect_scenes(
 
     let path = Path::new(&video_path);
     if !path.exists() {
-        return Err(format!("File not found: {}", video_path));
+        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, video_path));
     }
 
     let fps = match get_video_metadata(video_path.clone()).await {

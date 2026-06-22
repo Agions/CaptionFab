@@ -3,10 +3,10 @@ import { computed } from 'vue'
 import type { SubtitleItem } from '@/types/subtitle'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useSubtitleList } from '@/composables/useSubList'
-import CardTimeDisplay from './card/CardTimeDisplay.vue'
-import CardConfidenceBadge from './card/CardConfidenceBadge.vue'
-import CardThumbnailStrip from './card/CardThumbnailStrip.vue'
-import CardEditForm from './card/CardEditForm.vue'
+import CardTimeDisplay from './card/card-time-display.vue'
+import CardConfidenceBadge from './card/card-confidence-badge.vue'
+import CardThumbnailStrip from './card/card-thumbnail-strip.vue'
+import CardEditForm from './card/card-edit-form.vue'
 
 interface Props {
   subtitle: SubtitleItem
@@ -93,10 +93,10 @@ function handleEditStart(e: Event) {
     <div class="card-header">
       <div class="card-meta">
         <span class="card-index">{{ subtitle.index }}</span>
-        <CardTimeDisplay :start="subtitle.startTime" :end="subtitle.endTime" :format="formatTimeShort" />
+        <card-time-display :start="subtitle.startTime" :end="subtitle.endTime" :format="formatTimeShort" />
       </div>
       <div class="card-badges">
-        <CardConfidenceBadge :confidence="subtitle.confidence" />
+        <card-confidence-badge :confidence="subtitle.confidence" />
         <span class="frame-tag">#{{ subtitle.startFrame }}</span>
       </div>
     </div>
@@ -107,10 +107,10 @@ function handleEditStart(e: Event) {
     </p>
 
     <!-- Thumbnail strip -->
-    <CardThumbnailStrip v-if="isHovered && subtitle.thumbnailUrls?.length" :urls="subtitle.thumbnailUrls.slice(0, 5)" />
+    <card-thumbnail-strip v-if="isHovered && subtitle.thumbnailUrls?.length" :urls="subtitle.thumbnailUrls.slice(0, 5)" />
 
     <!-- Edit form -->
-    <CardEditForm
+    <card-edit-form
       v-if="isEditing"
       :edit-text="editText"
       :edit-start-time="editStartTime"

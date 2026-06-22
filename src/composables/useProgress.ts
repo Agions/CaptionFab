@@ -3,18 +3,20 @@
  * Extracted from SidePanel.vue Progress tab
  */
 import { computed } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
+import { useExtractionStore } from '@/stores/extraction'
 import { useSubtitleStore } from '@/stores/subtitle'
 
 export function useProgress() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
+  const extractionStore = useExtractionStore()
   const subtitleStore = useSubtitleStore()
 
   // Computed stats
-  const fps = computed(() => projectStore.videoMeta?.fps ?? 0)
+  const fps = computed(() => videoStore.videoMeta?.fps ?? 0)
   const resolution = computed(() => {
-    if (!projectStore.videoMeta) return 'N/A'
-    return `${projectStore.videoMeta.width} × ${projectStore.videoMeta.height}`
+    if (!videoStore.videoMeta) return 'N/A'
+    return `${videoStore.videoMeta.width} × ${videoStore.videoMeta.height}`
   })
 
   const memoryUsage = computed(() => {
@@ -23,8 +25,8 @@ export function useProgress() {
   })
 
   const extractSpeed = computed(() => {
-    if (!projectStore.videoMeta || !projectStore.extractOptions.frameInterval) return '0 fps'
-    const effectiveFps = fps.value / projectStore.extractOptions.frameInterval
+    if (!videoStore.videoMeta || !extractionStore.extractOptions.frameInterval) return '0 fps'
+    const effectiveFps = fps.value / extractionStore.extractOptions.frameInterval
     return `${effectiveFps.toFixed(1)} fps`
   })
 

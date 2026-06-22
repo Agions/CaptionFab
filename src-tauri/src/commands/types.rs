@@ -95,3 +95,29 @@ impl std::fmt::Display for ExportFormat {
         }
     }
 }
+
+// ── OCR types ───────────────────────────────────────────────────────────────
+
+/// A single OCR detection result.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OCRResult {
+    pub text: String,
+    pub confidence: f32,
+    pub bbox: BBox,
+}
+
+/// Bounding box for a detected text region.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BBox {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+/// Supported OCR language entry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OCRLang {
+    pub code: String,
+    pub name: String,
+}

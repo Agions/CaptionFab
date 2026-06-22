@@ -2,17 +2,17 @@
 import { computed, ref } from 'vue'
 import { useOCR } from '@/composables/useOCR'
 import { useSubtitleStore } from '@/stores/subtitle'
-import { useProjectStore } from '@/stores/project'
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
+import { useExtractionStore } from '@/stores/extraction'
+import ToggleSwitch from '@/components/common/toggle-switch.vue'
 import { PROCESSING_MODES } from '@/types/video'
 import type { ProcessingMode } from '@/types/video'
 
-const projectStore = useProjectStore()
+const extractionStore = useExtractionStore()
 
 const selectedMode = computed({
-  get: () => projectStore.extractOptions.processingMode,
+  get: () => extractionStore.extractOptions.processingMode,
   set: (val: ProcessingMode) => {
-    projectStore.extractOptions.processingMode = val
+    extractionStore.extractOptions.processingMode = val
   },
 })
 
@@ -43,23 +43,23 @@ const belowThresholdCount = computed(() =>
 
 // AI Correction settings — direct store binding
 const aiCorrection = computed({
-  get: () => projectStore.extractOptions.aiCorrection,
-  set: (val: boolean) => { projectStore.extractOptions.aiCorrection = val },
+  get: () => extractionStore.extractOptions.aiCorrection,
+  set: (val: boolean) => { extractionStore.extractOptions.aiCorrection = val },
 })
 
 const aiEndpoint = computed({
-  get: () => projectStore.extractOptions.aiEndpoint,
-  set: (val: string) => { projectStore.extractOptions.aiEndpoint = val },
+  get: () => extractionStore.extractOptions.aiEndpoint,
+  set: (val: string) => { extractionStore.extractOptions.aiEndpoint = val },
 })
 
 const aiApiKey = computed({
-  get: () => projectStore.extractOptions.aiApiKey,
-  set: (val: string) => { projectStore.extractOptions.aiApiKey = val },
+  get: () => extractionStore.extractOptions.aiApiKey,
+  set: (val: string) => { extractionStore.extractOptions.aiApiKey = val },
 })
 
 const aiModel = computed({
-  get: () => projectStore.extractOptions.aiModel,
-  set: (val: string) => { projectStore.extractOptions.aiModel = val },
+  get: () => extractionStore.extractOptions.aiModel,
+  set: (val: string) => { extractionStore.extractOptions.aiModel = val },
 })
 </script>
 
@@ -160,7 +160,7 @@ const aiModel = computed({
         <button
           v-for="lang in languageOptions"
           :key="lang.value"
-          :class="['lang-chip', { active: projectStore.extractOptions.languages.includes(lang.value) }]"
+          :class="['lang-chip', { active: extractionStore.extractOptions.languages.includes(lang.value) }]"
           @click="setLanguage(lang.value)"
         >
           <span>{{ lang.abbr }}</span>
@@ -192,7 +192,7 @@ const aiModel = computed({
             <span class="option-name">多通道 OCR</span>
             <span class="option-hint">多次识别取最优结果</span>
           </div>
-          <ToggleSwitch v-model="multiPass" />
+          <toggle-switch v-model="multiPass" />
         </div>
 
         <!-- Text Post-processing -->
@@ -201,7 +201,7 @@ const aiModel = computed({
             <span class="option-name">文字后处理</span>
             <span class="option-hint">自动修正标点、繁简转换</span>
           </div>
-          <ToggleSwitch v-model="postProcess" />
+          <toggle-switch v-model="postProcess" />
         </div>
 
         <!-- Merge Similar Subtitles -->
@@ -210,7 +210,7 @@ const aiModel = computed({
             <span class="option-name">字幕合并</span>
             <span class="option-hint">自动合并相似相邻字幕</span>
           </div>
-          <ToggleSwitch v-model="mergeSubtitles" />
+          <toggle-switch v-model="mergeSubtitles" />
         </div>
 
         <!-- Merge Threshold -->
@@ -294,7 +294,7 @@ const aiModel = computed({
           </svg>
           <span>AI 校对</span>
         </div>
-        <ToggleSwitch v-model="aiCorrection" />
+        <toggle-switch v-model="aiCorrection" />
       </div>
 
       <div v-if="aiCorrection" class="ai-settings">

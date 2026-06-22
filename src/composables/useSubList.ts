@@ -12,7 +12,7 @@
 
 import { ref, computed, shallowRef } from 'vue'
 import { useSubtitleStore } from '@/stores/subtitle'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { formatTimeShort, formatTimeSrt, parseTime } from '@/utils/time'
 import { getConfidenceHeatmap } from '@/utils/confidence'
 import type { SubtitleItem } from '@/types/subtitle'
@@ -21,7 +21,7 @@ const BATCH_SIZE = 50
 
 export function useSubtitleList() {
   const subtitleStore = useSubtitleStore()
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
 
   // ── Pagination ────────────────────────────────────────────
   const displayCount = ref(100)
@@ -81,7 +81,7 @@ export function useSubtitleList() {
     subtitleStore.selectSubtitle(id)
     const sub = subtitleStore.getSubtitleById(id)
     if (sub) {
-      projectStore.setCurrentFrame(sub.startFrame)
+      videoStore.setCurrentFrame(sub.startFrame)
     }
   }
 

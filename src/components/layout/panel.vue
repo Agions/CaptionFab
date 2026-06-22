@@ -6,12 +6,14 @@ import { useTabNavigation } from '@/composables/useTabNavigation'
 import { usePanelSections } from '@/composables/usePanelSections'
 
 // Tab components
-import FilesTab from './tabs/Files.vue'
-import ProgressTab from './tabs/Progress.vue'
-import ROITab from './tabs/ROI.vue'
-import OCRTab from './tabs/OCR.vue'
-import ExportTab from './tabs/Export.vue'
-import SettingsTab from './tabs/Settings.vue'
+import FilesTab from './tabs/files.vue'
+import ProgressTab from './tabs/progress.vue'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars — used in template
+import ROITab from './tabs/roi.vue'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars — used in template
+import OCRTab from './tabs/ocr.vue'
+import ExportTab from './tabs/export.vue'
+import SettingsTab from './tabs/settings.vue'
 
 const settingsStore = useSettingsStore()
 const { checkDependencies } = useSystemCheck()
@@ -91,12 +93,12 @@ defineExpose({
 
     <!-- Tab Content -->
     <div class="tab-content">
-      <FilesTab v-if="activeTab === 'files'" />
-      <ProgressTab v-else-if="activeTab === 'progress'" />
-      <ROITab v-else-if="activeTab === 'roi'" />
-      <OCRTab v-else-if="activeTab === 'ocr'" />
-      <ExportTab v-else-if="activeTab === 'export'" />
-      <SettingsTab v-else-if="activeTab === 'settings'" />
+      <files-tab v-if="activeTab === 'files'" />
+      <progress-tab v-else-if="activeTab === 'progress'" />
+      <roi-tab v-else-if="activeTab === 'roi'" />
+      <ocr-tab v-else-if="activeTab === 'ocr'" />
+      <export-tab v-else-if="activeTab === 'export'" />
+      <settings-tab v-else-if="activeTab === 'settings'" />
     </div>
   </aside>
 </template>

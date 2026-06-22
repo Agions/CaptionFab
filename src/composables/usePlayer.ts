@@ -1,5 +1,5 @@
 import { ref, onUnmounted } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { CANVAS_CONTEXT_2D, MIME_IMAGE_PNG } from '@/utils/constants'
 import { clamp } from '@/utils/math'
 
@@ -26,7 +26,7 @@ const KEYBOARD_SHORTCUTS = {
 } as const
 
 export function useVideoPlayer() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
 
   const videoRef = ref<HTMLVideoElement | null>(null)
   const isReady = ref(false)
@@ -65,15 +65,15 @@ export function useVideoPlayer() {
     })
 
     _addListener(element, VIDEO_EVENTS.PLAY, () => {
-      projectStore.setPlaying(true)
+      videoStore.setPlaying(true)
     })
 
     _addListener(element, VIDEO_EVENTS.PAUSE, () => {
-      projectStore.setPlaying(false)
+      videoStore.setPlaying(false)
     })
 
     _addListener(element, VIDEO_EVENTS.ENDED, () => {
-      projectStore.setPlaying(false)
+      videoStore.setPlaying(false)
     })
 
     // Throttled frame update — prevents store updates on every timeupdate event
@@ -89,11 +89,11 @@ export function useVideoPlayer() {
         // requestVideoFrameCallback 的 metadata 类型在部分 TS 版本中未定义
         const videoEl = element as HTMLVideoElement & { requestVideoFrameCallback?: (cb: (now: DOMHighResTimeStamp, metadata: unknown) => void) => number }
         const callback = (_now: DOMHighResTimeStamp, _metadata: unknown) => {
-          if (projectStore.videoMeta && element.currentTime) {
-            const frame = Math.floor(element.currentTime * projectStore.videoMeta.fps)
+          if (videoStore.videoMeta && element.currentTime) {
+            const frame = Math.floor(element.currentTime * videoStore.videoMeta.fps)
             if (frame !== _lastFrameTime) {
               _lastFrameTime = frame
-              projectStore.setCurrentFrame(frame)
+              videoStore.setCurrentFrame(frame)
             }
           }
           if (_rvfcActive && !element.paused) {
@@ -114,11 +114,11 @@ export function useVideoPlayer() {
       if (_rafPending) return
       _rafPending = true
       requestAnimationFrame(() => {
-        if (projectStore.videoMeta && element.currentTime) {
-          const frame = Math.floor(element.currentTime * projectStore.videoMeta.fps)
+        if (videoStore.videoMeta && element.currentTime) {
+          const frame = Math.floor(element.currentTime * videoStore.videoMeta.fps)
           if (frame !== _lastFrameTime) {
             _lastFrameTime = frame
-            projectStore.setCurrentFrame(frame)
+            videoStore.setCurrentFrame(frame)
           }
         }
         _rafPending = false
@@ -169,7 +169,7 @@ export function useVideoPlayer() {
   }
 
   function togglePlay() {
-    if (projectStore.isPlaying) {
+    if (videoStore.isPlaying) {
       pause()
     } else {
       play()
@@ -185,14 +185,14 @@ export function useVideoPlayer() {
   }
 
   function seekToFrame(frame: number) {
-    if (projectStore.videoMeta) {
-      const time = frame / projectStore.videoMeta.fps
+    if (videoStore.videoMeta) {
+      const time = frame / videoStore.videoMeta.fps
       seek(time)
     }
   }
 
   function seekRelative(deltaFrames: number) {
-    const newFrame = projectStore.currentFrame + deltaFrames
+    const newFrame = videoStore.currentFrame + deltaFrames
     seekToFrame(clamp(newFrame, 0))
   }
 
@@ -200,14 +200,14 @@ export function useVideoPlayer() {
   function setVolume(volume: number) {
     if (videoRef.value) {
       videoRef.value.volume = clamp(volume, 0, 1)
-      projectStore.volume = videoRef.value.volume
+      videoStore.volume = videoRef.value.volume
     }
   }
 
   function toggleMute() {
     if (videoRef.value) {
       videoRef.value.muted = !videoRef.value.muted
-      projectStore.isMuted = videoRef.value.muted
+      videoStore.isMuted = videoRef.value.muted
     }
   }
 
@@ -265,11 +265,11 @@ export function useVideoPlayer() {
         break
       case KEYBOARD_SHORTCUTS.ARROW_UP:
         e.preventDefault()
-        setVolume(projectStore.volume + 0.1)
+        setVolume(videoStore.volume + 0.1)
         break
       case KEYBOARD_SHORTCUTS.ARROW_DOWN:
         e.preventDefault()
-        setVolume(projectStore.volume - 0.1)
+        setVolume(videoStore.volume - 0.1)
         break
       case KEYBOARD_SHORTCUTS.MUTE:
         toggleMute()

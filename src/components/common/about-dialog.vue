@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Modal from '@/components/common/Modal.vue'
+import Modal from '@/components/common/modal.vue'
 
 interface Props {
   open: boolean
@@ -35,7 +35,7 @@ function close() {
 </script>
 
 <template>
-  <Modal :open="open" title="关于 CaptionFab" size="md" @close="close">
+  <modal :open="open" title="关于 CaptionFab" size="md" @close="close">
     <div class="about-content">
       <div class="about-header">
         <div class="app-icon">🎬</div>
@@ -89,7 +89,7 @@ function close() {
         <p>MIT License</p>
       </div>
     </div>
-  </Modal>
+  </modal>
 </template>
 
 <style lang="scss" scoped>

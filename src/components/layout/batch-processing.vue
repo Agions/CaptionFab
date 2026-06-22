@@ -3,9 +3,9 @@ import { ref, computed } from 'vue'
 import { useBatchProcessor, type BatchOptions } from '@/composables/useBatchProcessor'
 import { useFileDrop } from '@/composables/useFileDrop'
 import { formatETA } from '@/utils/time'
-import BatchDropZone from './batch/BatchDropZone.vue'
-import JobList from './batch/JobList.vue'
-import JobConfigPanel from './batch/JobConfigPanel.vue'
+import BatchDropZone from './batch/batch-drop-zone.vue'
+import JobList from './batch/job-list.vue'
+import JobConfigPanel from './batch/job-config-panel.vue'
 
 const {
   jobs,
@@ -98,19 +98,19 @@ defineExpose({ open: openDialog, close: closeDialog })
     <div class="batch-body">
       <!-- Left: Files -->
       <div class="files-col">
-        <BatchDropZone
+        <batch-drop-zone
           v-model:drop-zone-active="dropZoneActive"
           :selected-files="selectedFiles"
           @drop="handleFileDrop"
           @click="handleFileSelect"
           @remove="removeFile"
         />
-        <JobConfigPanel v-model="options" />
+        <job-config-panel v-model="options" />
       </div>
 
       <!-- Right: Jobs Queue -->
       <div class="jobs-col">
-        <JobList :jobs="jobs" :stats="stats" :is-processing="isProcessing" />
+        <job-list :jobs="jobs" :stats="stats" :is-processing="isProcessing" />
       </div>
     </div>
 

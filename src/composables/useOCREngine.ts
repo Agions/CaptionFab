@@ -16,7 +16,7 @@
 import { ref, shallowRef } from 'vue'
 import type { OCRConfig, OCREngine } from '@/types/video'
 import { CANVAS_CONTEXT_2D, ERR_OCR_NOT_READY, MIME_IMAGE_PNG } from '@/utils/constants'
-import { useImagePreprocessor } from './usePreprocessor'
+import { preprocessForSubtitles, preprocessForGeneralText } from '@/utils/image-preprocessor'
 import { getCalibrator } from '@/core'
 import { langToScript } from '@/utils/text'
 
@@ -119,7 +119,6 @@ export function useOCREngine() {
   const isProcessing = ref(false)
   const progress = ref(0)
   const error = ref<string | null>(null)
-  const preprocessor = useImagePreprocessor()
   const calibrator = getCalibrator()
 
   const worker = shallowRef<TesseractWorkerInterface | null>(null)
@@ -167,8 +166,8 @@ export function useOCREngine() {
   ): ImageData {
     if (mode === 'none') return imageData
     const result = mode === 'subtitle'
-      ? preprocessor.preprocessForSubtitles(imageData)
-      : preprocessor.preprocessForGeneralText(imageData)
+      ? preprocessForSubtitles(imageData)
+      : preprocessForGeneralText(imageData)
     return result.processedData
   }
 

@@ -13,8 +13,9 @@
  */
 
 import { ref } from 'vue'
-import { useProjectStore } from '@/stores/project'
 import { useSubtitleStore } from '@/stores/subtitle'
+import { useVideoStore } from '@/stores/video'
+import { useExtractionStore } from '@/stores/extraction'
 import { ERR_NO_VIDEO } from '@/utils/constants'
 import { PROCESSING_MODES } from '@/types/video'
 import { useVideoPlayer } from './usePlayer'
@@ -27,8 +28,7 @@ import {
   getCalibrator,
 } from '@/core'
 import { langToScript } from '@/utils/text'
-import { extractFrameMetrics } from '@/utils/detection'
-import { normalizeROI } from '@/utils/image'
+import { isRoiRegionLikelyEmpty } from '@/utils/detection'
 import { AICorrector } from '@/core/AICorrector'
 import type { ROI } from '@/types/video'
 
@@ -65,23 +65,9 @@ function createSubtitleItem(
  * 优化：复用 extractFrameMetrics 消除重复的像素遍历+方差计算逻辑。
  * Exported for unit testing.
  */
-export function isRoiRegionLikelyEmpty(
-  frameData: { data: Uint8ClampedArray; width: number; height: number },
-  roi: { x: number; y: number; width: number; height: number },
-  threshold = 100,
-): boolean {
-  const { width, height } = frameData
-  // ROI 完全越界时直接返回
-  // 优化：复用 @/utils/image 的 normalizeROI，消除重复实现
-  const { x0, y0, xEnd, yEnd } = normalizeROI(roi, width, height)
-  if (xEnd <= x0 || yEnd <= y0) return false
-
-  const metrics = extractFrameMetrics(frameData, roi)
-  return metrics.variance < threshold
-}
-
 export function useSubtitleExtractor() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
+  const extractionStore = useExtractionStore()
   const subtitleStore = useSubtitleStore()
   const videoPlayer = useVideoPlayer()
   const ocrEngine = useOCREngine()
@@ -100,12 +86,12 @@ export function useSubtitleExtractor() {
 
   // ─── 提取主循环 ───────────────────────────────────────────
   async function startExtraction() {
-    if (!projectStore.videoMeta) {
+    if (!videoStore.videoMeta) {
       throw new Error(ERR_NO_VIDEO)
     }
 
-    const opts = projectStore.extractOptions
-    const roi = projectStore.selectedROI
+    const opts = extractionStore.extractOptions
+    const roi = videoStore.selectedROI
 
     // Resolve processing mode presets
     const modeConfig = PROCESSING_MODES[opts.processingMode]
@@ -132,10 +118,10 @@ export function useSubtitleExtractor() {
     isExtracting.value = true
     isPaused.value = false
     extractedCount.value = 0
-    totalFrames.value = projectStore.videoMeta.totalFrames
+    totalFrames.value = videoStore.videoMeta.totalFrames
 
     // 提取循环外预计算（避免每帧重复计算）
-    const fps = projectStore.videoMeta.fps
+    const fps = videoStore.videoMeta.fps
     const lang = opts.languages[0]
     const confThreshold = effectiveConfThreshold
 

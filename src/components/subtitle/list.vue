@@ -15,12 +15,12 @@ import { useSubtitleStore } from '@/stores/subtitle'
 import { useSubtitleList } from '@/composables/useSubList'
 
 // 子组件
-import Card from './Card.vue'
-import SkeletonCard from './SkeletonCard.vue'
-import EmptyState from './EmptyState.vue'
-import ConfFilter from './ConfFilter.vue'
-import BatchBar from './BatchBar.vue'
-import ListFooter from './ListFooter.vue'
+import Card from './card.vue'
+import SkeletonCard from './skeleton-card.vue'
+import EmptyState from './empty-state.vue'
+import ConfFilter from './conf-filter.vue'
+import BatchBar from './batch-bar.vue'
+import ListFooter from './list-footer.vue'
 
 const subtitleStore = useSubtitleStore()
 const {
@@ -113,18 +113,18 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
     </div>
 
     <!-- ── Confidence Filter ──────────────────────── -->
-    <ConfFilter v-if="totalCount > 0" />
+    <conf-filter v-if="totalCount > 0" />
 
     <!-- ── Subtitle List ──────────────────────────── -->
     <div class="subtitle-list" role="list">
       <!-- Skeleton -->
       <template v-if="subtitleStore.isExtracting">
-        <SkeletonCard v-for="i in 5" :key="i" />
+        <skeleton-card v-for="i in 5" :key="i" />
       </template>
 
       <!-- Cards — Performance: v-memo skips re-render when subtitle data unchanged -->
       <template v-else>
-        <Card
+        <card
           v-for="sub in visibleSubtitles"
           :key="sub.id"
           :subtitle="sub"
@@ -145,7 +145,7 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
       </template>
 
       <!-- Empty state -->
-      <EmptyState
+      <empty-state
         v-if="!subtitleStore.isExtracting && filteredCount === 0"
         :has-search-query="!!subtitleStore.searchQuery"
       />
@@ -154,10 +154,10 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
     <!-- ── Footer ─────────────────────────────────── -->
     <footer class="panel-footer">
       <!-- Batch action -->
-      <BatchBar />
+      <batch-bar />
 
       <!-- Format toggles + delete -->
-      <ListFooter />
+      <list-footer />
     </footer>
   </aside>
 </template>

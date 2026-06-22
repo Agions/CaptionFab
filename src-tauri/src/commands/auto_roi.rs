@@ -272,7 +272,7 @@ pub(crate) async fn extract_frame_for_detection(
         std::time::Duration::from_secs(30),
     )
     .await
-    .map_err(|e| format!("Failed to run ffmpeg: {}", e))?;
+    .map_err(|e| format!("{}: {e}", crate::commands::errors::FFMPEG_FAILED))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -303,7 +303,7 @@ pub async fn auto_detect_roi(
 
     let path = Path::new(&video_path);
     if !path.exists() {
-        return Err(format!("File not found: {}", video_path));
+        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, video_path));
     }
 
     // Extract a frame at the given timestamp

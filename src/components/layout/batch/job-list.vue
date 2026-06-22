@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { BatchJob } from '@/composables/useBatchProcessor'
-import JobCard from './JobCard.vue'
+import JobCard from './job-card.vue'
 
 interface Props {
   jobs: BatchJob[]
@@ -60,7 +60,7 @@ const s = computed(() => ({
     <!-- Job list -->
     <div class="job-list" v-if="jobs.length > 0">
       <transition-group name="job-list" tag="div">
-        <JobCard
+        <job-card
           v-for="job in jobs"
           :key="job.id"
           :job="job"

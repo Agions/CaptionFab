@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 
 export interface DetectedROI {
   x: number
@@ -17,7 +17,7 @@ export interface DetectedROI {
 }
 
 export function useAutoROI() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
   const isDetecting = ref(false)
   const detectedROI = ref<DetectedROI | null>(null)
   const error = ref<string | null>(null)
@@ -51,7 +51,7 @@ export function useAutoROI() {
   function applyDetectedROI(): void {
     if (!detectedROI.value) return
 
-    projectStore.updateROI({
+    videoStore.updateROI({
       id: 'custom',
       name: '自动检测',
       type: 'custom',

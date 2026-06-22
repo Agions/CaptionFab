@@ -2,9 +2,9 @@
 import { watch } from 'vue'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useSubtitleList } from '@/composables/useSubList'
-import SubtitleListFooter from './ListFooter.vue'
-import BatchActionBar from './BatchActionBar.vue'
-import SearchBar from './list/SearchBar.vue'
+import SubtitleListFooter from './list-footer.vue'
+import BatchActionBar from './batch-action-bar.vue'
+import SearchBar from './list/search-bar.vue'
 
 const subtitleStore = useSubtitleStore()
 const {
@@ -76,7 +76,7 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
     </header>
 
     <!-- Search -->
-    <SearchBar />
+    <search-bar />
 
     <!-- Confidence Filter -->
     <slot v-if="totalCount > 0" name="confidence-filter" />
@@ -107,8 +107,8 @@ watch(() => subtitleStore.confidenceFilter, resetDisplayCount)
 
     <!-- Footer -->
     <footer class="panel-footer">
-      <BatchActionBar />
-      <SubtitleListFooter />
+      <batch-action-bar />
+      <subtitle-list-footer />
     </footer>
   </aside>
 </template>

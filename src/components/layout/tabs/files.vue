@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 </script>
 
 <template>
@@ -11,7 +11,7 @@ const projectStore = useProjectStore()
         <span class="section-title">当前视频</span>
       </div>
 
-      <div v-if="projectStore.hasVideo" class="video-card">
+      <div v-if="videoStore.hasVideo" class="video-card">
         <!-- File icon -->
         <div class="video-icon">
           <svg viewBox="0 0 40 40" fill="none">
@@ -25,23 +25,23 @@ const projectStore = useProjectStore()
         <div class="video-meta">
           <div class="meta-row">
             <span class="meta-label">文件名</span>
-            <span class="meta-value truncate">{{ projectStore.videoPath?.split('/').pop() ?? '-' }}</span>
+            <span class="meta-value truncate">{{ videoStore.videoPath?.split('/').pop() ?? '-' }}</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">分辨率</span>
-            <span class="meta-value">{{ projectStore.videoMeta?.width }} × {{ projectStore.videoMeta?.height }}</span>
+            <span class="meta-value">{{ videoStore.videoMeta?.width }} × {{ videoStore.videoMeta?.height }}</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">时长</span>
-            <span class="meta-value">{{ projectStore.duration.toFixed(1) }}s</span>
+            <span class="meta-value">{{ videoStore.duration.toFixed(1) }}s</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">帧率</span>
-            <span class="meta-value">{{ projectStore.videoMeta?.fps }} fps</span>
+            <span class="meta-value">{{ videoStore.videoMeta?.fps }} fps</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">总帧数</span>
-            <span class="meta-value">{{ projectStore.videoMeta?.totalFrames?.toLocaleString() }}</span>
+            <span class="meta-value">{{ videoStore.videoMeta?.totalFrames?.toLocaleString() }}</span>
           </div>
         </div>
       </div>

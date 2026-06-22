@@ -41,8 +41,8 @@ pub struct SystemCheckResult {
     pub recommendations: Vec<String>,
 }
 
-fn system_dependencies() -> &'static [SystemDependency; 5] {
-    static DEPS: OnceLock<[SystemDependency; 5]> = OnceLock::new();
+fn system_dependencies() -> &'static [SystemDependency] {
+    static DEPS: OnceLock<[SystemDependency; 4]> = OnceLock::new();
     DEPS.get_or_init(|| [
         SystemDependency {
             name: "ffmpeg".to_string(),
@@ -71,16 +71,6 @@ fn system_dependencies() -> &'static [SystemDependency; 5] {
             required: false,
             version_args: vec!["--version".to_string()],
             version_pattern: "ImageMagick".to_string(),
-        },
-        SystemDependency {
-            name: "PaddleOCR".to_string(),
-            command: "python3".to_string(),
-            required: false,
-            version_args: vec![
-                "-c".to_string(),
-                "import paddleocr; print('paddleocr', paddleocr.__version__)".to_string(),
-            ],
-            version_pattern: "paddleocr".to_string(),
         },
     ])
 }

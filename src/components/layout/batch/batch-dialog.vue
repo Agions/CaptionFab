@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useBatchProcessor, type BatchOptions } from '@/composables/useBatchProcessor'
-import JobConfigPanel from './JobConfigPanel.vue'
-import BatchProgressDialog from './BatchProgressDialog.vue'
+import JobConfigPanel from './job-config-panel.vue'
+import BatchProgressDialog from './batch-progress-dialog.vue'
 
 interface Props {
   isOpen: boolean
@@ -69,7 +69,7 @@ function handleClose() {
           </div>
 
           <div class="modal-body">
-            <JobConfigPanel v-model="batchOptions" />
+            <job-config-panel v-model="batchOptions" />
 
             <!-- Processing Mode -->
             <div class="option-group">
@@ -109,7 +109,7 @@ function handleClose() {
     </transition>
   </teleport>
 
-  <BatchProgressDialog
+  <batch-progress-dialog
     :is-open="showProgressDialog"
     :progress="overallProgress"
     :stats="{ total: stats.total, completed: stats.completed, failed: stats.failed }"

@@ -3,17 +3,17 @@ import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 import { useKeyboardShortcuts } from '@/composables/useHotkeys'
 import { useSubtitleExtractor } from '@/composables/useExtractor'
-import Toolbar from '@/components/layout/Toolbar.vue'
-import Panel from '@/components/layout/Panel.vue'
-import VideoPreview from '@/components/layout/VideoPreview.vue'
-import SubtitleList from '@/components/subtitle/SubtitleList.vue'
-import TimelineController from '@/components/video/TimelineController.vue'
-import StatusBar from '@/components/layout/StatusBar.vue'
-import Shortcuts from '@/components/common/Shortcuts.vue'
-import Export from '@/components/subtitle/SubExport.vue'
-import BatchProcessing from '@/components/layout/BatchProcessing.vue'
-import SubToast from '@/components/common/SubToast.vue'
-import Toast from '@/components/common/Toast.vue'
+import Toolbar from '@/components/layout/toolbar.vue'
+import Panel from '@/components/layout/panel.vue'
+import VideoPreview from '@/components/layout/video-preview.vue'
+import SubtitleList from '@/components/subtitle/subtitle-list.vue'
+import TimelineController from '@/components/video/timeline-controller.vue'
+import StatusBar from '@/components/layout/status-bar.vue'
+import Shortcuts from '@/components/common/shortcuts.vue'
+import Export from '@/components/subtitle/sub-export.vue'
+import BatchProcessing from '@/components/layout/batch-processing.vue'
+import SubToast from '@/components/common/sub-toast.vue'
+import Toast from '@/components/common/toast.vue'
 import { useSubtitleStore } from '@/stores/subtitle'
 
 // Initialize theme
@@ -84,30 +84,30 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container">
-    <Toolbar />
+    <toolbar />
     
     <div class="app-main">
-      <Panel />
+      <panel />
       <div class="main-content">
-        <VideoPreview class="video-area" />
-        <TimelineController v-if="showTimeline" class="timeline-area" />
+        <video-preview class="video-area" />
+        <timeline-controller v-if="showTimeline" class="timeline-area" />
       </div>
-      <SubtitleList />
+      <subtitle-list />
     </div>
     
-    <StatusBar />
+    <status-bar />
     
-    <Shortcuts ref="shortcutsHelpRef" />
-    <Export ref="exportDialogRef" />
-    <BatchProcessing ref="batchProcessRef" />
-    <SubToast
+    <shortcuts ref="shortcutsHelpRef" />
+    <export ref="exportDialogRef" />
+    <batch-processing ref="batchProcessRef" />
+    <sub-toast
       :visible="toastVisible"
       :text="toastText"
       :index="toastIndex"
       :total="toastTotal"
       @hide="toastVisible = false"
     />
-    <Toast />
+    <toast />
   </div>
 </template>
 

@@ -244,3 +244,23 @@ export class SceneHysteresis<S> {
     this.inSceneChange = false
   }
 }
+
+// ─── Legacy Single-Frame Empty Detection ────────────────────────────
+
+/**
+ * 检测 ROI 区域是否为纯色（方差低于阈值）。
+ * 单帧快速检测，用于初始化/预处理场景。
+ * Exported for unit testing.
+ */
+export function isRoiRegionLikelyEmpty(
+  frameData: { data: Uint8ClampedArray; width: number; height: number },
+  roi: { x: number; y: number; width: number; height: number },
+  threshold = 100,
+): boolean {
+  const { width, height } = frameData
+  const { x0, y0, xEnd, yEnd } = normalizeROI(roi, width, height)
+  if (xEnd <= x0 || yEnd <= y0) return false
+
+  const metrics = extractFrameMetrics(frameData, roi)
+  return metrics.variance < threshold
+}

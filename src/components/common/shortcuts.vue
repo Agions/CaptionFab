@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Modal from '@/components/common/Modal.vue'
+import Modal from '@/components/common/modal.vue'
 import { useKeyboardShortcuts } from '@/composables/useHotkeys'
 
 const { shortcuts, getShortcutText } = useKeyboardShortcuts()
@@ -25,7 +25,7 @@ defineExpose({ open, close })
 </script>
 
 <template>
-  <Modal
+  <modal
     :open="isOpen"
     title="键盘快捷键"
     size="md"
@@ -57,7 +57,7 @@ defineExpose({ open, close })
         <span class="tip-text">按 <kbd>?</kbd> 可随时打开此页面</span>
       </div>
     </div>
-  </Modal>
+  </modal>
 </template>
 
 <style lang="scss" scoped>

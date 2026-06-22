@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useSettings } from '@/composables/useSettings'
-import { useProjectStore } from '@/stores/project'
+import { useExtractionStore } from '@/stores/extraction'
 import { useGPU } from '@/composables/useGPU'
 
 const { localSettings, systemDeps, handleThemeChange } = useSettings()
-const projectStore = useProjectStore()
+const extractionStore = useExtractionStore()
 const { gpuInfo, isLoading, checkGPU, formatMemory } = useGPU()
 </script>
 
@@ -120,17 +120,17 @@ const { gpuInfo, isLoading, checkGPU, formatMemory } = useGPU()
         </div>
         <div class="setting-control slider-control">
           <div class="slider-track">
-            <div class="slider-fill" :style="{ width: projectStore.extractOptions.mergeThreshold * 100 + '%' }"/>
+            <div class="slider-fill" :style="{ width: extractionStore.extractOptions.mergeThreshold * 100 + '%' }"/>
             <input
               type="range"
-              v-model.number="projectStore.extractOptions.mergeThreshold"
+              v-model.number="extractionStore.extractOptions.mergeThreshold"
               min="0.5"
               max="1.0"
               step="0.01"
               class="slider"
             />
           </div>
-          <span class="slider-value">{{ Math.round(projectStore.extractOptions.mergeThreshold * 100) }}%</span>
+          <span class="slider-value">{{ Math.round(extractionStore.extractOptions.mergeThreshold * 100) }}%</span>
         </div>
       </div>
       <div class="setting-item">
@@ -140,17 +140,17 @@ const { gpuInfo, isLoading, checkGPU, formatMemory } = useGPU()
         </div>
         <div class="setting-control slider-control">
           <div class="slider-track">
-            <div class="slider-fill" :style="{ width: projectStore.extractOptions.confidenceThreshold * 100 + '%' }"/>
+            <div class="slider-fill" :style="{ width: extractionStore.extractOptions.confidenceThreshold * 100 + '%' }"/>
             <input
               type="range"
-              v-model.number="projectStore.extractOptions.confidenceThreshold"
+              v-model.number="extractionStore.extractOptions.confidenceThreshold"
               min="0"
               max="1"
               step="0.01"
               class="slider"
             />
           </div>
-          <span class="slider-value">{{ Math.round(projectStore.extractOptions.confidenceThreshold * 100) }}%</span>
+          <span class="slider-value">{{ Math.round(extractionStore.extractOptions.confidenceThreshold * 100) }}%</span>
         </div>
       </div>
     </div>

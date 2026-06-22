@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, provide } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useVideoPlayer } from '@/composables/usePlayer'
 import { useFileDrop } from '@/composables/useFileDrop'
 import { formatTimeShort, formatTimePrecise } from '@/utils/time'
 import { findSubtitleAtTime } from '@/utils/subtitleSearch'
-import VideoPlayer from './video/VideoPlayer.vue'
-import SubtitleOverlay from './video/SubtitleOverlay.vue'
-import FrameCounter from './video/FrameCounter.vue'
-import DropImportArea from './video/DropImportArea.vue'
+import VideoPlayer from './video/video-player.vue'
+import SubtitleOverlay from './video/subtitle-overlay.vue'
+import FrameCounter from './video/frame-counter.vue'
+import DropImportArea from './video/drop-import-area.vue'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 const subtitleStore = useSubtitleStore()
 
 const {
@@ -34,7 +34,7 @@ const { handleFileDrop, handleFileSelect } = useFileDrop({
     const file = files[0]
     if (file) {
       const url = URL.createObjectURL(file)
-      projectStore.setVideo(file.name, {
+      videoStore.setVideo(file.name, {
         path: url,
         width: 1920,
         height: 1080,
@@ -52,6 +52,9 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const isDragOver = ref(false)
 const hoverTime = ref<number | null>(null)
 const hoverX = ref(0)
+// rAF throttle: 批量处理 timeline mousemove，减少响应式更新频率
+let _hoverRafId: number | null = null
+let _hoverPendingEvent: MouseEvent | null = null
 
 // 优化：provide 移到 setup 顶层，确保在子组件挂载前可用
 // 原来在 onMounted 内调用是 Vue 反模式，可能导致子组件注入失败
@@ -69,7 +72,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-watch(() => projectStore.videoPath, (path) => {
+watch(() => videoStore.videoPath, (path) => {
   if (path && videoElement.value) {
     loadVideo(path)
   }
@@ -80,34 +83,48 @@ function handleProgressClick(e: MouseEvent) {
   const rect = target.getBoundingClientRect()
   const x = e.clientX - rect.left
   const percent = x / rect.width
-  if (projectStore.videoMeta) {
-    const frame = Math.floor(percent * projectStore.videoMeta.totalFrames)
+  if (videoStore.videoMeta) {
+    const frame = Math.floor(percent * videoStore.videoMeta.totalFrames)
     seekToFrame(frame)
   }
 }
 
 function handleTimelineHover(e: MouseEvent) {
-  const target = e.currentTarget as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const percent = Math.max(0, Math.min(1, x / rect.width))
-  if (projectStore.videoMeta) {
-    hoverTime.value = percent * projectStore.duration
+  // rAF throttle: 只保存最新事件坐标，等下一帧统一更新
+  _hoverPendingEvent = e
+  if (_hoverRafId !== null) return
+  _hoverRafId = requestAnimationFrame(() => {
+    _hoverRafId = null
+    const ev = _hoverPendingEvent
+    _hoverPendingEvent = null
+    if (!ev || !videoStore.videoMeta) return
+
+    const target = ev.currentTarget as HTMLElement
+    const rect = target.getBoundingClientRect()
+    const x = ev.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
+    hoverTime.value = percent * videoStore.duration
     hoverX.value = x
-  }
+  })
 }
 
 function handleTimelineLeave() {
   hoverTime.value = null
+  // 取消待处理的 rAF，避免鼠标离开后更新 hover 状态
+  if (_hoverRafId !== null) {
+    cancelAnimationFrame(_hoverRafId)
+    _hoverRafId = null
+    _hoverPendingEvent = null
+  }
 }
 
 const currentSubtitle = computed(() => {
-  if (!projectStore.hasVideo || subtitleStore.subtitles.length === 0) return null
+  if (!videoStore.hasVideo || subtitleStore.subtitles.length === 0) return null
   // 优化：二分查找提取到 utils/subtitleSearch.ts，可复用且可独立测试
-  return findSubtitleAtTime(subtitleStore.subtitles, projectStore.currentTime)
+  return findSubtitleAtTime(subtitleStore.subtitles, videoStore.currentTime)
 })
 
-const hasVideo = computed(() => projectStore.hasVideo)
+const hasVideo = computed(() => videoStore.hasVideo)
 </script>
 
 <template>
@@ -120,7 +137,7 @@ const hasVideo = computed(() => projectStore.hasVideo)
       @drop="handleFileDrop"
     >
       <!-- Empty State + Drop Zone -->
-      <DropImportArea
+      <drop-import-area
         :has-video="hasVideo"
         :is-drag-over="isDragOver"
         @drop="handleFileDrop"
@@ -128,7 +145,7 @@ const hasVideo = computed(() => projectStore.hasVideo)
       />
 
       <!-- Video Player -->
-      <VideoPlayer
+      <video-player
         v-if="hasVideo"
         ref="videoElement"
         :is-ready="isReady"
@@ -142,8 +159,8 @@ const hasVideo = computed(() => projectStore.hasVideo)
         @capture-frame="captureFrameAsDataURL"
       >
         <!-- Subtitle Overlay -->
-        <SubtitleOverlay v-if="currentSubtitle" :text="currentSubtitle.text" />
-      </VideoPlayer>
+        <subtitle-overlay v-if="currentSubtitle" :text="currentSubtitle.text" />
+      </video-player>
 
       <!-- ROI Selector -->
       <slot v-if="isReady && hasVideo" name="roi-selector" />
@@ -155,9 +172,9 @@ const hasVideo = computed(() => projectStore.hasVideo)
         class="ctrl-btn ctrl-play"
         @click="togglePlay"
         :disabled="!hasVideo"
-        :title="projectStore.isPlaying ? '暂停' : '播放'"
+        :title="videoStore.isPlaying ? '暂停' : '播放'"
       >
-        <svg v-if="projectStore.isPlaying" viewBox="0 0 24 24" fill="none" class="ctrl-icon">
+        <svg v-if="videoStore.isPlaying" viewBox="0 0 24 24" fill="none" class="ctrl-icon">
           <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
           <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
         </svg>
@@ -201,8 +218,8 @@ const hasVideo = computed(() => projectStore.hasVideo)
             v-memo="[sub.id, sub.startTime, sub.endTime, subtitleStore.selectedId]"
             class="marker"
             :style="{
-              left: `${(sub.startTime / projectStore.duration) * 100}%`,
-              width: `${Math.max(1, ((sub.endTime - sub.startTime) / projectStore.duration) * 100)}%`
+              left: `${(sub.startTime / videoStore.duration) * 100}%`,
+              width: `${Math.max(1, ((sub.endTime - sub.startTime) / videoStore.duration) * 100)}%`
             }"
             :class="{ active: sub.id === subtitleStore.selectedId }"
           />
@@ -215,25 +232,25 @@ const hasVideo = computed(() => projectStore.hasVideo)
             v-memo="[sub.id, sub.startTime, sub.endTime, subtitleStore.selectedId]"
             class="timeline-band"
             :style="{
-              left: `${(sub.startTime / projectStore.duration) * 100}%`,
-              width: `${Math.max(0.5, ((sub.endTime - sub.startTime) / projectStore.duration) * 100)}%`,
+              left: `${(sub.startTime / videoStore.duration) * 100}%`,
+              width: `${Math.max(0.5, ((sub.endTime - sub.startTime) / videoStore.duration) * 100)}%`,
               opacity: sub.id === subtitleStore.selectedId ? 0.4 : 0.15
             }"
           />
-          <div class="timeline-fill" :style="{ width: `${projectStore.progress}%` }"/>
-          <div class="timeline-head" :style="{ left: `${projectStore.progress}%` }"/>
+          <div class="timeline-fill" :style="{ width: `${videoStore.progress}%` }"/>
+          <div class="timeline-head" :style="{ left: `${videoStore.progress}%` }"/>
         </div>
       </div>
 
       <!-- Time display -->
       <div class="time-display">
-        <span class="time-current">{{ formatTimeShort(projectStore.currentTime) }}</span>
+        <span class="time-current">{{ formatTimeShort(videoStore.currentTime) }}</span>
         <span class="time-sep">/</span>
-        <span class="time-total">{{ formatTimeShort(projectStore.duration) }}</span>
+        <span class="time-total">{{ formatTimeShort(videoStore.duration) }}</span>
       </div>
 
       <!-- Frame counter -->
-      <FrameCounter v-if="hasVideo" />
+      <frame-counter v-if="hasVideo" />
     </div>
   </main>
 </template>

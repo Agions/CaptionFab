@@ -24,10 +24,9 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
 
-pub use commands::export::{export_subtitles, ExportFormat, SubtitleItem};
+pub use commands::types::{ExportFormat, OCRLang, SubtitleItem};
 pub use commands::file::{get_file_info, open_file_dialog, read_text_file, save_file_dialog, write_text_file};
 pub use commands::scene::detect_scenes;
-pub use commands::ocr::{ocr_recognize, ocr_get_languages};
 pub use commands::system::{check_system_dependencies, get_tesseract_languages};
 pub use commands::video::{extract_frame_at_time, get_video_metadata};
 
@@ -55,15 +54,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::video::get_video_metadata,
             commands::video::extract_frame_at_time,
-            commands::export::export_subtitles,
+            commands::ocr_export::export_subtitles,
             commands::file::save_file_dialog,
             commands::file::open_file_dialog,
             commands::file::write_text_file,
             commands::file::read_text_file,
             commands::file::get_file_info,
             commands::scene::detect_scenes,
-            commands::ocr::ocr_recognize,
-            commands::ocr::ocr_get_languages,
+            commands::ocr_export::ocr_recognize,
+            commands::ocr_export::ocr_get_languages,
             commands::auto_roi::auto_detect_roi,
             commands::system::check_system_dependencies,
             commands::system::get_tesseract_languages,

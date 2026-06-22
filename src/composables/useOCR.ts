@@ -1,10 +1,10 @@
 /**
  * useOCR - OCR 标签页状态
- * 优化：消除影子状态反模式 — 所有选项通过 computed get/set 直连 projectStore，
+ * 优化：消除影子状态反模式 — 所有选项通过 computed get/set 直连 extractionStore，
  * 不再维护本地 ref 副本。confidenceThreshold 原有的正确模式扩展到全部属性。
  */
 import { computed } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useExtractionStore } from '@/stores/extraction'
 import type { OCREngine } from '@/types/video'
 import { clamp } from '@/utils/math'
 
@@ -21,7 +21,7 @@ export interface OCREngineInfo {
 }
 
 export function useOCR() {
-  const projectStore = useProjectStore()
+  const extractionStore = useExtractionStore()
 
   // 引擎定义（只读数据，直接导出常量）
   const ocrEngines: OCREngineInfo[] = [
@@ -79,58 +79,58 @@ export function useOCR() {
   // confidenceThreshold 原有模式扩展到全部属性
 
   const confidenceThreshold = computed({
-    get: () => Math.round(projectStore.extractOptions.confidenceThreshold * 100),
+    get: () => Math.round(extractionStore.extractOptions.confidenceThreshold * 100),
     set: (val: number) => {
-      projectStore.extractOptions.confidenceThreshold = val / 100
+      extractionStore.extractOptions.confidenceThreshold = val / 100
     },
   })
 
   const selectedEngine = computed({
-    get: () => projectStore.extractOptions.ocrEngine || 'paddle',
+    get: () => extractionStore.extractOptions.ocrEngine || 'paddle',
     set: (val: OCREngine) => {
-      projectStore.extractOptions.ocrEngine = val
+      extractionStore.extractOptions.ocrEngine = val
     },
   })
 
   const multiPass = computed({
-    get: () => projectStore.extractOptions.multiPass,
+    get: () => extractionStore.extractOptions.multiPass,
     set: (val: boolean) => {
-      projectStore.extractOptions.multiPass = val
+      extractionStore.extractOptions.multiPass = val
     },
   })
 
   const postProcess = computed({
-    get: () => projectStore.extractOptions.postProcess,
+    get: () => extractionStore.extractOptions.postProcess,
     set: (val: boolean) => {
-      projectStore.extractOptions.postProcess = val
+      extractionStore.extractOptions.postProcess = val
     },
   })
 
   const mergeSubtitles = computed({
-    get: () => projectStore.extractOptions.mergeSubtitles,
+    get: () => extractionStore.extractOptions.mergeSubtitles,
     set: (val: boolean) => {
-      projectStore.extractOptions.mergeSubtitles = val
+      extractionStore.extractOptions.mergeSubtitles = val
     },
   })
 
   const mergeThreshold = computed({
-    get: () => projectStore.extractOptions.mergeThreshold,
+    get: () => extractionStore.extractOptions.mergeThreshold,
     set: (val: number) => {
-      projectStore.extractOptions.mergeThreshold = val
+      extractionStore.extractOptions.mergeThreshold = val
     },
   })
 
   const sceneThreshold = computed({
-    get: () => projectStore.extractOptions.sceneThreshold,
+    get: () => extractionStore.extractOptions.sceneThreshold,
     set: (val: number) => {
-      projectStore.extractOptions.sceneThreshold = val
+      extractionStore.extractOptions.sceneThreshold = val
     },
   })
 
   const frameInterval = computed({
-    get: () => projectStore.extractOptions.frameInterval,
+    get: () => extractionStore.extractOptions.frameInterval,
     set: (val: number) => {
-      projectStore.extractOptions.frameInterval = val
+      extractionStore.extractOptions.frameInterval = val
     },
   })
 
@@ -146,7 +146,7 @@ export function useOCR() {
 
   // 方法 — 简化为直接赋值
   function setLanguage(lang: string) {
-    projectStore.extractOptions.languages = [lang]
+    extractionStore.extractOptions.languages = [lang]
   }
 
   return {

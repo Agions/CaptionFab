@@ -3,18 +3,18 @@
  * Extracted from SidePanel.vue ROI tab
  */
 import { computed } from 'vue'
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 import { ROI_PRESETS } from '@/types/video'
 
 export function useROI() {
-  const projectStore = useProjectStore()
+  const videoStore = useVideoStore()
 
   const roiPresets = ROI_PRESETS
 
-  const selectedROI = computed(() => projectStore.selectedROI)
+  const selectedROI = computed(() => videoStore.selectedROI)
 
   function selectPreset(presetId: string) {
-    projectStore.selectROIPreset(presetId)
+    videoStore.selectROIPreset(presetId)
   }
 
   return {

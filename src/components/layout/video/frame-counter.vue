@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useProjectStore } from '@/stores/project'
+import { useVideoStore } from '@/stores/video'
 
-const projectStore = useProjectStore()
+const videoStore = useVideoStore()
 </script>
 
 <template>
   <div class="frame-counter">
     <span class="frame-label">F</span>
-    <span class="frame-num">{{ projectStore.currentFrame.toLocaleString() }}</span>
+    <span class="frame-num">{{ videoStore.currentFrame.toLocaleString() }}</span>
   </div>
 </template>
 
