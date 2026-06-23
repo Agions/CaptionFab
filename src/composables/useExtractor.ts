@@ -180,8 +180,7 @@ export function useSubtitleExtractor() {
           prevFrameData = frameData
           skipFrame = true
         }
-      } catch (e) {
-        console.warn(`[Extractor] ROI check failed for frame ${frameIndex}, skipping:`, e)
+      } catch {
         skipFrame = true
       }
       if (skipFrame) continue
@@ -192,8 +191,7 @@ export function useSubtitleExtractor() {
           prevFrameData = frameData
           continue
         }
-      } catch (e) {
-        console.warn(`[Extractor] Scene detection failed for frame ${frameIndex}, skipping:`, e)
+      } catch {
         prevFrameData = frameData
         continue
       }

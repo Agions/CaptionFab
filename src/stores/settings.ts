@@ -43,7 +43,6 @@ function cleanupLocalStorage(keys: string[]) {
       if (keySet.has(key) || keys.some(k => key.startsWith(k))) {
         try {
           localStorage.removeItem(key)
-          console.warn('[CaptionFab Settings] Cleaned up:', key)
         } catch {
           // 单个 key 删除失败不影响其他
         }
@@ -90,7 +89,6 @@ export const useSettingsStore = defineStore('settings', () => {
           try {
             localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify(newSettings))
           } catch {
-            console.warn('[CaptionFab Settings] Cleanup insufficient, saving minimal config')
             try {
               localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify({
                 theme: newSettings.theme,
