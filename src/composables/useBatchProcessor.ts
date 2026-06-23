@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useOCREngine } from './useOCREngine'
-import { type OCREngine } from '@/types/video'
+import { PROCESSING_MODES, type OCREngine } from '@/types/video'
 import { generateId } from '@/utils/id'
 import { resolveOcrLanguages } from '@/utils/lang'
 
@@ -162,8 +162,6 @@ export function useBatchProcessor() {
     try {
       const jobStart = Date.now()
 
-      // Use PROCESSING_MODES for settings based on processingMode
-      const { PROCESSING_MODES } = await import('@/types/video')
       const modeConfig = PROCESSING_MODES[options.processingMode]
       const frameInterval = modeConfig.frameInterval
       const multiPass = modeConfig.multiPass
