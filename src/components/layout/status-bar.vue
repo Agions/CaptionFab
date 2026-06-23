@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useProgress } from '@/composables/useProgress'
 import { useVideoStore } from '@/stores/video'
-import { useExtractionStore } from '@/stores/extraction'
 import { useSubtitleStore } from '@/stores/subtitle'
+import { useExtractionStore } from '@/stores/extraction'
 
 const videoStore = useVideoStore()
-const extractionStore = useExtractionStore()
 const subtitleStore = useSubtitleStore()
+const extractionStore = useExtractionStore()
+const { fps, resolution } = useProgress()
 
-const fps = computed(() => videoStore.videoMeta?.fps ?? 0)
-const resolution = computed(() => {
-  if (!videoStore.videoMeta) return 'N/A'
-  return `${videoStore.videoMeta.width} × ${videoStore.videoMeta.height}`
-})
 const ocrEngine = computed(() => extractionStore.extractOptions.ocrEngine)
 
 const memoryUsage = computed(() => {
