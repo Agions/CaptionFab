@@ -281,7 +281,6 @@ export function useSubtitleExtractor() {
             subtitleStore.subtitles[i].text = results[i].corrected
           }
         }
-        console.log(`[Extractor] AI correction applied to ${results.filter(r => r.confidence > 0.7).length} subtitles`)
       } catch (e) {
         console.error('[Extractor] AI correction failed:', e)
       }

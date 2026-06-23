@@ -245,7 +245,7 @@ export class SceneHysteresis<S> {
   }
 }
 
-// ─── Legacy Single-Frame Empty Detection ────────────────────────────
+// ─── Single-Frame Empty Detection ──────────────────────────────────
 
 /**
  * 检测 ROI 区域是否为纯色（方差低于阈值）。

@@ -89,7 +89,6 @@ export const useSettingsStore = defineStore('settings', () => {
           cleanupLocalStorage([LOCALSTORAGE_KEY_THUMBNAILS, LOCALSTORAGE_KEY_CACHE, LOCALSTORAGE_KEY_TEMP])
           try {
             localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify(newSettings))
-            console.info('[CaptionFab Settings] Successfully saved after cleanup')
           } catch {
             console.warn('[CaptionFab Settings] Cleanup insufficient, saving minimal config')
             try {
