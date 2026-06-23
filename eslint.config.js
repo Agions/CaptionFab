@@ -24,6 +24,9 @@ const browserGlobals = {
   URL: 'readonly',
   URLSearchParams: 'readonly',
   structuredClone: 'readonly',
+  // Animation / rAF globals
+  requestAnimationFrame: 'readonly',
+  cancelAnimationFrame: 'readonly',
   // DOM types
   MouseEvent: 'readonly',
   KeyboardEvent: 'readonly',

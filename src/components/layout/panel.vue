@@ -8,10 +8,10 @@ import { usePanelSections } from '@/composables/usePanelSections'
 // Tab components
 import FilesTab from './tabs/files.vue'
 import ProgressTab from './tabs/progress.vue'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars — used in template
-import ROITab from './tabs/roi.vue'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars — used in template
-import OCRTab from './tabs/ocr.vue'
+/* eslint-disable-line @typescript-eslint/ban-ts-comment -- Vue SFC template-only import */ // @ts-ignore ROITab used in Vue template (auto-unwrapped to <roi-tab>)
+import ROITab from './tabs/roi.vue' // eslint-disable-line @typescript-eslint/no-unused-vars -- used in template
+/* eslint-disable-line @typescript-eslint/ban-ts-comment -- Vue SFC template-only import */ // @ts-ignore OCRTab used in Vue template (auto-unwrapped to <ocr-tab>)
+import OCRTab from './tabs/ocr.vue' // eslint-disable-line @typescript-eslint/no-unused-vars -- used in template
 import ExportTab from './tabs/export.vue'
 import SettingsTab from './tabs/settings.vue'
 
