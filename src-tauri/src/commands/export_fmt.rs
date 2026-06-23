@@ -12,16 +12,12 @@ pub use super::types::SubtitleItem;
 
 /// Shared exporter for timed subtitle formats (SRT, VTT, SBV).
 /// Takes a timestamp formatter and optional header string.
-fn export_timed_entries<F>(
-    subtitles: &[SubtitleItem],
-    format_ts: F,
-    header: Option<&str>,
-) -> String
+fn export_timed_entries<F>(subtitles: &[SubtitleItem], format_ts: F, header: Option<&str>) -> String
 where
     F: Fn(f64) -> String,
 {
-    let cap = header.map_or(0, |h| h.len())
-        + subtitles.iter().map(|s| 50 + s.text.len()).sum::<usize>();
+    let cap =
+        header.map_or(0, |h| h.len()) + subtitles.iter().map(|s| 50 + s.text.len()).sum::<usize>();
     let mut output = String::with_capacity(cap);
     if let Some(h) = header {
         output.push_str(h);
@@ -30,7 +26,12 @@ where
         let start = format_ts(sub.start_time);
         let end = format_ts(sub.end_time);
         use std::fmt::Write;
-        write!(output, "{}\n{} --> {}\n{}\n\n", sub.index, start, end, sub.text).unwrap();
+        write!(
+            output,
+            "{}\n{} --> {}\n{}\n\n",
+            sub.index, start, end, sub.text
+        )
+        .unwrap();
     }
     output
 }
@@ -84,7 +85,10 @@ fn export_ass_family(
         let text = escape_ass_text(&sub.text);
         output.push_str(&format!(
             "Dialogue: {prefix},{start},{end},Default,,0,0,0,,{text}\n",
-            prefix = dialogue_prefix, start = start, end = end, text = text
+            prefix = dialogue_prefix,
+            start = start,
+            end = end,
+            text = text
         ));
     }
     output
@@ -177,8 +181,7 @@ pub fn export_as_json(subtitles: &[SubtitleItem]) -> Result<String, String> {
             })
         }).collect::<Vec<_>>()
     });
-    serde_json::to_string_pretty(&output)
-        .map_err(|e| format!("JSON serialization failed: {}", e))
+    serde_json::to_string_pretty(&output).map_err(|e| format!("JSON serialization failed: {}", e))
 }
 
 /// RFC 4180 compliant CSV export.

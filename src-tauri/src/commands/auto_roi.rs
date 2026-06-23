@@ -11,8 +11,9 @@
 //! 4. Find text-dense rows in the bottom third of the frame
 //! 5. Return bounding box of detected subtitle region
 
-use serde::{Deserialize, Serialize};
 use super::utils::{uuid_v4, TempFileGuard};
+use crate::commands::utils::shared::{horizontal_projection, sobel_edges_raw};
+use serde::{Deserialize, Serialize};
 
 use image::{DynamicImage, GenericImageView, GrayImage};
 use std::path::Path;
@@ -47,10 +48,18 @@ fn fallback_roi(_width: u32, _height: u32) -> DetectedROI {
 #[allow(dead_code)]
 fn to_percent(x: u32, y: u32, w: u32, h: u32, img_w: u32, img_h: u32) -> DetectedROI {
     DetectedROI {
-        x: ((x as f64 / img_w as f64) * 100.0).clamp(0.0, 100.0).round() as f64,
-        y: ((y as f64 / img_h as f64) * 100.0).clamp(0.0, 100.0).round() as f64,
-        width: ((w as f64 / img_w as f64) * 100.0).clamp(5.0, 100.0).round() as f64,
-        height: ((h as f64 / img_h as f64) * 100.0).clamp(3.0, 100.0).round() as f64,
+        x: ((x as f64 / img_w as f64) * 100.0)
+            .clamp(0.0, 100.0)
+            .round(),
+        y: ((y as f64 / img_h as f64) * 100.0)
+            .clamp(0.0, 100.0)
+            .round(),
+        width: ((w as f64 / img_w as f64) * 100.0)
+            .clamp(5.0, 100.0)
+            .round(),
+        height: ((h as f64 / img_h as f64) * 100.0)
+            .clamp(3.0, 100.0)
+            .round(),
         confidence: 0.5, // Will be refined below
     }
 }
@@ -59,60 +68,15 @@ fn to_percent(x: u32, y: u32, w: u32, h: u32, img_w: u32, img_h: u32) -> Detecte
 ///
 /// Computes gradient magnitude using Sobel operators on a grayscale image.
 /// Returns a binary edge map (edge pixels are non-zero).
+#[allow(clippy::needless_range_loop)]
 fn sobel_edges(gray: &GrayImage) -> Vec<Vec<u8>> {
     let (w, h) = gray.dimensions();
-    let mut edges = vec![vec![0u8; w as usize]; h as usize];
-
-    // Sobel kernels
-    let sobel_x: [[i32; 3]; 3] = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
-    let sobel_y: [[i32; 3]; 3] = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
-
-    let threshold: u32 = 80; // Edge strength threshold
-
-    for y in 1..(h as usize - 1) {
-        for x in 1..(w as usize - 1) {
-            let mut gx = 0i32;
-            let mut gy = 0i32;
-
-            for ky in 0..3 {
-                for kx in 0..3 {
-                    let px = gray.get_pixel((x + kx - 1) as u32, (y + ky - 1) as u32).0[0] as i32;
-                    gx += px * sobel_x[ky][kx];
-                    gy += px * sobel_y[ky][kx];
-                }
-            }
-
-            let magnitude = ((gx * gx + gy * gy) as f64).sqrt() as u32;
-            if magnitude > threshold {
-                edges[y][x] = 255;
-            }
-        }
-    }
-
-    edges
-}
-
-/// Compute horizontal projection profile from edge map.
-/// Returns sum of edge pixels per row (normalized 0.0-1.0).
-fn horizontal_projection(edges: &[Vec<u8>]) -> Vec<f64> {
-    if edges.is_empty() {
-        return Vec::new();
-    }
-    let width = edges[0].len() as f64;
-    if width == 0.0 {
-        return vec![0.0; edges.len()];
-    }
-
-    edges
-        .iter()
-        .map(|row| {
-            let sum: u32 = row.iter().map(|&p| p as u32).sum();
-            sum as f64 / width / 255.0 // Normalize to [0, 1]
-        })
-        .collect()
+    let pixels = gray.as_raw();
+    sobel_edges_raw(pixels, w as usize, h as usize)
 }
 
 /// Detect subtitle region from a loaded image.
+#[allow(clippy::needless_range_loop)]
 fn detect_roi_from_image(img: &DynamicImage) -> DetectedROI {
     let (width, height) = img.dimensions();
 
@@ -248,31 +212,30 @@ pub(crate) async fn extract_frame_for_detection(
 
     // Use a UUID-based temp file to avoid race conditions
     let uuid = uuid_v4();
-    let output_path = std::env::temp_dir().join(format!(
-        "captionfab_roi_frame_{}.png",
-        uuid
-    ));
+    let output_path = std::env::temp_dir().join(format!("captionfab_roi_frame_{}.png", uuid));
     let guard = TempFileGuard::new(output_path.clone());
 
     let ts_str = format!("{}", timestamp);
     let output_path_str = output_path.to_string_lossy();
 
     let args: Vec<&str> = vec![
-        "-y", "-nostdin",
-        "-ss", &ts_str,
-        "-i", video_path,
-        "-vframes", "1",
-        "-q:v", "2",
+        "-y",
+        "-nostdin",
+        "-ss",
+        &ts_str,
+        "-i",
+        video_path,
+        "-vframes",
+        "1",
+        "-q:v",
+        "2",
         output_path_str.as_ref(),
     ];
 
-    let output = super::utils::run_command_with_timeout(
-        "ffmpeg",
-        &args,
-        std::time::Duration::from_secs(30),
-    )
-    .await
-    .map_err(|e| format!("{}: {e}", crate::commands::errors::FFMPEG_FAILED))?;
+    let output =
+        super::utils::run_command_with_timeout("ffmpeg", &args, std::time::Duration::from_secs(30))
+            .await
+            .map_err(|e| format!("{}: {e}", crate::commands::errors::FFMPEG_FAILED))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -303,22 +266,30 @@ pub async fn auto_detect_roi(
 
     let path = Path::new(&video_path);
     if !path.exists() {
-        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, video_path));
+        return Err(format!(
+            "{}: {}",
+            crate::commands::errors::FILE_NOT_FOUND,
+            video_path
+        ));
     }
 
     // Extract a frame at the given timestamp
     let (_frame_path, _guard) = extract_frame_for_detection(&video_path, timestamp).await?;
 
     // Load the image
-    let img = image::open(&_frame_path)
-        .map_err(|e| format!("Failed to load extracted frame: {}", e))?;
+    let img =
+        image::open(&_frame_path).map_err(|e| format!("Failed to load extracted frame: {}", e))?;
 
     // Detect ROI
     let roi = detect_roi_from_image(&img);
 
     tracing::info!(
         "Auto-detected ROI: ({:.1}%, {:.1}%) → {:.1}% x {:.1}%  (confidence: {:.2})",
-        roi.x, roi.y, roi.width, roi.height, roi.confidence
+        roi.x,
+        roi.y,
+        roi.width,
+        roi.height,
+        roi.confidence
     );
 
     Ok(roi)

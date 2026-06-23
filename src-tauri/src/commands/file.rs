@@ -1,5 +1,6 @@
 use tauri::AppHandle;
-use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::{DialogExt, FileDialogBuilder, FilePath};
+use tauri::Runtime;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FileFilter {
@@ -13,15 +14,10 @@ impl FileFilter {
     }
 }
 
-#[tauri::command]
-pub async fn save_file_dialog(
-    app: AppHandle,
-    title: String,
-    default_name: String,
-    filters: Vec<FileFilter>,
-) -> Result<String, String> {
-    let mut builder = app.dialog().file().set_title(&title).set_file_name(&default_name);
-
+fn apply_file_filters<R: Runtime>(
+    mut builder: FileDialogBuilder<R>,
+    filters: &[FileFilter],
+) -> FileDialogBuilder<R> {
     if filters.is_empty() {
         builder = builder.add_filter("All Files", &["*"]);
     } else {
@@ -33,13 +29,37 @@ pub async fn save_file_dialog(
             );
         }
     }
+    builder
+}
+
+fn handle_file_path(file_path: Option<FilePath>) -> Result<String, String> {
+    match file_path {
+        Some(path) => path
+            .into_path()
+            .map(|p| p.to_string_lossy().into_owned())
+            .map_err(|e| format!("Invalid file path: {}", e)),
+        None => Err("No file selected".to_string()),
+    }
+}
+
+#[tauri::command]
+pub async fn save_file_dialog(
+    app: AppHandle,
+    title: String,
+    default_name: String,
+    filters: Vec<FileFilter>,
+) -> Result<String, String> {
+    let builder = app
+        .dialog()
+        .file()
+        .set_title(&title)
+        .set_file_name(&default_name);
+
+    let builder = apply_file_filters(builder, &filters);
 
     let file_path = builder.blocking_save_file();
 
-    match file_path {
-        Some(path) => Ok(path.to_string()),
-        None => Err("No file selected".to_string()),
-    }
+    handle_file_path(file_path)
 }
 
 #[tauri::command]
@@ -48,28 +68,13 @@ pub async fn open_file_dialog(
     title: String,
     filters: Vec<FileFilter>,
 ) -> Result<String, String> {
-    let mut builder = app.dialog().file().set_title(&title);
+    let builder = app.dialog().file().set_title(&title);
 
-    if filters.is_empty() {
-        builder = builder
-            .add_filter("Video Files", &["mp4", "mkv", "avi", "mov", "webm", "flv"])
-            .add_filter("All Files", &["*"]);
-    } else {
-        for filter in filters {
-            let (name, extensions) = filter.to_filter_tuple();
-            builder = builder.add_filter(
-                &name,
-                &extensions.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-            );
-        }
-    }
+    let builder = apply_file_filters(builder, &filters);
 
     let file_path = builder.blocking_pick_file();
 
-    match file_path {
-        Some(path) => Ok(path.to_string()),
-        None => Err("No file selected".to_string()),
-    }
+    handle_file_path(file_path)
 }
 
 /// Validate that the path is within allowed directories and is safe.
@@ -88,9 +93,9 @@ fn validate_path(path: &str) -> Result<(), String> {
         None => vec![std::env::temp_dir()],
     };
 
-    let is_allowed = allowed_dirs.iter().any(|allowed| {
-        canonical.starts_with(allowed)
-    });
+    let is_allowed = allowed_dirs
+        .iter()
+        .any(|allowed| canonical.starts_with(allowed));
 
     if !is_allowed {
         return Err(format!(

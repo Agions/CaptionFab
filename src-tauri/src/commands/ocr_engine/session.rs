@@ -1,8 +1,8 @@
 //! ONNX session management — lazy loading + Mutex-guarded inference.
 
 use std::path::PathBuf;
-use std::sync::Mutex;
 use std::sync::LazyLock;
+use std::sync::Mutex;
 
 use ort::session::Session;
 
@@ -85,13 +85,18 @@ impl OcrSession {
         *guard = Some(session);
         Ok(())
     }
+}
 
+// Type alias for ONNX output tensor metadata
+type OutputTensor = (String, Vec<usize>, Vec<f32>);
+
+impl OcrSession {
     /// Run inference and return owned output tensors.
     /// Each output is a tuple of (name, shape, data).
     pub fn run_owned<'i, 'v: 'i, const N: usize>(
         &self,
         input_values: impl Into<ort::session::SessionInputs<'i, 'v, N>>,
-    ) -> Result<Vec<(String, Vec<usize>, Vec<f32>)>, String> {
+    ) -> Result<Vec<OutputTensor>, String> {
         self.ensure_loaded()?;
         let mut guard = self
             .session
@@ -129,7 +134,5 @@ impl OcrSession {
 
 // ─── Session singletons ───────────────────────────────────────────────────────
 
-pub static DET_SESSION: LazyLock<OcrSession> =
-    LazyLock::new(|| OcrSession::new("det.onnx"));
-pub static REC_SESSION: LazyLock<OcrSession> =
-    LazyLock::new(|| OcrSession::new("rec.onnx"));
+pub static DET_SESSION: LazyLock<OcrSession> = LazyLock::new(|| OcrSession::new("det.onnx"));
+pub static REC_SESSION: LazyLock<OcrSession> = LazyLock::new(|| OcrSession::new("rec.onnx"));

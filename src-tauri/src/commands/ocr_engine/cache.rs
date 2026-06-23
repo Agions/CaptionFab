@@ -1,8 +1,8 @@
 //! LRU cache for OCR results.
 
 use std::collections::HashMap;
-use std::sync::Mutex;
 use std::sync::LazyLock;
+use std::sync::Mutex;
 
 use crate::commands::types::OCRResult;
 
@@ -46,5 +46,4 @@ impl OcrCache {
     }
 }
 
-pub static OCR_CACHE: LazyLock<Mutex<OcrCache>> =
-    LazyLock::new(|| Mutex::new(OcrCache::new(256)));
+pub static OCR_CACHE: LazyLock<Mutex<OcrCache>> = LazyLock::new(|| Mutex::new(OcrCache::new(256)));

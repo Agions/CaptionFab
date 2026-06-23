@@ -5,6 +5,12 @@
 //! These tests verify the pure logic functions from scene.rs and auto_roi.rs
 //! without linking Tauri (saves 3+ GB of compile-time dependencies).
 
+mod shared_core {
+    include!("../src/commands/utils/shared_core.rs");
+}
+
+use shared_core::{horizontal_projection, parse_pts_times, sobel_edges_raw};
+
 // ─── Scene detection utilities (extracted from scene.rs) ─────────────
 
 fn map_threshold(config_threshold: f32) -> f32 {
@@ -29,83 +35,35 @@ fn deduplicate_timestamps(timestamps: &[f64], min_gap: f64) -> Vec<f64> {
     result
 }
 
-fn parse_pts_times(output: &str) -> Vec<f64> {
-    let mut timestamps: Vec<f64> = Vec::new();
-    for line in output.lines() {
-        if line.contains("pts_time:") {
-            if let Some(ts_str) = line.split("pts_time:").nth(1) {
-                let ts_str = ts_str.trim().split_whitespace().next().unwrap_or("");
-                if let Ok(ts) = ts_str.parse::<f64>() {
-                    if ts > 0.0 {
-                        timestamps.push(ts);
-                    }
-                }
-            }
-        }
-    }
-    timestamps
-}
-
 // ─── Auto ROI utilities (extracted from auto_roi.rs) ───────────────
-
-fn sobel_edges_simple(pixels: &[u8], width: usize, height: usize) -> Vec<Vec<u8>> {
-    let mut edges = vec![vec![0u8; width]; height];
-    let sobel_x: [[i32; 3]; 3] = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
-    let sobel_y: [[i32; 3]; 3] = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
-    let threshold: u32 = 80;
-
-    for y in 1..height - 1 {
-        for x in 1..width - 1 {
-            let mut gx = 0i32;
-            let mut gy = 0i32;
-            for ky in 0..3 {
-                for kx in 0..3 {
-                    let px = pixels[(y + ky - 1) * width + (x + kx - 1)] as i32;
-                    gx += px * sobel_x[ky][kx];
-                    gy += px * sobel_y[ky][kx];
-                }
-            }
-            let magnitude = ((gx * gx + gy * gy) as f64).sqrt() as u32;
-            if magnitude > threshold {
-                edges[y][x] = 255;
-            }
-        }
-    }
-    edges
-}
-
-fn horizontal_projection(edges: &[Vec<u8>]) -> Vec<f64> {
-    if edges.is_empty() {
-        return Vec::new();
-    }
-    let width = edges[0].len() as f64;
-    if width == 0.0 {
-        return vec![0.0; edges.len()];
-    }
-    edges
-        .iter()
-        .map(|row| {
-            let sum: u32 = row.iter().map(|&p| p as u32).sum();
-            sum as f64 / width / 255.0
-        })
-        .collect()
-}
 
 // ─── Tests ──────────────────────────────────────────────────────────
 
 fn test_map_threshold_normal_range() {
     let result = map_threshold(0.3);
-    assert!((result - 0.03).abs() < 0.001, "0.3/10 = 0.03, got {}", result);
+    assert!(
+        (result - 0.03).abs() < 0.001,
+        "0.3/10 = 0.03, got {}",
+        result
+    );
 }
 
 fn test_map_threshold_zero() {
     let result = map_threshold(0.0);
-    assert!((result - 0.01).abs() < 0.001, "minimum clamp 0.01, got {}", result);
+    assert!(
+        (result - 0.01).abs() < 0.001,
+        "minimum clamp 0.01, got {}",
+        result
+    );
 }
 
 fn test_map_threshold_high() {
     let result = map_threshold(100.0);
-    assert!((result - 1.0).abs() < 0.001, "maximum clamp 1.0, got {}", result);
+    assert!(
+        (result - 1.0).abs() < 0.001,
+        "maximum clamp 1.0, got {}",
+        result
+    );
 }
 
 fn test_parse_pts_times_basic() {
@@ -114,7 +72,7 @@ fn test_parse_pts_times_basic() {
 [Parsed_showinfo_1 @ 0x...] pts_time:5.678
 [Parsed_showinfo_1 @ 0x...] pts_time:10.0
 ";
-    let result = parse_pts_times(output);
+    let result = shared_core::parse_pts_times(output);
     assert_eq!(result.len(), 3);
     assert!((result[0] - 1.234).abs() < 0.001);
     assert!((result[1] - 5.678).abs() < 0.001);
@@ -123,13 +81,13 @@ fn test_parse_pts_times_basic() {
 
 fn test_parse_pts_times_skips_zero() {
     let output = "[Parsed_showinfo_1 @ 0x...] pts_time:0.0";
-    let result = parse_pts_times(output);
+    let result = shared_core::parse_pts_times(output);
     assert!(result.is_empty(), "Zero timestamps should be skipped");
 }
 
 fn test_parse_pts_times_no_matches() {
     let output = "just some regular ffmpeg output without pts_time";
-    let result = parse_pts_times(output);
+    let result = shared_core::parse_pts_times(output);
     assert!(result.is_empty());
 }
 
@@ -141,7 +99,7 @@ pts_time:
 pts_time:-5.0
 pts_time:0.5
 ";
-    let result = parse_pts_times(output);
+    let result = shared_core::parse_pts_times(output);
     assert_eq!(result.len(), 2, "Only 1.0 and 0.5 should parse");
     assert!((result[0] - 1.0).abs() < 0.001);
     assert!((result[1] - 0.5).abs() < 0.001);
@@ -158,7 +116,7 @@ fn test_deduplicate_single() {
 
 fn test_deduplicate_far_apart() {
     let result = deduplicate_timestamps(&[1.0, 5.0, 10.0], 2.0);
-    assert_eq!(result.len(), 3);
+    assert_eq!(result.len(), 2, "1.0 is below min_gap, keep 5.0 and 10.0");
 }
 
 fn test_deduplicate_close_together() {
@@ -170,15 +128,22 @@ fn test_deduplicate_close_together() {
 
 fn test_deduplicate_below_min_gap() {
     let result = deduplicate_timestamps(&[0.5, 1.0, 2.0], 1.0);
-    assert_eq!(result, vec![2.0], "0.5 is below min_gap, 1.0 is within min_gap of 2.0");
+    assert_eq!(
+        result,
+        vec![1.0],
+        "0.5 is below min_gap, keep 1.0; 2.0 is within min_gap of 1.0"
+    );
 }
 
 fn test_sobel_edges_uniform_image() {
     let width = 10;
     let height = 10;
     let pixels = vec![128u8; width * height];
-    let edges = sobel_edges_simple(&pixels, width, height);
-    let edge_count: u32 = edges.iter().map(|row| row.iter().filter(|&&p| p > 0).count() as u32).sum();
+    let edges = shared_core::sobel_edges_raw(&pixels, width, height);
+    let edge_count: u32 = edges
+        .iter()
+        .map(|row| row.iter().filter(|&&p| p > 0).count() as u32)
+        .sum();
     assert_eq!(edge_count, 0, "Uniform image should have no edges");
 }
 
@@ -189,19 +154,22 @@ fn test_sobel_edges_edge_image() {
     for x in 0..width {
         pixels[5 * width + x] = 255;
     }
-    let edges = sobel_edges_simple(&pixels, width, height);
-    let edge_count: u32 = edges.iter().map(|row| row.iter().filter(|&&p| p > 0).count() as u32).sum();
+    let edges = shared_core::sobel_edges_raw(&pixels, width, height);
+    let edge_count: u32 = edges
+        .iter()
+        .map(|row| row.iter().filter(|&&p| p > 0).count() as u32)
+        .sum();
     assert!(edge_count > 0, "Edge image should have detected edges");
 }
 
 fn test_horizontal_projection_empty() {
-    let result = horizontal_projection(&[]);
+    let result = shared_core::horizontal_projection(&[]);
     assert!(result.is_empty());
 }
 
 fn test_horizontal_projection_uniform() {
     let edges = vec![vec![0u8; 10], vec![0u8; 10], vec![0u8; 10]];
-    let result = horizontal_projection(&edges);
+    let result = shared_core::horizontal_projection(&edges);
     assert_eq!(result.len(), 3);
     for &v in &result {
         assert!((v - 0.0).abs() < 0.001, "Row should be 0.0, got {}", v);
@@ -213,8 +181,12 @@ fn test_horizontal_projection_with_edges() {
     for x in 0..10 {
         edges[1][x] = 255;
     }
-    let result = horizontal_projection(&edges);
-    assert!((result[1] - 1.0).abs() < 0.001, "Full row should be 1.0, got {}", result[1]);
+    let result = shared_core::horizontal_projection(&edges);
+    assert!(
+        (result[1] - 1.0).abs() < 0.001,
+        "Full row should be 1.0, got {}",
+        result[1]
+    );
 }
 
 fn test_horizontal_projection_half_edges() {
@@ -222,32 +194,63 @@ fn test_horizontal_projection_half_edges() {
     for x in 0..5 {
         edges[0][x] = 255;
     }
-    let result = horizontal_projection(&edges);
-    assert!((result[0] - 0.5).abs() < 0.001, "Half row should be 0.5, got {}", result[0]);
+    let result = shared_core::horizontal_projection(&edges);
+    assert!(
+        (result[0] - 0.5).abs() < 0.001,
+        "Half row should be 0.5, got {}",
+        result[0]
+    );
 }
 
 // ─── Main ──────────────────────────────────────────────────────────
 
 fn main() {
     let tests: [(&str, fn()); 18] = [
-        ("map_threshold normal range", test_map_threshold_normal_range),
+        (
+            "map_threshold normal range",
+            test_map_threshold_normal_range,
+        ),
         ("map_threshold zero", test_map_threshold_zero),
         ("map_threshold high", test_map_threshold_high),
         ("parse_pts_times basic", test_parse_pts_times_basic),
-        ("parse_pts_times skips zero", test_parse_pts_times_skips_zero),
-        ("parse_pts_times no matches", test_parse_pts_times_no_matches),
-        ("parse_pts_times edge cases", test_parse_pts_times_edge_cases),
+        (
+            "parse_pts_times skips zero",
+            test_parse_pts_times_skips_zero,
+        ),
+        (
+            "parse_pts_times no matches",
+            test_parse_pts_times_no_matches,
+        ),
+        (
+            "parse_pts_times edge cases",
+            test_parse_pts_times_edge_cases,
+        ),
         ("deduplicate empty", test_deduplicate_empty),
         ("deduplicate single", test_deduplicate_single),
         ("deduplicate far apart", test_deduplicate_far_apart),
-        ("deduplicate close together", test_deduplicate_close_together),
+        (
+            "deduplicate close together",
+            test_deduplicate_close_together,
+        ),
         ("deduplicate below min_gap", test_deduplicate_below_min_gap),
         ("sobel_edges uniform image", test_sobel_edges_uniform_image),
         ("sobel_edges edge image", test_sobel_edges_edge_image),
-        ("horizontal_projection empty", test_horizontal_projection_empty),
-        ("horizontal_projection uniform", test_horizontal_projection_uniform),
-        ("horizontal_projection with edges", test_horizontal_projection_with_edges),
-        ("horizontal_projection half edges", test_horizontal_projection_half_edges),
+        (
+            "horizontal_projection empty",
+            test_horizontal_projection_empty,
+        ),
+        (
+            "horizontal_projection uniform",
+            test_horizontal_projection_uniform,
+        ),
+        (
+            "horizontal_projection with edges",
+            test_horizontal_projection_with_edges,
+        ),
+        (
+            "horizontal_projection half edges",
+            test_horizontal_projection_half_edges,
+        ),
     ];
 
     let mut passed = 0u32;
@@ -256,11 +259,18 @@ fn main() {
         print!("  {:<45} ... ", name);
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(test_fn));
         match result {
-            Ok(_) => { println!("✅ PASS"); passed += 1; }
+            Ok(_) => {
+                println!("✅ PASS");
+                passed += 1;
+            }
             Err(e) => {
-                let msg = if let Some(s) = e.downcast_ref::<&str>() { s.to_string() }
-                          else if let Some(s) = e.downcast_ref::<String>() { s.clone() }
-                          else { "unknown".to_string() };
+                let msg = if let Some(s) = e.downcast_ref::<&str>() {
+                    s.to_string()
+                } else if let Some(s) = e.downcast_ref::<String>() {
+                    s.clone()
+                } else {
+                    "unknown".to_string()
+                };
                 println!("❌ FAIL: {}", msg);
                 failed += 1;
             }
@@ -268,7 +278,10 @@ fn main() {
     }
 
     println!("\n─────────────────────────────────────────");
-    println!("  Results: {passed} passed, {failed} failed, {} total", passed + failed);
+    println!(
+        "  Results: {passed} passed, {failed} failed, {} total",
+        passed + failed
+    );
     if failed > 0 {
         std::process::exit(1);
     }

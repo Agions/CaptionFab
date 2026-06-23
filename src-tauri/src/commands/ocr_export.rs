@@ -1,10 +1,10 @@
 //! Inlined OCR + Export commands (thin wrappers eliminated).
 
-use crate::commands::types::{ExportFormat, OCRLang, OCRResult, SubtitleItem};
 use crate::commands::export_fmt::{
-    export_as_ass, export_as_csv, export_as_json, export_as_lrc, export_as_sbv,
-    export_as_srt, export_as_ssa, export_as_txt, export_as_vtt,
+    export_as_ass, export_as_csv, export_as_json, export_as_lrc, export_as_sbv, export_as_srt,
+    export_as_ssa, export_as_txt, export_as_vtt,
 };
+use crate::commands::types::{ExportFormat, OCRLang, OCRResult, SubtitleItem};
 
 /// Recognise text in an image using the native Rust OCR engine.
 #[tauri::command]
@@ -24,15 +24,14 @@ pub async fn ocr_recognize(
 
     tracing::info!(
         "OCR recognize: {} (lang={}, engine={})",
-        image_path, lang, engine
+        image_path,
+        lang,
+        engine
     );
 
     match engine.as_str() {
         "paddle" | "native" => ocr_native(&image_path, &lang).await,
-        _ => Err(format!(
-            "Unknown OCR engine: {}. Supported: native",
-            engine
-        )),
+        _ => Err(format!("Unknown OCR engine: {}. Supported: native", engine)),
     }
 }
 
@@ -41,8 +40,8 @@ async fn ocr_native(image_path: &str, lang: &str) -> Result<Vec<OCRResult>, Stri
     let lang = lang.to_owned();
 
     tokio::task::spawn_blocking(move || {
-        let img = image::open(&path)
-            .map_err(|e| format!("Failed to open image '{}': {}", path, e))?;
+        let img =
+            image::open(&path).map_err(|e| format!("Failed to open image '{}': {}", path, e))?;
 
         let results = crate::commands::ocr_engine::OcrEngine::recognize(&img, &lang)?;
         Ok(results)
@@ -77,10 +76,7 @@ pub async fn ocr_get_languages() -> Vec<OCRLang> {
 // ── Export command (inlined from commands/export.rs) ─────────────────────
 
 /// Dispatch to the appropriate format exporter.
-fn render_content(
-    subtitles: &[SubtitleItem],
-    format: ExportFormat,
-) -> Result<String, String> {
+fn render_content(subtitles: &[SubtitleItem], format: ExportFormat) -> Result<String, String> {
     match format {
         ExportFormat::SRT => Ok(export_as_srt(subtitles)),
         ExportFormat::WebVTT => Ok(export_as_vtt(subtitles)),

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// Region of interest within a video frame for subtitle extraction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ROI {
     pub id: String,
     pub name: String,

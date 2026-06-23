@@ -22,6 +22,7 @@ use tracing;
 
 use super::utils::run_command_with_timeout;
 use super::video::get_video_metadata;
+use crate::commands::utils::shared::parse_pts_times;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SceneDetectionConfig {
@@ -67,29 +68,6 @@ fn deduplicate_timestamps(timestamps: &[f64], min_gap: f64) -> Vec<f64> {
     result
 }
 
-/// Parse FFmpeg showinfo output for `pts_time:` lines.
-///
-/// FFmpeg output when `select` filter fires:
-/// ```text
-/// [Parsed_showinfo_1 @ 0x...] pts_time:1.234
-/// ```
-fn parse_pts_times(output: &str) -> Vec<f64> {
-    let mut timestamps: Vec<f64> = Vec::new();
-    for line in output.lines() {
-        if line.contains("pts_time:") {
-            if let Some(ts_str) = line.split("pts_time:").nth(1) {
-                let ts_str = ts_str.trim().split_whitespace().next().unwrap_or("");
-                if let Ok(ts) = ts_str.parse::<f64>() {
-                    if ts > 0.0 {
-                        timestamps.push(ts);
-                    }
-                }
-            }
-        }
-    }
-    timestamps
-}
-
 #[tauri::command]
 pub async fn detect_scenes(
     video_path: String,
@@ -103,7 +81,11 @@ pub async fn detect_scenes(
 
     let path = Path::new(&video_path);
     if !path.exists() {
-        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, video_path));
+        return Err(format!(
+            "{}: {}",
+            crate::commands::errors::FILE_NOT_FOUND,
+            video_path
+        ));
     }
 
     let fps = match get_video_metadata(video_path.clone()).await {
@@ -114,8 +96,8 @@ pub async fn detect_scenes(
         }
     };
 
-    let timestamps = detect_scenes_ffmpeg(&video_path, config.threshold, config.min_scene_length)
-        .await?;
+    let timestamps =
+        detect_scenes_ffmpeg(&video_path, config.threshold, config.min_scene_length).await?;
 
     let scene_changes: Vec<SceneChange> = timestamps
         .into_iter()
@@ -143,10 +125,7 @@ async fn detect_scenes_ffmpeg(
     // Build FFmpeg filter expression
     // `select='gt(scene,<threshold>)'` — fires on scene changes
     // `showinfo` — outputs pts_time for each selected frame
-    let filter = format!(
-        "select='gt(scene,{:.3})',showinfo",
-        ffmpeg_threshold
-    );
+    let filter = format!("select='gt(scene,{:.3})',showinfo", ffmpeg_threshold);
 
     tracing::debug!(
         "Running FFmpeg scene detection: threshold={:.3} (mapped from {:.3}), min_scene_len={}",
@@ -158,10 +137,14 @@ async fn detect_scenes_ffmpeg(
     let output = run_command_with_timeout(
         "ffmpeg",
         &[
-            "-i", path,
-            "-filter:v", &filter,
-            "-vsync", "vfr",
-            "-f", "null",
+            "-i",
+            path,
+            "-filter:v",
+            &filter,
+            "-vsync",
+            "vfr",
+            "-f",
+            "null",
             "-",
         ],
         std::time::Duration::from_secs(300), // 5 min timeout for long videos
@@ -183,7 +166,10 @@ async fn detect_scenes_ffmpeg(
     let raw_timestamps = parse_pts_times(&combined_output);
 
     if raw_timestamps.is_empty() {
-        tracing::info!("No scene changes detected in video (threshold={:.3})", ffmpeg_threshold);
+        tracing::info!(
+            "No scene changes detected in video (threshold={:.3})",
+            ffmpeg_threshold
+        );
         return Ok(Vec::new());
     }
 

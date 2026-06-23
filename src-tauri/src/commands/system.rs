@@ -43,36 +43,38 @@ pub struct SystemCheckResult {
 
 fn system_dependencies() -> &'static [SystemDependency] {
     static DEPS: OnceLock<[SystemDependency; 4]> = OnceLock::new();
-    DEPS.get_or_init(|| [
-        SystemDependency {
-            name: "ffmpeg".to_string(),
-            command: "ffmpeg".to_string(),
-            required: true,
-            version_args: vec!["-version".to_string()],
-            version_pattern: "ffmpeg version".to_string(),
-        },
-        SystemDependency {
-            name: "ffprobe".to_string(),
-            command: "ffprobe".to_string(),
-            required: true,
-            version_args: vec!["-version".to_string()],
-            version_pattern: "ffprobe version".to_string(),
-        },
-        SystemDependency {
-            name: "tesseract".to_string(),
-            command: "tesseract".to_string(),
-            required: true,
-            version_args: vec!["--version".to_string()],
-            version_pattern: "tesseract".to_string(),
-        },
-        SystemDependency {
-            name: "ImageMagick".to_string(),
-            command: "convert".to_string(),
-            required: false,
-            version_args: vec!["--version".to_string()],
-            version_pattern: "ImageMagick".to_string(),
-        },
-    ])
+    DEPS.get_or_init(|| {
+        [
+            SystemDependency {
+                name: "ffmpeg".to_string(),
+                command: "ffmpeg".to_string(),
+                required: true,
+                version_args: vec!["-version".to_string()],
+                version_pattern: "ffmpeg version".to_string(),
+            },
+            SystemDependency {
+                name: "ffprobe".to_string(),
+                command: "ffprobe".to_string(),
+                required: true,
+                version_args: vec!["-version".to_string()],
+                version_pattern: "ffprobe version".to_string(),
+            },
+            SystemDependency {
+                name: "tesseract".to_string(),
+                command: "tesseract".to_string(),
+                required: true,
+                version_args: vec!["--version".to_string()],
+                version_pattern: "tesseract".to_string(),
+            },
+            SystemDependency {
+                name: "ImageMagick".to_string(),
+                command: "convert".to_string(),
+                required: false,
+                version_args: vec!["--version".to_string()],
+                version_pattern: "ImageMagick".to_string(),
+            },
+        ]
+    })
 }
 
 #[tauri::command]
@@ -141,14 +143,12 @@ async fn check_single_dependency(dep: &SystemDependency) -> DependencyCheckResul
                 }
             }
         }
-        Err(e) => {
-            DependencyCheckResult {
-                name: dep.name.clone(),
-                installed: false,
-                version: None,
-                error: Some(format!("Command not found: {}", e)),
-            }
-        }
+        Err(e) => DependencyCheckResult {
+            name: dep.name.clone(),
+            installed: false,
+            version: None,
+            error: Some(format!("Command not found: {}", e)),
+        },
     }
 }
 

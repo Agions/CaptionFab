@@ -114,7 +114,10 @@ pub async fn check_gpu_capability() -> GPUCapability {
     // nvidia-smi queries are done in spawn_blocking to avoid blocking the
     // async runtime (nvidia-smi is typically fast, < 50ms)
     let (device_count, memory_total) = tokio::task::spawn_blocking(|| {
-        (count_cuda_devices_via_nvidia_smi(), query_gpu_memory_via_nvidia_smi())
+        (
+            count_cuda_devices_via_nvidia_smi(),
+            query_gpu_memory_via_nvidia_smi(),
+        )
     })
     .await
     .unwrap_or((None, None));

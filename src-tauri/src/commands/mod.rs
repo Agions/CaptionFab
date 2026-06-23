@@ -19,17 +19,17 @@
 //! | `auto_roi` | 自动 ROI 检测（Rust 原生 image crate）|
 //! | `timestamp` | 时间戳格式化（SRT/VTT/ASS/SSA/SBV）|
 //! | `gpu` | GPU 检测（ONNX Runtime 原生）|
-pub mod types;
-pub mod utils;
-pub mod video;
-pub mod scene;
+pub mod auto_roi;
+pub mod errors;
 pub mod export_fmt;
 pub mod ffmpeg;
 pub mod file;
+pub mod gpu;
 pub mod ocr_engine;
 pub mod ocr_export;
-pub mod errors;
+pub mod scene;
 pub mod system;
-pub mod auto_roi;
 pub mod timestamp;
-pub mod gpu;
+pub mod types;
+pub mod utils;
+pub mod video;

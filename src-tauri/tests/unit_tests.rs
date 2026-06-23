@@ -53,7 +53,7 @@ mod tests {
         let frame = (timestamp * fps) as u64;
         
         // Should be approximately 1498-1500
-        assert!(frame >= 1498 && frame <= 1500);
+        assert!((1498..=1500).contains(&frame));
     }
 
     #[test]
@@ -142,8 +142,8 @@ mod tests {
     #[test]
     fn test_bounding_box_edge_touching() {
         // Boxes that touch at edges should NOT count as intersecting
-        let box1_x = 100i32; let box1_y = 100i32; let box1_w = 50u32; let box1_h = 50u32;
-        let box2_x = 150i32; let box2_y = 100i32; let box2_w = 50u32; let box2_h = 50u32;
+        let box1_x = 100i32; let _box1_y = 100i32; let box1_w = 50u32; let _box1_h = 50u32;
+        let box2_x = 150i32; let _box2_y = 100i32; let box2_w = 50u32; let _box2_h = 50u32;
         
         // box1 ends at x=150, box2 starts at x=150 - they touch but don't overlap
         let x_overlap = box1_x < (box2_x + box2_w as i32) && (box1_x + box1_w as i32) > box2_x;
@@ -160,7 +160,7 @@ mod tests {
         let threshold = 0.3f32;
         
         // Threshold should be valid (0.0 to 1.0 for normalized similarity)
-        assert!(threshold >= 0.0 && threshold <= 1.0);
+        assert!((0.0..=1.0).contains(&threshold));
         
         // Convert to ffmpeg expected format (0-255 range for some filters)
         let ff_threshold = (threshold * 255.0) as i32;

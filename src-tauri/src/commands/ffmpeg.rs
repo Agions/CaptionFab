@@ -14,7 +14,6 @@
 //! | fraction string | [`parse_fps_from_fraction`] | `f64` (fps) |
 //! | time string | [`parse_time_to_seconds`] | `f64` (seconds) |
 
-
 // Re-export so callers can get VideoMetadata without pulling in video.rs
 
 /// Parse frame rate from ffprobe's "30000/1001" fraction string.
@@ -98,9 +97,7 @@ pub fn parse_stream_info(output: &str) -> (u32, u32, f64) {
         );
     }
     if fps == 30.0 {
-        tracing::warn!(
-            "Could not parse video fps from ffmpeg output, using default 30.0"
-        );
+        tracing::warn!("Could not parse video fps from ffmpeg output, using default 30.0");
     }
 
     (width, height, fps)

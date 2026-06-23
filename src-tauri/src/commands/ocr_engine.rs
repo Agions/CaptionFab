@@ -26,19 +26,19 @@
 //! - **GPU Support**: Automatic CUDA/CPU provider selection
 //! - **Concurrent Inference**: Detection + per-box recognition pipeline
 
-pub mod session;
 pub mod cache;
-pub mod preprocess;
 pub mod postprocess;
+pub mod preprocess;
+pub mod session;
 use crate::commands::types::{BBox, OCRResult};
 
+use cache::OCR_CACHE;
 use image::DynamicImage;
 use image::GenericImageView;
 use ndarray::Array;
-use session::{DET_SESSION, REC_SESSION};
-use cache::OCR_CACHE;
+use postprocess::{compute_confidence, decode_boxes, nms_boxes, simple_hash};
 use preprocess::preprocess_detection;
-use postprocess::{decode_boxes, nms_boxes, simple_hash, compute_confidence};
+use session::{DET_SESSION, REC_SESSION};
 
 // Box expansion ratio for recognition crops.
 const BOX_EXPAND_RATIO: f32 = 0.1;
@@ -79,11 +79,9 @@ impl OcrEngine {
             .next()
             .ok_or_else(|| "No detection output".to_string())?;
 
-        let det_owned: Array<f32, ndarray::IxDyn> = Array::from_shape_vec(
-            ndarray::IxDyn(&det_shape_vec),
-            det_data,
-        )
-        .map_err(|e| format!("Failed to create detection array: {e}"))?;
+        let det_owned: Array<f32, ndarray::IxDyn> =
+            Array::from_shape_vec(ndarray::IxDyn(&det_shape_vec), det_data)
+                .map_err(|e| format!("Failed to create detection array: {e}"))?;
         let det_shape = det_owned.shape().to_vec();
         let det_h = det_shape.get(2).copied().unwrap_or(1).max(1);
         let det_w = det_shape.get(3).copied().unwrap_or(1).max(1);
@@ -121,8 +119,8 @@ impl OcrEngine {
 
         let mut results: Vec<OCRResult> = Vec::with_capacity(boxes.len());
         for &[x1, y1, x2, y2] in &boxes {
-            let crop_x = (x1 as u32).saturating_sub((x1 as f32 * BOX_EXPAND_RATIO) as u32);
-            let crop_y = (y1 as u32).saturating_sub((y1 as f32 * BOX_EXPAND_RATIO) as u32);
+            let crop_x = (x1 as u32).saturating_sub((x1 * BOX_EXPAND_RATIO) as u32);
+            let crop_y = (y1 as u32).saturating_sub((y1 * BOX_EXPAND_RATIO) as u32);
             let crop_w = ((x2 - x1) * (1.0 + 2.0 * BOX_EXPAND_RATIO)) as u32;
             let crop_h = ((y2 - y1) * (1.0 + 2.0 * BOX_EXPAND_RATIO)) as u32;
 
@@ -155,13 +153,11 @@ impl OcrEngine {
                 Some(v) => v,
                 None => continue,
             };
-            let rec_owned: Array<f32, ndarray::IxDyn> = match Array::from_shape_vec(
-                ndarray::IxDyn(&rec_shape_vec),
-                rec_data,
-            ) {
-                Ok(a) => a,
-                Err(_) => continue,
-            };
+            let rec_owned: Array<f32, ndarray::IxDyn> =
+                match Array::from_shape_vec(ndarray::IxDyn(&rec_shape_vec), rec_data) {
+                    Ok(a) => a,
+                    Err(_) => continue,
+                };
             let rec_shape = rec_owned.shape().to_vec();
 
             if rec_shape.len() < 3 {
@@ -255,10 +251,7 @@ mod tests {
     fn test_preprocess_detection_shape() {
         let img = test_image();
         let (tensor, nw, nh) = preprocess_detection(&img);
-        assert_eq!(
-            tensor.shape(),
-            &[1, 3, 960, 960]
-        );
+        assert_eq!(tensor.shape(), &[1, 3, 960, 960]);
         assert!(nw > 0.0);
         assert!(nh > 0.0);
     }
@@ -266,7 +259,7 @@ mod tests {
     #[test]
     fn test_preprocess_recognition_shape() {
         let img = test_image().crop_imm(5, 10, 85, 10);
-        let tensor = postprocess::preprocess_recognition(&img);
+        let tensor = preprocess::preprocess_recognition(&img);
         let shape = tensor.shape();
         assert_eq!(shape[0], 1);
         assert_eq!(shape[1], 3);

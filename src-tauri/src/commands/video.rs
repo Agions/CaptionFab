@@ -5,9 +5,7 @@ use std::path::Path;
 use super::ffmpeg::{
     parse_duration_from_ffmpeg_output, parse_fps_from_fraction, parse_stream_info,
 };
-use super::utils::{
-    uuid_v4, TempFileGuard, run_command_with_timeout,
-};
+use super::utils::{run_command_with_timeout, uuid_v4, TempFileGuard};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VideoMetadata {
@@ -23,26 +21,33 @@ pub struct VideoMetadata {
 #[tauri::command]
 pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
     // Warn about paths with special characters that may cause issues
-    if path.contains(|c: char| c == '\'' || c == '"' || c == '$' || c == '`' || c == '\\') {
+    if path.contains(|c: char| ['\'', '"', '$', '`', '\\'].contains(&c)) {
         tracing::warn!(
             "Video path contains shell-special characters which may cause issues: {}",
             path
         );
     }
-    
+
     tracing::info!("Getting metadata for: {}", path);
 
     let path_obj = Path::new(&path);
 
     if !path_obj.exists() {
-        return Err(format!("{}: {}", crate::commands::errors::FILE_NOT_FOUND, path));
+        return Err(format!(
+            "{}: {}",
+            crate::commands::errors::FILE_NOT_FOUND,
+            path
+        ));
     }
 
     // Try to use ffprobe for real metadata
     if let Ok(metadata) = get_video_metadata_ffprobe(&path).await {
         tracing::info!(
             "Got video metadata via ffprobe: {}x{} @ {} fps, {}s",
-            metadata.width, metadata.height, metadata.fps, metadata.duration
+            metadata.width,
+            metadata.height,
+            metadata.fps,
+            metadata.duration
         );
         return Ok(metadata);
     }
@@ -139,8 +144,10 @@ async fn get_video_metadata_ffprobe(path: &str) -> Result<VideoMetadata, String>
     let output = run_command_with_timeout(
         "ffprobe",
         &[
-            "-v", "quiet",
-            "-print_format", "json",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
             "-show_format",
             "-show_streams",
             path,
@@ -160,9 +167,7 @@ async fn get_video_metadata_ffprobe(path: &str) -> Result<VideoMetadata, String>
     // Find video stream
     let video_stream = json["streams"]
         .as_array()
-        .and_then(|streams| {
-            streams.iter().find(|s| s["codec_type"] == "video")
-        })
+        .and_then(|streams| streams.iter().find(|s| s["codec_type"] == "video"))
         .ok_or("No video stream found")?;
 
     let width = video_stream["width"].as_u64().unwrap_or(1920) as u32;
@@ -200,10 +205,7 @@ async fn get_video_metadata_ffprobe(path: &str) -> Result<VideoMetadata, String>
 }
 
 #[tauri::command]
-pub async fn extract_frame_at_time(
-    path: String,
-    timestamp_secs: f64,
-) -> Result<String, String> {
+pub async fn extract_frame_at_time(path: String, timestamp_secs: f64) -> Result<String, String> {
     extract_frame_at_time_impl(&path, timestamp_secs, None).await
 }
 
@@ -224,11 +226,8 @@ async fn extract_frame_at_time_impl(
     // 使用 UUID + 时间戳避免竞争条件
     let uuid = uuid_v4();
     let timestamp_ms = (timestamp_secs * 1000.0) as u64;
-    let output_path = std::env::temp_dir().join(format!(
-        "captionfab_frame_{}_{}.png",
-        timestamp_ms,
-        uuid
-    ));
+    let output_path =
+        std::env::temp_dir().join(format!("captionfab_frame_{}_{}.png", timestamp_ms, uuid));
     let _guard = TempFileGuard::new(output_path.clone()); // Auto-cleanup on function exit
 
     // Build ffmpeg arguments with security flags
@@ -238,11 +237,16 @@ async fn extract_frame_at_time_impl(
     let ts_str = format!("{}", timestamp_secs);
     let output_path_str = output_path.to_string_lossy();
     let mut args: Vec<&str> = vec![
-        "-y", "-nostdin",
-        "-ss", ts_str.as_str(),
-        "-i", path,
-        "-vframes", "1",
-        "-q:v", "2",
+        "-y",
+        "-nostdin",
+        "-ss",
+        ts_str.as_str(),
+        "-i",
+        path,
+        "-vframes",
+        "1",
+        "-q:v",
+        "2",
     ];
 
     // Add crop filter if specified
@@ -252,13 +256,9 @@ async fn extract_frame_at_time_impl(
 
     args.push(output_path_str.as_ref());
 
-    let output = run_command_with_timeout(
-        "ffmpeg",
-        &args,
-        std::time::Duration::from_secs(30),
-    )
-    .await
-    .map_err(|e| format!("Failed to run ffmpeg: {}", e))?;
+    let output = run_command_with_timeout("ffmpeg", &args, std::time::Duration::from_secs(30))
+        .await
+        .map_err(|e| format!("Failed to run ffmpeg: {}", e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);

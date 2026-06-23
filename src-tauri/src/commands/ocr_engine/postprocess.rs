@@ -100,11 +100,11 @@ pub fn decode_boxes(
                     ];
 
                     for (nx, ny) in neighbours {
-                        if nx < out_w && ny < out_h && !visited[ny * out_w + nx] {
-                            if output[[0, 0, ny, nx]] > DET_THRESHOLD {
-                                visited[ny * out_w + nx] = true;
-                                queue.push((nx, ny));
-                            }
+                        if nx < out_w && ny < out_h && !visited[ny * out_w + nx]
+                            && output[[0, 0, ny, nx]] > DET_THRESHOLD
+                        {
+                            visited[ny * out_w + nx] = true;
+                            queue.push((nx, ny));
                         }
                     }
                 }

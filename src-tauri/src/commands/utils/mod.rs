@@ -10,11 +10,14 @@
 //!
 //! FFmpeg / ffprobe output parsing lives in [`super::ffmpeg`].
 
+pub mod shared;
+pub mod shared_core;
+
 use std::path::PathBuf;
 use std::time::Duration;
-use uuid::Uuid;
 use tokio::process::Command;
 use tokio::time::timeout;
+use uuid::Uuid;
 
 // ─── Temp file guard ─────────────────────────────────────────────────────────
 
@@ -59,13 +62,10 @@ pub async fn run_command_with_timeout(
     args: &[&str],
     timeout_duration: Duration,
 ) -> Result<std::process::Output, String> {
-    let output = timeout(
-        timeout_duration,
-        Command::new(cmd).args(args).output(),
-    )
-    .await
-    .map_err(|_| format!("Command '{}' timed out after {:?}", cmd, timeout_duration))?
-    .map_err(|e| format!("Failed to execute '{}': {}", cmd, e))?;
+    let output = timeout(timeout_duration, Command::new(cmd).args(args).output())
+        .await
+        .map_err(|_| format!("Command '{}' timed out after {:?}", cmd, timeout_duration))?
+        .map_err(|e| format!("Failed to execute '{}': {}", cmd, e))?;
 
     Ok(output)
 }

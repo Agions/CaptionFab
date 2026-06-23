@@ -22,8 +22,14 @@ pub fn format_timestamp(seconds: f64, separator: &str, precision: u32) -> String
     let secs = (seconds % 60.0).floor() as u32;
     let fraction = ((seconds % 1.0) * 10_f64.powi(precision as i32)).floor() as u32;
     match precision {
-        3 => format!("{:02}:{:02}:{:02}{}{:03}", hours, minutes, secs, separator, fraction),
-        _ => format!("{:02}:{:02}:{:02}{}{:02}", hours, minutes, secs, separator, fraction),
+        3 => format!(
+            "{:02}:{:02}:{:02}{}{:03}",
+            hours, minutes, secs, separator, fraction
+        ),
+        _ => format!(
+            "{:02}:{:02}:{:02}{}{:02}",
+            hours, minutes, secs, separator, fraction
+        ),
     }
 }
 
