@@ -47,7 +47,6 @@
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
-    "@vueuse/core": "^10.7.0",
     "pinia": "^2.1.0",
     "tesseract.js": "^5.0.0",
     "vue": "^3.4.0"

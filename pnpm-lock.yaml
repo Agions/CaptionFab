@@ -17,9 +17,6 @@ importers:
       '@tauri-apps/plugin-shell':
         specifier: ^2.0.0
         version: 2.3.5
-      '@vueuse/core':
-        specifier: ^10.7.0
-        version: 10.11.1(vue@3.5.35(typescript@5.9.3))
       pinia:
         specifier: ^2.1.0
         version: 2.3.1(typescript@5.9.3)(vue@3.5.35(typescript@5.9.3))

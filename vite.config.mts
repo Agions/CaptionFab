@@ -70,7 +70,7 @@ export default defineConfig({
   optimizeDeps: {
     // 优化：预构建稳定依赖加速冷启动
     // 注意：tesseract.js 含 WASM 不参与预构建，仅用 include 加速首次加载
-    include: ['vue', 'pinia', '@vueuse/core'],
+    include: ['vue', 'pinia'],
     // 优化：排除 WASM 重型依赖，避免预构建阻塞
     exclude: ['tesseract.js']
   }
