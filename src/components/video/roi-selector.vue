@@ -14,28 +14,12 @@ const emit = defineEmits<{
 const videoStore = useVideoStore()
 
 const containerRef = ref<HTMLElement | null>(null)
+const selectionBoxRef = ref<HTMLElement | null>(null)
 const isSelecting = ref(false)
 const startPos = ref({ x: 0, y: 0 })
-const currentPos = ref({ x: 0, y: 0 })
-// rAF throttle: 批量处理高频 mousemove，避免每帧触发响应式更新
+// rAF throttle: 批量处理高频 mousemove，直接写 DOM 跳过 Vue 响应式
 let _rafId: number | null = null
 let _pendingMouseEvent: MouseEvent | null = null
-
-const selection = computed(() => {
-  if (!isSelecting.value) return null
-
-  const x = Math.min(startPos.value.x, currentPos.value.x)
-  const y = Math.min(startPos.value.y, currentPos.value.y)
-  const width = Math.abs(currentPos.value.x - startPos.value.x)
-  const height = Math.abs(currentPos.value.y - startPos.value.y)
-
-  return {
-    x: (x / props.videoWidth) * 100,
-    y: (y / props.videoHeight) * 100,
-    width: (width / props.videoWidth) * 100,
-    height: (height / props.videoHeight) * 100
-  }
-})
 
 const currentROI = computed(() => videoStore.selectedROI)
 
@@ -48,7 +32,6 @@ function handleMouseDown(e: MouseEvent) {
 
   isSelecting.value = true
   startPos.value = { x, y }
-  currentPos.value = { x, y }
 }
 
 function handleMouseMove(e: MouseEvent) {
@@ -62,27 +45,48 @@ function handleMouseMove(e: MouseEvent) {
     if (!ev || !isSelecting.value || !containerRef.value) return
 
     const rect = containerRef.value.getBoundingClientRect()
-    currentPos.value = {
-      x: Math.max(0, Math.min(ev.clientX - rect.left, props.videoWidth)),
-      y: Math.max(0, Math.min(ev.clientY - rect.top, props.videoHeight)),
+    const currentX = Math.max(0, Math.min(ev.clientX - rect.left, props.videoWidth))
+    const currentY = Math.max(0, Math.min(ev.clientY - rect.top, props.videoHeight))
+
+    // 直接写 DOM style，绕过 Vue 响应式，降低拖拽延迟
+    if (selectionBoxRef.value) {
+      const x = Math.min(startPos.value.x, currentX)
+      const y = Math.min(startPos.value.y, currentY)
+      const width = Math.abs(currentX - startPos.value.x)
+      const height = Math.abs(currentY - startPos.value.y)
+
+      selectionBoxRef.value.style.left = `${(x / props.videoWidth) * 100}%`
+      selectionBoxRef.value.style.top = `${(y / props.videoHeight) * 100}%`
+      selectionBoxRef.value.style.width = `${(width / props.videoWidth) * 100}%`
+      selectionBoxRef.value.style.height = `${(height / props.videoHeight) * 100}%`
     }
   })
 }
 
 function handleMouseUp() {
-  if (!isSelecting.value || !selection.value) return
+  if (!isSelecting.value) return
 
-  // Only emit if selection is meaningful (> 1% of video size)
-  if (selection.value.width > 1 && selection.value.height > 1) {
-    emit('update', selection.value)
+  // 从 DOM 读取最终选区，避免保留中间响应式状态
+  if (selectionBoxRef.value) {
+    const style = selectionBoxRef.value.style
+    const width = parseFloat(style.width)
+    const height = parseFloat(style.height)
 
-    videoStore.updateROI({
-      x: selection.value.x,
-      y: selection.value.y,
-      width: selection.value.width,
-      height: selection.value.height,
-      type: 'custom'
-    })
+    if (width > 1 && height > 1) {
+      emit('update', {
+        x: parseFloat(style.left),
+        y: parseFloat(style.top),
+        width,
+        height
+      })
+      videoStore.updateROI({
+        x: parseFloat(style.left),
+        y: parseFloat(style.top),
+        width,
+        height,
+        type: 'custom'
+      })
+    }
   }
 
   isSelecting.value = false
@@ -122,14 +126,9 @@ onUnmounted(() => {
     <!-- Active selection -->
     <Transition name="roi">
       <div
-        v-if="selection"
+        v-if="isSelecting"
+        ref="selectionBoxRef"
         class="roi-selection"
-        :style="{
-          left: `${selection.x}%`,
-          top: `${selection.y}%`,
-          width: `${selection.width}%`,
-          height: `${selection.height}%`
-        }"
       >
         <div class="roi-corner top-left"/>
         <div class="roi-corner top-right"/>
@@ -156,7 +155,7 @@ onUnmounted(() => {
 
     <!-- Hint -->
     <Transition name="fade">
-      <div v-if="!selection && !currentROI" class="roi-hint">
+      <div v-if="!isSelecting && !currentROI" class="roi-hint">
         <svg viewBox="0 0 20 20" fill="none" class="hint-icon">
           <rect x="3" y="6" width="14" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
           <path d="M7 10h6M10 7v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
