@@ -12,7 +12,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@import "@/assets/styles/_variables.scss"; @import "@/assets/styles/_mixins.scss";`,
+        additionalData: `@import "@/assets/styles/_variables.scss"; @import "@/assets/styles/_mixins.scss"; @import "@/assets/styles/_modal.scss";`,
         silenceDeprecations: ['import', 'color-functions', 'global-builtin', 'legacy-js-api']
       }
     }

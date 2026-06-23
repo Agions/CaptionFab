@@ -89,6 +89,7 @@ function handleMouseUp() {
 }
 
 function handleTimelineHover(e: MouseEvent) {
+  isHovering.value = true
   // rAF throttle: 只保存最新事件坐标，等下一帧统一更新
   _hoverPendingEvent = e
   if (_hoverRafId !== null) return
@@ -109,6 +110,7 @@ function handleTimelineHover(e: MouseEvent) {
     if (tooltipRef.value) {
       const root = tooltipRef.value.$el as HTMLElement | undefined
       if (root) {
+        root.style.display = 'block'
         root.style.left = `${(frame / totalFrames.value) * 100}%`
         const timeEl = root.querySelector('.preview-time')
         const frameEl = root.querySelector('.preview-frame')
@@ -135,6 +137,13 @@ function handleTimelineLeave() {
     cancelAnimationFrame(_hoverRafId)
     _hoverRafId = null
     _hoverPendingEvent = null
+  }
+  // 直接隐藏 tooltip DOM，避免 Vue 响应式开销
+  if (tooltipRef.value) {
+    const root = tooltipRef.value.$el as HTMLElement | undefined
+    if (root) {
+      root.style.display = 'none'
+    }
   }
 }
 
@@ -306,7 +315,6 @@ const subtitleCount = computed(() => subtitleStore.totalCount)
       </div>
 
       <timeline-tooltip
-        v-if="isHovering || isDragging"
         ref="tooltipRef"
         :hover-frame="hoverFrame"
         :total-frames="totalFrames"

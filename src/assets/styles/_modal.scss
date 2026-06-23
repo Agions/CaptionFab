@@ -1,0 +1,92 @@
+// ============================================
+// CaptionFab Design System v2.0 - Modal
+// ============================================
+
+// Shared modal wrapper (fixed overlay + centered content)
+@mixin modal-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($bg-base, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+// Shared modal content shell
+// $min-w / $max-w accept null to omit that constraint
+@mixin modal-content($min-w: 360px, $max-w: 480px) {
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: $space-6;
+  animation: fade-up 0.3s ease-out both;
+
+  @if $min-w {
+    min-width: $min-w;
+  }
+  @if $max-w {
+    max-width: $max-w;
+  }
+}
+
+// Shared modal header
+@mixin modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $space-4;
+
+  h3 {
+    font-size: $text-lg;
+    font-weight: 700;
+    color: $text-primary;
+  }
+}
+
+// Shared close button
+@mixin modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-full;
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $bg-overlay;
+    color: $text-primary;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Shared modal body base
+@mixin modal-body($align: stretch, $gap: $space-4) {
+  display: flex;
+  flex-direction: column;
+  align-items: $align;
+  gap: $gap;
+}
+
+// Shared fade transition
+@mixin modal-fade {
+  &-enter-active,
+  &-leave-active {
+    transition: opacity 0.2s ease;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+  }
+}

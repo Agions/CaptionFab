@@ -53,6 +53,7 @@ defineExpose({ rootEl: rootRef })
   padding: $space-2;
   box-shadow: $shadow-lg;
   min-width: 160px;
+  display: none;
   animation: tooltip-enter 0.15s ease-out;
 }
 

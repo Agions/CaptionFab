@@ -80,11 +80,13 @@ export function useVideoPlayer() {
     // Performance: use requestVideoFrameCallback when available for frame-accurate tracking
     let _rafPending = false
     let _lastFrameTime = 0
+    let _useRvfc = false
 
     // Performance: requestVideoFrameCallback for smoother frame-accurate updates (Chrome 117+)
     function _startRVFC() {
       if (!_rvfcActive && 'requestVideoFrameCallback' in element) {
         _rvfcActive = true
+        _useRvfc = true
         // 优化：使用 unknown 替代 any，保持类型安全
         // requestVideoFrameCallback 的 metadata 类型在部分 TS 版本中未定义
         const videoEl = element as HTMLVideoElement & { requestVideoFrameCallback?: (cb: (now: DOMHighResTimeStamp, metadata: unknown) => void) => number }
@@ -100,6 +102,7 @@ export function useVideoPlayer() {
             videoEl.requestVideoFrameCallback(callback)
           } else {
             _rvfcActive = false
+            _useRvfc = false
           }
         }
         videoEl.requestVideoFrameCallback(callback)
@@ -108,9 +111,12 @@ export function useVideoPlayer() {
 
     function _stopRVFC() {
       _rvfcActive = false
+      _useRvfc = false
     }
 
     _addListener(element, VIDEO_EVENTS.TIME_UPDATE, () => {
+      // RVFC is frame-accurate; suppress redundant updates while it is active
+      if (_useRvfc) return
       if (_rafPending) return
       _rafPending = true
       requestAnimationFrame(() => {

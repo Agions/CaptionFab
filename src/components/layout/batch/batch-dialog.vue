@@ -119,67 +119,23 @@ function handleClose() {
 
 <style lang="scss" scoped>
 .batch-dialog {
-  position: fixed;
-  inset: 0;
-  z-index: $z-modal;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba($bg-base, 0.8);
-  backdrop-filter: blur(4px);
+  @include modal-wrapper;
 }
 
 .modal-content {
-  background: $bg-surface;
-  border: 1px solid $border;
-  border-radius: $radius-lg;
-  padding: $space-6;
-  min-width: 360px;
-  max-width: 480px;
-  animation: fade-up 0.3s ease-out both;
+  @include modal-content(360px, 480px);
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: $space-4;
-}
-
-.modal-header h3 {
-  font-size: $text-lg;
-  font-weight: 700;
-  color: $text-primary;
+  @include modal-header;
 }
 
 .modal-close {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-full;
-  background: transparent;
-  border: none;
-  color: $text-muted;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all $transition-fast;
-
-  &:hover {
-    background: $bg-overlay;
-    color: $text-primary;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
+  @include modal-close;
 }
 
 .modal-body {
-  display: flex;
-  @include flex-column;
-  gap: $space-4;
+  @include modal-body;
 }
 
 .option-group {
@@ -271,13 +227,5 @@ function handleClose() {
   }
 }
 
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
+@include modal-fade('modal-fade');
 </style>
