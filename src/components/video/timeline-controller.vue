@@ -21,12 +21,12 @@ const zoomLevel = ref(1)
 const isDragging = ref(false)
 const isHovering = ref(false)
 const hoverFrame = ref(0)
-const hoverPosition = ref({ x: 0, y: 0 })
 const hoverThumbnail = ref<string | null>(null)
 
 // Keyboard navigation
 const focusedMarkerIndex = ref(-1)
 const timelineRef = ref<HTMLElement | null>(null)
+const tooltipRef = ref<InstanceType<typeof TimelineTooltip> | null>(null)
 
 // Video control functions
 const seekToFrame = inject<(frame: number) => void>('seekToFrame')
@@ -35,6 +35,9 @@ const captureFrame = inject<() => string | null>('captureFrame')
 // Thumbnail capture with proper debounce and requestIdleCallback
 let thumbnailTimeout: ReturnType<typeof setTimeout> | null = null
 let _pendingThumbnailFrame = -1
+// rAF throttle: 批量处理 timeline hover，直接写 tooltip DOM 跳过 Vue 响应式
+let _hoverRafId: number | null = null
+let _hoverPendingEvent: MouseEvent | null = null
 
 async function captureThumbnailAtFrame(frame: number) {
   if (!seekToFrame || !captureFrame) return null
@@ -86,34 +89,65 @@ function handleMouseUp() {
 }
 
 function handleTimelineHover(e: MouseEvent) {
-  const track = document.querySelector('.timeline-track') as HTMLElement
-  if (!track) return
-  const rect = track.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const percent = Math.max(0, Math.min(1, x / rect.width))
-  hoverFrame.value = Math.floor(percent * totalFrames.value)
-  hoverPosition.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  isHovering.value = true
+  // rAF throttle: 只保存最新事件坐标，等下一帧统一更新
+  _hoverPendingEvent = e
+  if (_hoverRafId !== null) return
+  _hoverRafId = requestAnimationFrame(() => {
+    _hoverRafId = null
+    const ev = _hoverPendingEvent
+    _hoverPendingEvent = null
+    if (!ev) return
 
-  // Performance: throttle thumbnail capture to avoid excessive frame seeks
-  if (thumbnailTimeout) clearTimeout(thumbnailTimeout)
-  thumbnailTimeout = setTimeout(async () => {
-    // Skip if frame hasn't changed since last capture
-    if (hoverThumbnail.value && hoverFrame.value === _pendingThumbnailFrame) return
-    if (seekToFrame && captureFrame) {
-      hoverThumbnail.value = await captureThumbnailAtFrame(hoverFrame.value)
+    const track = document.querySelector('.timeline-track') as HTMLElement
+    if (!track) return
+    const rect = track.getBoundingClientRect()
+    const x = ev.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
+    const frame = Math.floor(percent * totalFrames.value)
+
+    // 直接写 tooltip DOM，绕过 Vue 响应式
+    if (tooltipRef.value) {
+      const root = tooltipRef.value.$el as HTMLElement | undefined
+      if (root) {
+        root.style.left = `${(frame / totalFrames.value) * 100}%`
+        const timeEl = root.querySelector('.preview-time')
+        const frameEl = root.querySelector('.preview-frame')
+        if (timeEl) timeEl.textContent = formatFrameToTime(frame, fps.value)
+        if (frameEl) frameEl.textContent = `#${frame.toLocaleString()}`
+      }
     }
-  }, 80) // Reduced from 100ms for snappier response
+
+    // 节流缩略图捕获，避免频繁 seek
+    if (thumbnailTimeout) clearTimeout(thumbnailTimeout)
+    thumbnailTimeout = setTimeout(async () => {
+      if (hoverThumbnail.value && hoverFrame.value === _pendingThumbnailFrame) return
+      if (seekToFrame && captureFrame) {
+        hoverThumbnail.value = await captureThumbnailAtFrame(hoverFrame.value)
+      }
+    }, 80)
+  })
 }
 
 function handleTimelineLeave() {
   isHovering.value = false
+  // 取消待处理的 rAF，避免鼠标离开后更新 hover 状态
+  if (_hoverRafId !== null) {
+    cancelAnimationFrame(_hoverRafId)
+    _hoverRafId = null
+    _hoverPendingEvent = null
+  }
 }
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
   if (thumbnailTimeout) clearTimeout(thumbnailTimeout)
+  // 清理 rAF，防止组件卸载后回调执行
+  if (_hoverRafId !== null) {
+    cancelAnimationFrame(_hoverRafId)
+    _hoverRafId = null
+    _hoverPendingEvent = null
+  }
 })
 
 // Keyboard navigation
@@ -273,6 +307,7 @@ const subtitleCount = computed(() => subtitleStore.totalCount)
 
       <timeline-tooltip
         v-if="isHovering || isDragging"
+        ref="tooltipRef"
         :hover-frame="hoverFrame"
         :total-frames="totalFrames"
         :fps="fps"

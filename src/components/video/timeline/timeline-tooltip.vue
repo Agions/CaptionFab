@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { formatFrameToTime } from '@/utils/time'
 
 interface Props {
@@ -9,10 +10,19 @@ interface Props {
 }
 
 defineProps<Props>()
+
+const rootRef = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  // 初始渲染后确保 DOM 可用
+})
+
+defineExpose({ rootEl: rootRef })
 </script>
 
 <template>
   <div
+    ref="rootRef"
     class="timeline-preview"
     :style="{
       left: `${(hoverFrame / totalFrames) * 100}%`,
