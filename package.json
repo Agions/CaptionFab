@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "docs:build": "vitepress build docs",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "depcheck": "depcheck --ignores \"@tauri-apps/plugin-dialog,@tauri-apps/plugin-shell\""
   },
   "keywords": [
     "video",
@@ -55,6 +56,7 @@
     "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "^2.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
+    "depcheck": "^1.4.7",
     "eslint": "^10.2.0",
     "eslint-plugin-vue": "^10.8.0",
     "sass": "^1.69.0",
