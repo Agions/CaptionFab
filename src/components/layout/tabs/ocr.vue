@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useOCR } from '@/composables/useOCR'
 import { useSubtitleStore } from '@/stores/subtitle'
 import { useExtractionStore } from '@/stores/extraction'
@@ -37,9 +37,24 @@ const showAdvanced = ref(false)
 
 const subtitleStore = useSubtitleStore()
 
-const belowThresholdCount = computed(() =>
-  subtitleStore.subtitles.filter(s => s.confidence < confidenceThreshold.value / 100).length
-)
+// 优化：belowThresholdCount 在滑块拖动时频繁重算（O(n) filter），
+// 改用 rAF 节流更新显示值，避免主线程卡顿
+const _belowCount = ref(0)
+let _belowCountRaf: number | null = null
+const belowThresholdCount = computed(() => _belowCount.value)
+
+function _updateBelowCount() {
+  const threshold = confidenceThreshold.value / 100
+  _belowCount.value = subtitleStore.subtitles.filter(s => s.confidence < threshold).length
+}
+
+watch(confidenceThreshold, () => {
+  if (_belowCountRaf !== null) return
+  _belowCountRaf = requestAnimationFrame(() => {
+    _belowCountRaf = null
+    _updateBelowCount()
+  })
+})
 
 // AI Correction settings — direct store binding
 const aiCorrection = computed({
