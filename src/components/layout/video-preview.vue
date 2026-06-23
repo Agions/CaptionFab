@@ -50,9 +50,9 @@ const { handleFileDrop, handleFileSelect } = useFileDrop({
 
 const videoElement = ref<HTMLVideoElement | null>(null)
 const isDragOver = ref(false)
-const hoverTime = ref<number | null>(null)
-const hoverX = ref(0)
-// rAF throttle: 批量处理 timeline mousemove，减少响应式更新频率
+// rAF throttle: 批量处理 timeline mousemove，直接写 DOM 跳过 Vue 响应式
+const isHovering = ref(false)
+const tooltipRef = ref<HTMLElement | null>(null)
 let _hoverRafId: number | null = null
 let _hoverPendingEvent: MouseEvent | null = null
 
@@ -91,25 +91,31 @@ function handleProgressClick(e: MouseEvent) {
 
 function handleTimelineHover(e: MouseEvent) {
   // rAF throttle: 只保存最新事件坐标，等下一帧统一更新
+  if (!isHovering.value) {
+    isHovering.value = true
+  }
   _hoverPendingEvent = e
   if (_hoverRafId !== null) return
   _hoverRafId = requestAnimationFrame(() => {
     _hoverRafId = null
     const ev = _hoverPendingEvent
     _hoverPendingEvent = null
-    if (!ev || !videoStore.videoMeta) return
+    if (!ev || !videoStore.videoMeta || !tooltipRef.value) return
 
     const target = ev.currentTarget as HTMLElement
     const rect = target.getBoundingClientRect()
     const x = ev.clientX - rect.left
     const percent = Math.max(0, Math.min(1, x / rect.width))
-    hoverTime.value = percent * videoStore.duration
-    hoverX.value = x
+    const time = percent * videoStore.duration
+
+    // 直接写 DOM style + text，绕过 Vue 响应式
+    tooltipRef.value.style.left = `${x}px`
+    tooltipRef.value.textContent = formatTimePrecise(time)
   })
 }
 
 function handleTimelineLeave() {
-  hoverTime.value = null
+  isHovering.value = false
   // 取消待处理的 rAF，避免鼠标离开后更新 hover 状态
   if (_hoverRafId !== null) {
     cancelAnimationFrame(_hoverRafId)
@@ -203,12 +209,10 @@ const hasVideo = computed(() => videoStore.hasVideo)
         @mouseleave="handleTimelineLeave"
       >
         <div
-          v-if="hoverTime !== null && hasVideo"
+          v-if="isHovering && hasVideo"
+          ref="tooltipRef"
           class="timeline-bubble"
-          :style="{ left: `${hoverX}px` }"
-        >
-          {{ formatTimePrecise(hoverTime) }}
-        </div>
+        ></div>
 
     <!-- Timeline markers — Performance: v-memo to skip re-render when markers unchanged -->
         <div class="timeline-markers">
