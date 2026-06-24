@@ -1,6 +1,6 @@
 # 开发者指南
 
-欢迎为 CaptionFab 贡献代码！本文档涵盖环境搭建、代码规范、测试和发布流程。
+欢迎为 caption-fab 贡献代码！本文档涵盖环境搭建、代码规范、测试和发布流程。
 
 ---
 
@@ -19,8 +19,8 @@
 ### 克隆仓库
 
 ```bash
-git clone https://github.com/Agions/CaptionFab.git
-cd CaptionFab
+git clone https://github.com/Agions/caption-fab.git
+cd caption-fab
 ```
 
 ### 安装依赖
@@ -46,7 +46,7 @@ pnpm tauri dev
 ## 项目结构
 
 ```
-CaptionFab/
+caption-fab/
 ├── src/
 │   ├── components/             # Vue 组件
 │   │   ├── common/             # 通用组件

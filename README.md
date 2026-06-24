@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Agions/CaptionFab/main/public/logo.svg" alt="CaptionFab" width="120"/>
+<img src="https://raw.githubusercontent.com/Agions/caption-fab/main/public/logo.svg" alt="CaptionFab" width="120"/>
 
 # CaptionFab
 
 **智能硬编码字幕提取工具** — 从视频中精准提取字幕，支持 9 种专业格式输出
 
-[![Version](https://img.shields.io/github/v/release/Agions/CaptionFab?style=flat-square&color=FFD700)](https://github.com/Agions/CaptionFab/releases)
-[![Tests](https://img.shields.io/badge/tests-398%20passed-10B981?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
-[![License](https://img.shields.io/github/license/Agions/CaptionFab?style=flat-square&color=A855F7)](https://github.com/Agions/CaptionFab/blob/main/LICENSE)
+[![Version](https://img.shields.io/github/v/release/Agions/caption-fab?style=flat-square&color=FFD700)](https://github.com/Agions/caption-fab/releases)
+[![Tests](https://img.shields.io/badge/tests-398%20passed-10B981?style=flat-square)](https://github.com/Agions/caption-fab/actions)
+[![License](https://img.shields.io/github/license/Agions/caption-fab?style=flat-square&color=A855F7)](https://github.com/Agions/caption-fab/blob/main/LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2.x-3B82F6?style=flat-square)](https://tauri.app)
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)](https://vuejs.org)
 [![Rust](https://img.shields.io/badge/Rust-2021-FFD700?style=flat-square)](https://www.rust-lang.org)
@@ -40,10 +40,10 @@
 
 | 平台 | 下载链接 |
 |:-----|:---------|
-| Windows x64 | [captionfab-v3.6.0-x64-setup.exe](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-x64-setup.exe) |
-| macOS (Intel) | [captionfab-v3.6.0-x64.dmg](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-x64.dmg) |
-| macOS (Apple Silicon) | [captionfab-v3.6.0-aarch64.dmg](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-aarch64.dmg) |
-| Linux (Debian/Ubuntu) | [captionfab-v3.6.0-amd64.deb](https://github.com/Agions/CaptionFab/releases/download/v3.6.0/captionfab-v3.6.0-amd64.deb) |
+| Windows x64 | [captionfab-v3.6.0-x64-setup.exe](https://github.com/Agions/caption-fab/releases/download/v3.6.0/captionfab-v3.6.0-x64-setup.exe) |
+| macOS (Intel) | [captionfab-v3.6.0-x64.dmg](https://github.com/Agions/caption-fab/releases/download/v3.6.0/captionfab-v3.6.0-x64.dmg) |
+| macOS (Apple Silicon) | [captionfab-v3.6.0-aarch64.dmg](https://github.com/Agions/caption-fab/releases/download/v3.6.0/captionfab-v3.6.0-aarch64.dmg) |
+| Linux (Debian/Ubuntu) | [captionfab-v3.6.0-amd64.deb](https://github.com/Agions/caption-fab/releases/download/v3.6.0/captionfab-v3.6.0-amd64.deb) |
 
 ---
 
@@ -53,7 +53,7 @@
 
 ```bash
 # 前置依赖：Node.js 18+ · pnpm · Rust 1.82+ · FFmpeg
-git clone https://github.com/Agions/CaptionFab.git
+git clone https://github.com/Agions/caption-fab.git
 cd CaptionFab
 pnpm install
 pnpm tauri dev     # 开发模式（热重载）
@@ -208,6 +208,6 @@ pnpm tauri build      # 生产构建
 
 **Made with ❤️ by [Agions](https://github.com/Agions)**
 
-[GitHub](https://github.com/Agions/CaptionFab) · [Issues](https://github.com/Agions/CaptionFab/issues) · [Releases](https://github.com/Agions/CaptionFab/releases) · [Security Advisories](https://github.com/Agions/CaptionFab/security/advisories)
+[GitHub](https://github.com/Agions/caption-fab) · [Issues](https://github.com/Agions/caption-fab/issues) · [Releases](https://github.com/Agions/caption-fab/releases) · [Security Advisories](https://github.com/Agions/caption-fab/security/advisories)
 
 </div>
