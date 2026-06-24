@@ -6,13 +6,13 @@
 
 **智能硬编码字幕提取工具** — 从视频中精准提取字幕，支持 9 种专业格式输出
 
-[![Version](https://img.shields.io/github/v/release/Agions/CaptionFab?style=flat-square&color=0EA5E9)](https://github.com/Agions/CaptionFab/releases)
-[![Tests](https://img.shields.io/badge/tests-372%20passed-10B981?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
-[![License](https://img.shields.io/github/license/Agions/CaptionFab?style=flat-square&color=10B981)](https://github.com/Agions/CaptionFab/blob/main/LICENSE)
-[![Tauri](https://img.shields.io/badge/Tauri-2.x-blue?style=flat-square)](https://tauri.app)
+[![Version](https://img.shields.io/github/v/release/Agions/CaptionFab?style=flat-square&color=FFD700)](https://github.com/Agions/CaptionFab/releases)
+[![Tests](https://img.shields.io/badge/tests-398%20passed-10B981?style=flat-square)](https://github.com/Agions/CaptionFab/actions)
+[![License](https://img.shields.io/github/license/Agions/CaptionFab?style=flat-square&color=A855F7)](https://github.com/Agions/CaptionFab/blob/main/LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2.x-3B82F6?style=flat-square)](https://tauri.app)
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)](https://vuejs.org)
-[![Rust](https://img.shields.io/badge/Rust-2021-dea584?style=flat-square)](https://www.rust-lang.org)
-[![ONNX](https://img.shields.io/badge/ONNX-Runtime-blue?style=flat-square)](https://onnxruntime.ai)
+[![Rust](https://img.shields.io/badge/Rust-2021-FFD700?style=flat-square)](https://www.rust-lang.org)
+[![ONNX](https://img.shields.io/badge/ONNX-Runtime-3B82F6?style=flat-square)](https://onnxruntime.ai)
 
 </div>
 
@@ -80,7 +80,7 @@ pnpm tauri build   # 生产构建
 | **路由** | GoRouter (Tauri 侧) | — |
 | **后端语言** | Rust + Tokio | 2021 edition |
 | **OCR 引擎** | PaddleOCR / EasyOCR / Tesseract | ONNX Runtime / WASM |
-| **测试框架** | Vitest + cargo test | 372 个测试 |
+| **测试框架** | Vitest + cargo test | 398 个测试 |
 | **构建工具** | Vite + pnpm | 5.x / 9.x |
 
 ---
