@@ -7,6 +7,7 @@ import {
   LOCALSTORAGE_KEY_TEMP,
   LOCALSTORAGE_SIZE_LIMIT,
 } from '@/utils/constants'
+import { logger } from '@/utils/logger'
 
 export type Theme = 'dark' | 'light'
 export type Language = 'zh-CN' | 'en-US'
@@ -49,7 +50,7 @@ function cleanupLocalStorage(keys: string[]) {
       }
     }
   } catch (e) {
-    console.warn('[CaptionFab Settings] Failed to cleanup localStorage:', e)
+    logger.warn('Settings', 'Failed to cleanup localStorage', e)
   }
 }
 
@@ -62,7 +63,7 @@ export const useSettingsStore = defineStore('settings', () => {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
       }
     } catch (e) {
-      console.warn('[CaptionFab Settings] Failed to load settings:', e)
+      logger.warn('Settings', 'Failed to load settings', e)
     }
     return { ...DEFAULT_SETTINGS }
   }
@@ -77,14 +78,14 @@ export const useSettingsStore = defineStore('settings', () => {
       try {
         const serialized = JSON.stringify(newSettings)
         if (serialized.length > LOCALSTORAGE_SIZE_LIMIT) {
-          console.warn('[CaptionFab Settings] Settings too large to save:', serialized.length, 'bytes')
+          logger.debug('Settings', 'Settings too large to save: ' + serialized.length + ' bytes')
           return
         }
         localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, serialized)
       } catch (e: unknown) {
         const err = e as { name?: string }
         if (err.name === 'QuotaExceededError') {
-          console.warn('[CaptionFab Settings] localStorage quota exceeded, attempting cleanup')
+          logger.warn('Settings', 'localStorage quota exceeded, attempting cleanup')
           cleanupLocalStorage([LOCALSTORAGE_KEY_THUMBNAILS, LOCALSTORAGE_KEY_CACHE, LOCALSTORAGE_KEY_TEMP])
           try {
             localStorage.setItem(LOCALSTORAGE_KEY_SETTINGS, JSON.stringify(newSettings))
@@ -95,11 +96,11 @@ export const useSettingsStore = defineStore('settings', () => {
                 language: newSettings.language
               }))
             } catch {
-              console.error('[CaptionFab Settings] Failed to save even minimal config')
+              logger.error('Settings', 'Failed to save even minimal config')
             }
           }
         } else {
-          console.warn('[CaptionFab Settings] Failed to save settings:', err)
+          logger.warn('Settings', 'Failed to save settings', err)
         }
       }
     }, 100)

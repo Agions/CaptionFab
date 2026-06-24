@@ -4,6 +4,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core'
+import { logger } from '@/utils/logger'
 
 export interface FileInfo {
   path: string
@@ -22,7 +23,7 @@ export async function openFileDialog(title: string = 'Select File'): Promise<str
     })
     return path
   } catch (e) {
-    console.error('[FileOps] Failed to open file dialog:', e)
+    logger.error('FileOps', 'Failed to open file dialog', e)
     return null
   }
 }
@@ -40,7 +41,7 @@ export async function saveFileDialog(
     })
     return path
   } catch (e) {
-    console.error('[FileOps] Failed to save file dialog:', e)
+    logger.error('FileOps', 'Failed to save file dialog', e)
     return null
   }
 }
@@ -51,7 +52,7 @@ export async function writeTextFile(path: string, content: string): Promise<bool
     await invoke('write_text_file', { path, content })
     return true
   } catch (e) {
-    console.error('[FileOps] Failed to write file:', e)
+    logger.error('FileOps', 'Failed to write file', e)
     return false
   }
 }
@@ -62,7 +63,7 @@ export async function readTextFile(path: string): Promise<string | null> {
     const content = await invoke<string>('read_text_file', { path })
     return content
   } catch (e) {
-    console.error('[FileOps] Failed to read file:', e)
+    logger.error('FileOps', 'Failed to read file', e)
     return null
   }
 }
@@ -73,7 +74,7 @@ export async function getFileInfo(path: string): Promise<FileInfo | null> {
     const info = await invoke<FileInfo>('get_file_info', { path })
     return info
   } catch (e) {
-    console.error('[FileOps] Failed to get file info:', e)
+    logger.error('FileOps', 'Failed to get file info', e)
     return null
   }
 }

@@ -7,6 +7,7 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useVideoStore } from '@/stores/video'
+import { logger } from '@/utils/logger'
 
 export interface DetectedROI {
   x: number
@@ -39,7 +40,7 @@ export function useAutoROI() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       error.value = msg
-      console.error('Auto ROI detection failed:', msg)
+      logger.error('AutoROI', 'detection failed', msg)
     } finally {
       isDetecting.value = false
     }

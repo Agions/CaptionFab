@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { VideoMetadata } from '@/types/video'
+import { logger } from '@/utils/logger'
 
 export async function getVideoMetadata(path: string): Promise<VideoMetadata> {
   try {
@@ -23,8 +24,7 @@ export async function getVideoMetadata(path: string): Promise<VideoMetadata> {
       codec: meta.codec
     }
   } catch (e) {
-    console.error('[VideoMetadata] Failed to get metadata from Tauri:', e)
-    // Fallback to browser-based metadata extraction
+    logger.error('VideoMetadata', 'Failed to get metadata from Tauri', e)
     return await getVideoMetadataBrowser(path)
   }
 }

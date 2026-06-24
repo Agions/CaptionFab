@@ -4,6 +4,7 @@ import type { SubtitleItem, SubtitleEdit, EditableField, EditableValue, ExportFo
 import { CONFIDENCE_HIGH, CONFIDENCE_MID, getConfidenceLevel } from '@/utils/confidence'
 import { type ConfidenceFilterValue } from '@/utils/confidence'
 import { getExporter, type ExportFormat } from '@/core'
+import { logger } from '@/utils/logger'
 
 export const useSubtitleStore = defineStore('subtitle', () => {
   // State
@@ -174,7 +175,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   const fieldHandlers: FieldHandlers = {
     text: (sub, value) => {
       if (typeof value !== 'string') {
-        console.error(`[SubtitleStore] applyFieldEdit: expected string for 'text', got ${typeof value}`)
+        logger.error('SubtitleStore', `applyFieldEdit: expected string for 'text', got ${typeof value}`)
         return
       }
       sub.text = value
@@ -182,14 +183,14 @@ export const useSubtitleStore = defineStore('subtitle', () => {
     },
     startTime: (sub, value) => {
       if (typeof value !== 'number') {
-        console.error(`[SubtitleStore] applyFieldEdit: expected number for 'startTime', got ${typeof value}`)
+        logger.error('SubtitleStore', `applyFieldEdit: expected number for 'startTime', got ${typeof value}`)
         return
       }
       sub.startTime = value
     },
     endTime: (sub, value) => {
       if (typeof value !== 'number') {
-        console.error(`[SubtitleStore] applyFieldEdit: expected number for 'endTime', got ${typeof value}`)
+        logger.error('SubtitleStore', `applyFieldEdit: expected number for 'endTime', got ${typeof value}`)
         return
       }
       sub.endTime = value
@@ -199,7 +200,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   function applyFieldEdit(sub: SubtitleItem, field: EditableField, value: EditableValue) {
     const handler = fieldHandlers[field]
     if (!handler) {
-      console.error(`[SubtitleStore] applyFieldEdit: unknown field '${field}'`)
+      logger.error('SubtitleStore', `applyFieldEdit: unknown field '${field}'`)
       return
     }
     handler(sub, value)

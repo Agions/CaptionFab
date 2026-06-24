@@ -31,6 +31,7 @@ import { langToScript } from '@/utils/text'
 import { isRoiRegionLikelyEmpty } from '@/utils/detection'
 import { AICorrector } from '@/core/AICorrector'
 import type { ROI } from '@/types/video'
+import { logger } from '@/utils/logger'
 
 /**
  * 将 SubtitleLite 转换为 SubtitleItem 的工厂函数
@@ -233,7 +234,7 @@ export function useSubtitleExtractor() {
           extractedCount.value++
         }
       } catch (e) {
-        console.error(`[Extractor] Frame ${frameIndex} OCR failed:`, e)
+        logger.error("Extractor", `Frame ${frameIndex} OCR failed`, e)
       }
 
       // ── 进度更新 ─────────────────────────────────────
@@ -280,7 +281,7 @@ export function useSubtitleExtractor() {
           }
         }
       } catch (e) {
-        console.error('[Extractor] AI correction failed:', e)
+        logger.error('Extractor', 'AI correction failed', e)
       }
     }
 

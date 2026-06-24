@@ -8,6 +8,7 @@ import { getVideoMetadata } from '@/utils/video'
 import { useTheme } from '@/composables/useTheme'
 import { useNotification } from '@/composables/useNotification'
 import AboutDialog from '@/components/common/about-dialog.vue'
+import { logger } from '@/utils/logger'
 
 const videoStore = useVideoStore()
 const subtitleStore = useSubtitleStore()
@@ -42,7 +43,7 @@ async function handleOpenFile() {
     await videoPlayer.loadVideo(filePath)
 
   } catch (e) {
-    console.error('[ToolBar] Failed to open file:', e)
+    logger.error('ToolBar', 'Failed to open file', e)
     notifyError(`打开文件失败: ${e}`)
   } finally {
     isBusy.value = false
@@ -81,7 +82,7 @@ async function handleSave() {
     await writeTextFile(filePath, projectData)
 
   } catch (e) {
-    console.error('[ToolBar] Failed to save project:', e)
+    logger.error('ToolBar', 'Failed to save project', e)
     notifyError(`保存失败: ${e}`)
   } finally {
     isBusy.value = false

@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { logger } from '@/utils/logger'
 
 export interface SystemDependency {
   name: string
@@ -32,7 +33,7 @@ export function useSystemCheck() {
       return result
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
-      console.error('[SystemCheck] Failed to check dependencies:', e)
+      logger.error('SystemCheck', 'Failed to check dependencies', e)
       return null
     } finally {
       isChecking.value = false
@@ -47,7 +48,7 @@ export function useSystemCheck() {
       const languages = await invoke<string[]>('get_tesseract_languages')
       return languages
     } catch (e) {
-      console.error('[SystemCheck] Failed to get Tesseract languages:', e)
+      logger.error('SystemCheck', 'Failed to get Tesseract languages', e)
       return ['eng', 'chi_sim'] // Fallback
     }
   }

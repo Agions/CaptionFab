@@ -1,5 +1,6 @@
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { logger } from '@/utils/logger'
 
 export interface GPUInfo {
   available: boolean
@@ -18,7 +19,7 @@ export function useGPU() {
       const result = await invoke<GPUInfo>('check_gpu_capability')
       gpuInfo.value = result
     } catch (e) {
-      console.error('[GPU] Check failed:', e)
+      logger.error('GPU', 'Check failed', e)
       gpuInfo.value = { available: false }
     } finally {
       isLoading.value = false

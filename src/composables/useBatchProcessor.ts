@@ -4,6 +4,7 @@ import { useOCREngine } from './useOCREngine'
 import { PROCESSING_MODES, type OCREngine } from '@/types/video'
 import { generateId } from '@/utils/id'
 import { resolveOcrLanguages } from '@/utils/lang'
+import { logger } from '@/utils/logger'
 
 export interface BatchJob {
   id: string
@@ -123,7 +124,7 @@ export function useBatchProcessor() {
           const msg = e instanceof Error ? e.message : String(e)
           job.status = 'failed'
           job.error = msg
-          console.error(`[Batch] Job ${job.id} failed:`, msg)
+          logger.error('Batch', `Job ${job.id} failed`, msg)
         })
         .finally(() => {
           running--
