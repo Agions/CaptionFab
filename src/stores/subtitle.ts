@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, shallowRef, computed } from 'vue'
+import { ref, shallowRef, computed, triggerRef } from 'vue'
 import type { SubtitleItem, SubtitleEdit, EditableField, EditableValue, ExportFormats } from '@/types/subtitle'
 import { CONFIDENCE_HIGH, CONFIDENCE_MID, getConfidenceLevel } from '@/utils/confidence'
 import { type ConfidenceFilterValue } from '@/utils/confidence'
@@ -21,7 +21,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   const confidenceFilter = ref<ConfidenceFilterValue>('all')
   
   // Export Options
-  const exportFormats = shallowRef<ExportFormats>({
+  const exportFormats = ref<ExportFormats>({
     srt: true,
     vtt: false,
     vtt_styled: false,
@@ -120,6 +120,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
     for (let i = lo; i < newLen; i++) arr[i].index = i + 1
     // Rebuild lookup map once for O(1) id → index access
     for (let i = lo; i < newLen; i++) _subtitleIndexMap.set(arr[i].id, i)
+    triggerRef(subtitles)
   }
   
   function updateSubtitle(id: string, updates: Partial<SubtitleItem>) {
@@ -146,6 +147,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
       _subtitleIndexMap.set(sub.id, i)
     }
     if (selectedId.value === id) selectedId.value = null
+    triggerRef(subtitles)
   }
   
   function selectSubtitle(id: string | null) {
