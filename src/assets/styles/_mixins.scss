@@ -180,3 +180,90 @@ $conf-levels: (
 @mixin card-border-error {
   border: 1.5px solid rgba($error, 0.3);
 }
+
+// ── Shared Icon Button ─────────────────────────────────────────
+// Default params match the old modal-close mixin (32px, overlay hover).
+// Used by modal-close, file-remove, job-action-btn, etc.
+@mixin icon-btn($size: 32px, $radius: $radius-full, $hover-bg: $bg-overlay, $hover-color: $text-primary) {
+  width: $size;
+  height: $size;
+  border-radius: $radius;
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $hover-bg;
+    color: $hover-color;
+  }
+
+  svg {
+    width: $size * 0.5;
+    height: $size * 0.5;
+  }
+}
+
+// ── Panel Section ──────────────────────────────────────────────
+@mixin panel-section {
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: $space-4;
+}
+
+@mixin section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $space-3;
+}
+
+@mixin section-label {
+  font-size: $text-sm;
+  font-weight: 600;
+  color: $text-secondary;
+}
+
+// ── Form Select ────────────────────────────────────────────────
+@mixin form-select {
+  padding: $space-2 $space-3;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  background: $bg-elevated;
+  color: $text-secondary;
+  font-size: $text-sm;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $primary;
+    outline: none;
+  }
+}
+
+// ── Card Base ──────────────────────────────────────────────────
+@mixin card-base {
+  position: relative;
+  padding: $space-3;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+// ── Fade Transition ────────────────────────────────────────────
+@mixin fade-transition {
+  &-enter-active,
+  &-leave-active {
+    transition: opacity $duration-normal $ease-out-expo;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+  }
+}

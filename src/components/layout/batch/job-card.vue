@@ -229,31 +229,11 @@ defineEmits<{
 }
 
 .job-action-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: $radius-sm;
-  background: transparent;
-  border: none;
-  color: $text-muted;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all $transition-fast;
-
-  &:hover {
-    background: rgba($primary, 0.1);
-    color: $primary;
-  }
+  @include icon-btn(28px, $radius-sm, rgba($primary, 0.1), $primary);
 
   &--remove:hover {
     background: rgba($error, 0.1);
     color: $error;
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
   }
 }
 

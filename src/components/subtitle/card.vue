@@ -133,13 +133,8 @@ function handleEditStart(e: Event) {
 
 <style lang="scss" scoped>
 .subtitle-card {
-  position: relative;
-  padding: $space-3;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  @include card-base;
   cursor: pointer;
-  overflow: hidden;
   animation: card-in $duration-normal $ease-out-expo both;
   @include pressable;
   transition: transform $duration-fast $ease-out-expo, border-color $duration-fast $ease-out-expo, box-shadow $duration-fast $ease-out-expo;

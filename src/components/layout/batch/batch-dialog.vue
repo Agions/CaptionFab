@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useBatchProcessor, type BatchOptions } from '@/composables/useBatchProcessor'
 import JobConfigPanel from './job-config-panel.vue'
 import BatchProgressDialog from './batch-progress-dialog.vue'
+import BaseModal from './base-modal.vue'
 
 interface Props {
   isOpen: boolean
@@ -55,59 +56,42 @@ function handleClose() {
 </script>
 
 <template>
-  <teleport to="body">
-    <transition name="modal-fade">
-      <div v-if="isOpen" class="batch-dialog" role="dialog" aria-modal="true">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>批量处理</h3>
-            <button class="modal-close" @click="handleClose" aria-label="关闭">
-              <svg viewBox="0 0 20 20" fill="none">
-                <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </button>
-          </div>
+  <base-modal :is-open="isOpen" title="批量处理" @close="handleClose">
+    <job-config-panel v-model="batchOptions" />
 
-          <div class="modal-body">
-            <job-config-panel v-model="batchOptions" />
+    <!-- Processing Mode -->
+    <div class="option-group">
+      <label>处理模式</label>
+      <select v-model="batchOptions.processingMode">
+        <option value="fast">🚀 快速模式</option>
+        <option value="standard">⚖️ 标准模式</option>
+        <option value="precise">🎯 精准模式</option>
+      </select>
+    </div>
 
-            <!-- Processing Mode -->
-            <div class="option-group">
-              <label>处理模式</label>
-              <select v-model="batchOptions.processingMode">
-                <option value="fast">🚀 快速模式</option>
-                <option value="standard">⚖️ 标准模式</option>
-                <option value="precise">🎯 精准模式</option>
-              </select>
-            </div>
+    <!-- ETA Display -->
+    <div v-if="estimatedTimeRemaining" class="eta-display">
+      <span class="eta-label">预计剩余:</span>
+      <span class="eta-value">{{ formatTime(estimatedTimeRemaining) }}</span>
+    </div>
 
-            <!-- ETA Display -->
-            <div v-if="estimatedTimeRemaining" class="eta-display">
-              <span class="eta-label">预计剩余:</span>
-              <span class="eta-value">{{ formatTime(estimatedTimeRemaining) }}</span>
-            </div>
-
-            <div class="actions">
-              <button
-                class="btn btn-primary"
-                :disabled="selectedFiles.length === 0 || isProcessing"
-                @click="handleStartBatch"
-              >
-                {{ isProcessing ? '处理中...' : '开始处理' }}
-              </button>
-              <button
-                v-if="isProcessing"
-                class="btn btn-secondary"
-                @click="cancelBatch"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-  </teleport>
+    <div class="actions">
+      <button
+        class="btn btn-primary"
+        :disabled="selectedFiles.length === 0 || isProcessing"
+        @click="handleStartBatch"
+      >
+        {{ isProcessing ? '处理中...' : '开始处理' }}
+      </button>
+      <button
+        v-if="isProcessing"
+        class="btn btn-secondary"
+        @click="cancelBatch"
+      >
+        取消
+      </button>
+    </div>
+  </base-modal>
 
   <batch-progress-dialog
     :is-open="showProgressDialog"
@@ -118,26 +102,6 @@ function handleClose() {
 </template>
 
 <style lang="scss" scoped>
-.batch-dialog {
-  @include modal-wrapper;
-}
-
-.modal-content {
-  @include modal-content(360px, 480px);
-}
-
-.modal-header {
-  @include modal-header;
-}
-
-.modal-close {
-  @include modal-close;
-}
-
-.modal-body {
-  @include modal-body;
-}
-
 .option-group {
   display: flex;
   @include flex-column;
@@ -150,18 +114,7 @@ function handleClose() {
   }
 
   select {
-    padding: $space-2 $space-3;
-    border: 1px solid $border;
-    border-radius: $radius-sm;
-    background: $bg-elevated;
-    color: $text-secondary;
-    font-size: $text-sm;
-    cursor: pointer;
-
-    &:focus {
-      border-color: $primary;
-      outline: none;
-    }
+    @include form-select;
   }
 }
 
@@ -226,6 +179,4 @@ function handleClose() {
     background: $bg-overlay;
   }
 }
-
-@include modal-fade('modal-fade');
 </style>

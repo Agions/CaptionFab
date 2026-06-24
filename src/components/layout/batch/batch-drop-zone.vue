@@ -76,23 +76,15 @@ defineEmits<{
 
 <style lang="scss" scoped>
 .panel-section {
-  background: $bg-surface;
-  border: 1px solid $border;
-  border-radius: $radius-lg;
-  padding: $space-4;
+  @include panel-section;
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: $space-3;
+  @include section-header;
 }
 
 .section-label {
-  font-size: $text-sm;
-  font-weight: 600;
-  color: $text-secondary;
+  @include section-label;
 }
 
 .file-count {
@@ -217,28 +209,7 @@ defineEmits<{
 }
 
 .file-remove {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: $radius-full;
-  background: transparent;
-  border: none;
-  color: $text-muted;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all $transition-fast;
-
-  &:hover {
-    background: rgba($error, 0.1);
-    color: $error;
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
+  @include icon-btn(24px, $radius-full, rgba($error, 0.1), $error);
 }
 
 .file-list-enter-active,

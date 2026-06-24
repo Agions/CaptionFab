@@ -60,12 +60,7 @@ defineProps<{
   color: var(--text-muted);
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity $duration-normal $ease-out-expo;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.fade {
+  @include fade-transition;
 }
 </style>

@@ -45,31 +45,6 @@
   }
 }
 
-// Shared close button
-@mixin modal-close {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-full;
-  background: transparent;
-  border: none;
-  color: $text-muted;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all $transition-fast;
-
-  &:hover {
-    background: $bg-overlay;
-    color: $text-primary;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-
 // Shared modal body base
 @mixin modal-body($align: stretch, $gap: $space-4) {
   display: flex;

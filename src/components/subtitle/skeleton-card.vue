@@ -20,12 +20,7 @@
 // Variables and mixins are automatically injected via vite.config.ts additionalData
 
 .skeleton-card {
-  position: relative;
-  padding: $space-3;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  overflow: hidden;
+  @include card-base;
 
   &::before {
     content: '';

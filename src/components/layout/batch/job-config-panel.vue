@@ -117,18 +117,7 @@ export default {
 }
 
 .option-select {
-  padding: $space-2 $space-3;
-  border: 1px solid $border;
-  border-radius: $radius-sm;
-  background: $bg-elevated;
-  color: $text-secondary;
-  font-size: $text-sm;
-  cursor: pointer;
-
-  &:focus {
-    border-color: $primary;
-    outline: none;
-  }
+  @include form-select;
 }
 
 .format-chips {
