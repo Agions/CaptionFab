@@ -1,27 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { toGrayscale, enhanceContrast, boxBlur } from '@/utils/image'
 import { clamp } from '@/utils/math'
-
-// ─── ImageData factory (uses native constructor via test-setup polyfill) ────
-function makeFrame(width: number, height: number, r: number, g: number, b: number): ImageData {
-  const data = new Uint8ClampedArray(width * height * 4)
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255
-  }
-  return new ImageData(data, width, height)
-}
-
-function makeGradient(width: number, height: number): ImageData {
-  const data = new Uint8ClampedArray(width * height * 4)
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const v = Math.round((x / (width - 1)) * 255)
-      const i = (y * width + x) * 4
-      data[i] = v; data[i + 1] = v; data[i + 2] = v; data[i + 3] = 255
-    }
-  }
-  return new ImageData(data, width, height)
-}
+import { makeFrame, makeGradient } from '@/test-utils/frames'
 
 function pixel(frame: ImageData, x: number, y: number): [number, number, number] {
   const i = (y * frame.width + x) * 4

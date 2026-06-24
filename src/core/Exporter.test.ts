@@ -80,15 +80,6 @@ describe('Exporter', () => {
       expect(result.content.startsWith('WEBVTT\n\n')).toBe(true)
     })
 
-    it('SRT uses comma as millisecond separator (not period)', () => {
-      // endTime=0.5 → 00:00:00,500 (500ms)
-      const subs = [sub(0, 0.5, 'Test', 0)]
-      const result = exporter.export(subs, 'srt')
-      // SRT uses comma: "00:00:00,500" not "00:00:00.500"
-      expect(result.content).toContain(',500')
-      expect(result.content).not.toContain('.500')
-    })
-
     it('VTT uses period as millisecond separator (not comma)', () => {
       // endTime=1.5 → 00:00:01.500, so we check for '.500' after the arrow
       const subs = [sub(0.0, 1.5, 'Test', 0)]

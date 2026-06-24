@@ -35,20 +35,13 @@ describe('image-morph', () => {
 
     it('erode shrinks bright region: single bright pixel becomes dark', () => {
       const w = 5, h = 5
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 50
-        data[i + 1] = 50
-        data[i + 2] = 50
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 50)
       // Set center pixel to white
       const center = (2 * w + 2) * 4
-      data[center] = 255
-      data[center + 1] = 255
-      data[center + 2] = 255
+      img.data[center] = 255
+      img.data[center + 1] = 255
+      img.data[center + 2] = 255
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const result = morphologicalErode(img, 1)
       const ri = (2 * w + 2) * 4
       expect(result.data[ri]).toBe(50)
@@ -56,17 +49,12 @@ describe('image-morph', () => {
 
     it('erode with size 1 considers 3x3 neighborhood', () => {
       const w = 7, h = 7
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 0
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 0)
       const idx33 = (3 * w + 3) * 4
-      data[idx33] = 200
-      data[idx33 + 1] = 200
-      data[idx33 + 2] = 200
+      img.data[idx33] = 200
+      img.data[idx33 + 1] = 200
+      img.data[idx33 + 2] = 200
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const result = morphologicalErode(img, 1)
       expect(result.data[idx33]).toBe(0)
     })
@@ -104,19 +92,12 @@ describe('image-morph', () => {
 
     it('dilate expands bright region: dark pixel near bright neighbor becomes bright', () => {
       const w = 5, h = 5
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 0
-        data[i + 1] = 0
-        data[i + 2] = 0
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 0)
       const center = (2 * w + 2) * 4
-      data[center] = 255
-      data[center + 1] = 255
-      data[center + 2] = 255
+      img.data[center] = 255
+      img.data[center + 1] = 255
+      img.data[center + 2] = 255
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const result = morphologicalDilate(img, 1)
       // (2,3) has neighbor (2,2) with value 255 → max = 255
       const ri = (2 * w + 3) * 4
@@ -125,17 +106,12 @@ describe('image-morph', () => {
 
     it('dilate with size 2 expands further than size 1', () => {
       const w = 9, h = 9
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 0
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 0)
       const center = (4 * w + 4) * 4
-      data[center] = 255
-      data[center + 1] = 255
-      data[center + 2] = 255
+      img.data[center] = 255
+      img.data[center + 1] = 255
+      img.data[center + 2] = 255
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const r1 = morphologicalDilate(img, 1)
       const r2 = morphologicalDilate(img, 2)
 
@@ -146,18 +122,13 @@ describe('image-morph', () => {
 
     it('dilate at corner only checks valid neighbors', () => {
       const w = 5, h = 5
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 0
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 0)
       // Put bright pixel at (0,1)
       const idx = (1 * w + 0) * 4
-      data[idx] = 200
-      data[idx + 1] = 200
-      data[idx + 2] = 200
+      img.data[idx] = 200
+      img.data[idx + 1] = 200
+      img.data[idx + 2] = 200
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const result = morphologicalDilate(img, 1)
       // (0,0) has neighbor (0,1) with value 200 → max = 200
       expect(result.data[0]).toBe(200)
@@ -175,17 +146,12 @@ describe('image-morph', () => {
 
     it('removes single-pixel noise', () => {
       const w = 7, h = 7
-      const data = new Uint8ClampedArray(w * h * 4)
-      for (let i = 0; i < w * h * 4; i += 4) {
-        data[i] = 0
-        data[i + 3] = 255
-      }
+      const img = makeImage(w, h, 0)
       const spot = (3 * w + 3) * 4
-      data[spot] = 255
-      data[spot + 1] = 255
-      data[spot + 2] = 255
+      img.data[spot] = 255
+      img.data[spot + 1] = 255
+      img.data[spot + 2] = 255
 
-      const img = { data, width: w, height: h } as unknown as ImageData
       const result = morphOpen(img, 1)
       expect(result.data[spot]).toBe(0)
     })

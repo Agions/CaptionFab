@@ -6,34 +6,7 @@ import {
   DEFAULT_EMPTY_DETECTOR_OPTIONS,
   DEFAULT_SCENE_HYSTERESIS_OPTIONS,
 } from './detection'
-
-/** Create a mock ImageData with uniform color */
-function makeFrame(w: number, h: number, r: number, g: number, b: number): { data: Uint8ClampedArray; width: number; height: number } {
-  const data = new Uint8ClampedArray(w * h * 4)
-  for (let i = 0; i < w * h * 4; i += 4) {
-    data[i] = r
-    data[i + 1] = g
-    data[i + 2] = b
-    data[i + 3] = 255
-  }
-  return { data, width: w, height: h }
-}
-
-/** Create a mock ImageData with a horizontal dark stripe (subtitle-like) */
-function makeFrameWithStripe(w: number, h: number, stripeY: number, bgR = 200, stripeR = 30): { data: Uint8ClampedArray; width: number; height: number } {
-  const data = new Uint8ClampedArray(w * h * 4)
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const idx = (y * w + x) * 4
-      const isStripe = y === stripeY
-      data[idx] = isStripe ? stripeR : bgR
-      data[idx + 1] = isStripe ? stripeR : bgR
-      data[idx + 2] = isStripe ? stripeR : bgR
-      data[idx + 3] = 255
-    }
-  }
-  return { data, width: w, height: h }
-}
+import { makeFrame, makeStripeFrame, makeHighVarianceFrame } from '@/test-utils/frames'
 
 // ─── extractFrameMetrics ────────────────────────────────────────────
 describe('extractFrameMetrics', () => {
@@ -69,23 +42,13 @@ describe('extractFrameMetrics', () => {
   })
 
   it('image with high contrast has high variance', () => {
-    const frame = makeFrame(32, 32, 0, 0, 0)
-    // 4px-wide stripes so step=2 sampling captures both dark and bright pixels
-    for (let y = 0; y < 32; y++) {
-      for (let x = 0; x < 32; x++) {
-        const idx = (y * 32 + x) * 4
-        const val = Math.floor(x / 4) % 2 === 0 ? 0 : 255
-        frame.data[idx] = val
-        frame.data[idx + 1] = val
-        frame.data[idx + 2] = val
-      }
-    }
+    const frame = makeHighVarianceFrame(32, 32)
     const metrics = extractFrameMetrics(frame, fullROI)
     expect(metrics.variance).toBeGreaterThan(1000)
   })
 
   it('image with stripe has non-zero edge density', () => {
-    const frame = makeFrameWithStripe(40, 40, 20)
+    const frame = makeStripeFrame(40, 40, 20)
     const metrics = extractFrameMetrics(frame, fullROI)
     // Stripe creates gradient transitions at row boundaries
     expect(metrics.edgeDensity).toBeGreaterThan(0)
@@ -168,17 +131,7 @@ describe('AdaptiveEmptyDetector', () => {
 
   it('does not falsely detect high-variance frames as empty', () => {
     const det = new AdaptiveEmptyDetector({ confirmFrames: 2 })
-    const highVarFrame = makeFrame(32, 32, 128, 128, 128)
-    // 4px stripes so step=2 captures both values
-    for (let y = 0; y < 32; y++) {
-      for (let x = 0; x < 32; x++) {
-        const idx = (y * 32 + x) * 4
-        const val = Math.floor(x / 4) % 2 === 0 ? 0 : 255
-        highVarFrame.data[idx] = val
-        highVarFrame.data[idx + 1] = val
-        highVarFrame.data[idx + 2] = val
-      }
-    }
+    const highVarFrame = makeHighVarianceFrame(32, 32)
 
     for (let i = 0; i < 15; i++) {
       det.isEmpty(highVarFrame, fullROI)

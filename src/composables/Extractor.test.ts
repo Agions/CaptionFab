@@ -1,27 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { isRoiRegionLikelyEmpty } from '@/utils/detection'
+import { makeFrame, makeGradient } from '@/test-utils/frames'
 
 // ─── Frame factories (no DOM, pure typed arrays) ─────────────────────────────
-function makeFrame(width: number, height: number, pixel: number): { data: Uint8ClampedArray; width: number; height: number } {
-  const data = new Uint8ClampedArray(width * height * 4)
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = pixel; data[i + 1] = pixel; data[i + 2] = pixel; data[i + 3] = 255
-  }
-  return { data, width, height }
-}
-
-function makeGradient(width: number, height: number): { data: Uint8ClampedArray; width: number; height: number } {
-  const data = new Uint8ClampedArray(width * height * 4)
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const v = Math.round((x / width) * 255)
-      const i = (y * width + x) * 4
-      data[i] = v; data[i + 1] = v; data[i + 2] = v; data[i + 3] = 255
-    }
-  }
-  return { data, width, height }
-}
-
 function makeSplitFrame(width: number, height: number, leftPixel: number, rightPixel: number): { data: Uint8ClampedArray; width: number; height: number } {
   const data = new Uint8ClampedArray(width * height * 4)
   for (let y = 0; y < height; y++) {
@@ -39,15 +20,15 @@ describe('isRoiRegionLikelyEmpty', () => {
 
   // ─── Solid backgrounds (zero variance) ─────────────────────────────────────
   it('returns true for all-black frame', () => {
-    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 0), roi)).toBe(true)
+    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 0, 0, 0), roi)).toBe(true)
   })
 
   it('returns true for all-white frame', () => {
-    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 255), roi)).toBe(true)
+    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 255, 255, 255), roi)).toBe(true)
   })
 
   it('returns true for uniform mid-gray frame', () => {
-    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 128), roi)).toBe(true)
+    expect(isRoiRegionLikelyEmpty(makeFrame(320, 240, 128, 128, 128), roi)).toBe(true)
   })
 
   // ─── High variance (text/subtitle present) ──────────────────────────────────
@@ -106,13 +87,13 @@ describe('isRoiRegionLikelyEmpty', () => {
 
   // ─── Edge cases ────────────────────────────────────────────────────────────
   it('returns false when ROI is entirely outside frame bounds', () => {
-    const frame = makeFrame(320, 240, 0)
+    const frame = makeFrame(320, 240, 0, 0, 0)
     const outsideRoi = { x: 200, y: 200, width: 200, height: 200 }
     expect(isRoiRegionLikelyEmpty(frame, outsideRoi)).toBe(false)
   })
 
   it('uniform single-pixel-width ROI has zero variance', () => {
-    const frame = makeFrame(100, 100, 128)
+    const frame = makeFrame(100, 100, 128, 128, 128)
     const narrowRoi = { x: 50, y: 50, width: 5, height: 5 }
     // All pixels are 128 → variance=0 → likely empty
     expect(isRoiRegionLikelyEmpty(frame, narrowRoi)).toBe(true)
