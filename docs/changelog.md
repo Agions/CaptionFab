@@ -1,88 +1,17 @@
-# 更新日志
+# 更新日志 (Changelog)
 
-所有 notable changes 都记录在此文件中。
-
-格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
+所有项目变更都记录在此文件中。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
 ---
 
-## [3.6.0] - 2026-06-23
+## [0.0.1] - 2026-08-06
 
-### Performance — Reactivity Bypass & Dead Code Elimination
+### Major Architecture Refactoring & Distill Branding
 
-- **timeline hover 优化**：`timeline-controller.vue` rAF 节流 + 直接写 tooltip DOM，绕过 Vue 响应式
-- **video-preview hover 优化**：`video-preview.vue` timeline hover 直接写 DOM
-- **roi-selector 优化**：拖拽时 rAF 直接写 DOM，删除 `selection` computed
-- **Vite 构建回归修复**：消除 `src/types/video.ts` 静态+动态混合导入警告
-- **依赖清理**：移除未使用的 `@vueuse/core`、`@vue/language-server`、`@vue/theme`
-- **死代码清理**：移除 `Exporter.ts` 未使用的 `exportBilingualSRT/VTT`
-- **调试日志清理**：移除 `useExtractor.ts` / `settings.ts` 残留 console 语句
-
-### Documentation
-
-- **文档重构**：删除 VitePress 站点，整合为单一 `README.md`
-- **README 改进**：修正版本号、测试数、OCR 引擎说明、外部链接验证
-
----
-
-## [3.5.0] - 2026-06-04
-
-### Architecture Refactoring & Branding
-
-- **项目更名**：SubLens → **CaptionFab**，全项目 97 处引用更新
-- **Rust 模块拆分**：`utils.rs` 拆分为 `shared` / `shared_core` / `mod`，净减 101 行
-- **OCR 引擎重构**：5 模块拆分（session / cache / preprocess / postprocess / mod）
-- **薄抽象层消除**：`ocr` + `export` 合并为 `ocr_export`
-- **错误字符串统一**：新增 `errors.rs`
-- **FFmpeg 调用统一**：`run_command_with_timeout` 单入口
-- **Vue 组件命名**：50 组件统一 kebab-case
-- **死代码扫描**：批量删除未使用导出和 barrel 模块
-
----
-
-## [3.4.0] - 2026-04-14
-
-### ⚡ Performance — Async I/O
-
-- 所有 `std::process::Command` 和 `std::fs` 替换为 `tokio::` 异步版本
-- Rust 侧完全异步化：`video.rs`、`scene.rs`、`export.rs`、`file.rs`、`system.rs`、`ffmpeg.rs`
-
----
-
-## [3.3.1] - 2026-04-10
-
-### 🏗️ Architecture Refactor
-
-- 共享 `types.rs` / `utils.rs` 模块，消除 3 处重复代码
-- `ocr.rs` 完全重写，简化 temp 文件管理
-- 删除 8 个历史失败 action runs
-
----
-
-## [3.3.0] - 2026-04-10
-
-### 🎨 Design System v2.0
-
-- UI 设计系统全面重构：OKLCH 色彩空间，专业字体（DM Sans/Geist）
-- 组件微交互对齐：Button hover、Modal 背透、StatusBar 脉冲
-- CI 三路并行：quality / build / rust-test 完全并行
-
----
-
-## [3.2.1] - 2026-04-08
-
-### Refactor
-
-- Project renamed: VisionSub -> HardSubX (repository, documentation, source files)
-- TypeScript Strict Mode: all `any` type violations fixed (7 files)
-- GitHub branding: 18 professional topics, English SEO description, SVG logo
-
----
-
-## [3.2.0] - 2026-04-04
-
-### Added
-
-- Confidence level filter + batch operations (Phase 3/4)
-- Advanced OCR post-processing pipeline (Phase 4)
-- `filterJitterSubtitles`: removes short-duration OCR noise frames
+- **全新项目重命名与品牌升级**：全面更名为 **Distill**，重设全套矢量图标、品牌预览及桌面应用 App Icons。
+- **5层解耦架构实施**：按 SOLID 原则划分为 Core Engine / API Service / UI Rendering / Config Manager / Utils 独立模块。
+- **双模式 OCR 抽象**：`IOCREngineProvider` 支持离线本地提取（Tesseract/Native ONNX）与云端 API 模式（Gemini / OpenAI Vision）无缝切换。
+- **8 点 ROI 手柄选区**：`VideoCanvasOverlay.vue` 提供 Canvas / SVG 叠加交互图层，支持 8 点手柄缩放与 0~1 坐标归一化计算。
+- **安全凭据管理**：`securityStore.ts` 实现本地 AES/Base64 加密存储 API Key，支持一键安全抹除。
+- **暗黑 Studio 影视 UI**：双栏主工作台布局，左侧视频预览 + 右侧字幕时间轴卡片与 SRT/VTT 导出。
+- **GitHub 远程同步**：仓库名称同步为 `Agions/Distill`，清理所有历史发布版本与标签，更新 Topics 与描述。
