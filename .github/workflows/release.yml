@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag version (e.g., v3.2.0)'
+        description: 'Tag version (e.g., v0.0.1)'
         required: false
         type: string
 
@@ -21,27 +21,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # ── Cache node_modules directly ──────────────────────────────────────────
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-
-
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm install --ignore-scripts --no-audit --loglevel=error
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build web
-        run: npm run build
+        run: pnpm build
         env:
           CI: true
 
@@ -74,23 +68,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-
-
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm install --ignore-scripts --no-audit --loglevel=error
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Download web build
         uses: actions/download-artifact@v4
@@ -129,30 +118,29 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'CaptionFab ${{ github.ref_name }}'
+          releaseName: 'Distill ${{ github.ref_name }}'
           releaseBody: |
-            ## CaptionFab ${{ github.ref_name }}
+            ## Distill ${{ github.ref_name }}
 
-            智能视频字幕提取工具，从视频中精准提取硬编码字幕，支持 9 种专业格式输出。
+            专业视频硬字幕提取与蒸馏工具，支持离线与云端双模式字幕提取。
 
             ### Downloads
 
             | Platform | Architecture | File |
             |---------|-------------|------|
-            | macOS | Apple Silicon (M1/M2/M3) | `CaptionFab_macos-apple-silicon.tar.gz` |
-            | Linux | x86_64 | `CaptionFab_ubuntu-x64.tar.gz` |
-            | Windows | x64 | `CaptionFab_windows-x64.zip` |
+            | macOS | Apple Silicon (M1/M2/M3) | `Distill_macos-apple-silicon.tar.gz` |
+            | Linux | x86_64 | `Distill_ubuntu-x64.tar.gz` |
+            | Windows | x64 | `Distill_windows-x64.zip` |
 
             ### Features
-            - 🤖 多引擎 OCR：PaddleOCR · EasyOCR · Tesseract.js，80+ 语言
-            - ⚡ 五阶段后处理：标准化 → 去噪 → 合并 → 融合 → 校准
-            - 📦 9 种导出格式：SRT, VTT, ASS, SSA, JSON, CSV, TXT, LRC, SBV
-            - 🎬 智能场景检测：直方图 + 卡方检验，减少 60% 无效 OCR
-            - 🔧 纯 Rust 后端：Tokio 异步 I/O，零外部运行时依赖
-            - 🛡️ 置信度校准：混语 · 短文本 · 重复字符自动降权
+            - ⚡ 双模式 OCR 引擎：支持本地离线（Tesseract / Native ONNX）与云端 API（Gemini / OpenAI Vision）
+            - 🎯 8 点手柄交互选区：画布拖拽与 0~1 坐标归一化
+            - 📦 多格式导出：支持一键导出为 SRT, VTT, TXT, JSON 等字幕格式
+            - 🎬 智能场景切分：跳过无字幕静态帧，提升识别效率
+            - 🔒 凭据加密：本地 AES 加密保存 API Key，支持随时安全抹除
 
             ### Installation
             1. Download the archive for your platform
-            2. Extract and run `CaptionFab` (Linux/macOS) or `CaptionFab.exe` (Windows)
-            3. **macOS**: run `xattr -cr ./CaptionFab` if blocked by Gatekeeper
+            2. Extract and run `Distill` (Linux/macOS) or `Distill.exe` (Windows)
+            3. **macOS**: run `xattr -cr ./Distill` if blocked by Gatekeeper
           args: ${{ matrix.args }}

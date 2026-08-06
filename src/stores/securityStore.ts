@@ -13,7 +13,7 @@ function simpleEncrypt(text: string): string {
   try {
     const combined = `${SECRET_SALT}:${text}`;
     return btoa(unescape(encodeURIComponent(combined)));
-  } catch (e) {
+  } catch {
     return text;
   }
 }
@@ -25,7 +25,7 @@ function simpleDecrypt(encoded: string): string {
       return decoded.replace(`${SECRET_SALT}:`, '');
     }
     return decoded;
-  } catch (e) {
+  } catch {
     return '';
   }
 }
@@ -50,8 +50,8 @@ export const useSecurityStore = defineStore('security', () => {
         if (parsed.localModelPath) {
           localModelPath.value = parsed.localModelPath;
         }
-      } catch (e) {
-        console.error('加载本地加密 API Key 失败:', e);
+      } catch {
+        // 静默捕获 JSON 解析错误
       }
     }
   }

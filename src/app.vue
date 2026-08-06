@@ -22,8 +22,9 @@ async function handleStartExtraction() {
 
   try {
     await pipeline.startExtraction(videoEl, subtitleStore.roi);
-  } catch (err: any) {
-    alert(`提取硬字幕失败: ${err.message || err}`);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    alert(`提取硬字幕失败: ${errMsg}`);
   }
 }
 </script>
