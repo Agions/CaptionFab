@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'CaptionFab',
-  description: '智能硬编码字幕提取工具 — 从视频中精准提取字幕',
+  title: 'Distill',
+  description: '专业视频硬字幕提取与蒸馏工具 — 从视频画面中蒸馏提炼字幕文本',
   lang: 'zh-CN',
   base: '/',
   cleanUrls: true,
@@ -53,7 +53,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Agions/CaptionFab' },
+      { icon: 'github', link: 'https://github.com/Agions/Distill' },
     ],
 
     footer: {
@@ -62,7 +62,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/Agions/CaptionFab/edit/main/docs/:path',
+      pattern: 'https://github.com/Agions/Distill/edit/main/docs/:path',
       text: 'Edit this page on GitHub',
     },
   },

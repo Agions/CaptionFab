@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: CaptionFab
-  text: 智能硬编码字幕提取工具
-  tagline: 从视频中精准提取字幕，支持 9 种专业格式输出。基于 Tauri + Vue 3 + Rust 构建。
+  name: Distill
+  text: 专业视频硬字幕提取与蒸馏工具
+  tagline: 从视频画面中蒸馏提炼字幕文本，支持离线与云端双模式。基于 Tauri + Vue 3 + TypeScript 构建。
   image:
     src: /logo.svg
-    alt: CaptionFab
+    alt: Distill
   actions:
     - theme: brand
       text: 快速开始
@@ -17,46 +17,37 @@ hero:
       link: /architecture
     - theme: alt
       text: GitHub
-      link: https://github.com/Agions/CaptionFab
+      link: https://github.com/Agions/Distill
 
 features:
-  - icon: 🤖
-    title: 多引擎 OCR
-    details: PaddleOCR（默认）、EasyOCR、Tesseract 可切换；ONNX Runtime 推理，GPU 加速，256 帧 LRU 缓存
   - icon: ⚡
-    title: 五阶段后处理
-    details: 标准化 → 去噪 → 合并分裂 → 相似度融合 → 时间校准，流水线清洗
-  - icon: 📦
-    title: 9 种导出格式
-    details: SRT · VTT · ASS · SSA · JSON · CSV · TXT · LRC · SBV，一键导出
+    title: 双模式 OCR 引擎
+    details: 支持离线模式（Tesseract / Native ONNX）与云端 API 模式（Gemini / OpenAI Vision），无缝切换
+  - icon: 🎯
+    title: 8 点手柄区域框选
+    details: 视频预览图层上交互式拖拽、缩放框选硬字幕 ROI 选区，坐标归一化 (0~1)
+  - icon: 🔒
+    title: 安全加密凭据管理
+    details: API Key 使用 AES/Base64 本地加密保存，支持随时一键抹除凭据
   - icon: 🎬
-    title: 智能场景检测
-    details: FFmpeg select filter + Rust 原生实现，减少 60% 无效 OCR
+    title: 暗黑 Studio UI
+    details: 沉浸式影视后期风格双栏界面，左侧视频框选预览 + 右侧时间轴字幕卡片列表
+  - icon: 📦
+    title: 多格式实时导出
+    details: 支持一键导出为 SRT、VTT、TXT、JSON 等多种专业字幕与文本格式
   - icon: 🛡️
-    title: 置信度校准
-    details: CJK n-gram 分析、竖线检测、标点规范化，可视化质量信号
-  - icon: 🔧
-    title: 纯 Rust 后端
-    details: Tokio 异步 I/O，所有文件/视频操作非阻塞，零 GC
-  - icon: 📐
-    title: ROI 预设
-    details: 底部 · 顶部 · 左侧 · 右侧 · 中间 · 自定义 — 一键切换
-  - icon: 📹
-    title: 广泛视频格式
-    details: MP4 · MKV · AVI · MOV · WebM · M4V · WMV · FLV · 3GP
-  - icon: 🎨
-    title: 暗色/亮色主题
-    details: 跟随系统或手动切换，设置持久化到 localStorage
+    title: 模块化 5 层架构
+    details: 严格按照 SOLID 原则分层设计（Core / Services / UI / Config / Utils），完全解耦并具备完整的 TS 类型定义
 ---
 
 ## 项目概览
 
 | 指标 | 数据 |
 |:-----|:-----|
-| 测试数量 | 372 个单元测试 |
-| 导出格式 | 9 种 |
-| 支持语言 | 100+ |
-| 技术栈 | Tauri 2.x + Vue 3.5 + Rust + TypeScript 5.9 |
+| 测试数量 | Vitest 单元测试全通过 |
+| 导出格式 | SRT / VTT / TXT / JSON |
+| 架构设计 | 5 层解耦抽象与依赖倒置 |
+| 技术栈 | Tauri 2.x + Vue 3.5 + TypeScript 5.x |
 
 ## 快速链接
 

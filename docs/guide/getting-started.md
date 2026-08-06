@@ -1,6 +1,6 @@
 # 快速开始
 
-欢迎使用 CaptionFab！本文档将帮助你快速搭建开发环境并运行项目。
+欢迎使用 Distill！本文档将帮助你快速搭建开发环境并运行项目。
 
 ---
 
@@ -9,7 +9,7 @@
 | 依赖 | 版本要求 | 说明 |
 |:-----|:---------|:-----|
 | Node.js | 18+ | 前端运行环境 |
-| pnpm | 9+ | 包管理器 |
+| npm / pnpm | 9+ | 包管理器 |
 | Rust | 1.82+ | 后端编译环境 |
 | FFmpeg | 6+ | 视频元数据提取 |
 
@@ -20,31 +20,21 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/Agions/CaptionFab.git
-cd CaptionFab
+git clone https://github.com/Agions/Distill.git
+cd Distill
 ```
 
 ### 2. 安装前端依赖
 
 ```bash
-pnpm install
+npm install
 ```
 
-### 3. 安装 Rust 依赖
+### 3. 运行开发环境
 
 ```bash
-cd src-tauri
-cargo fetch
-cd ..
+npm run dev
 ```
-
-### 4. 运行开发环境
-
-```bash
-pnpm tauri dev
-```
-
-开发模式下，前端会启动热重载服务器，Rust 后端会重新编译并自动重启。
 
 ---
 
@@ -54,73 +44,29 @@ pnpm tauri dev
 
 ```bash
 # 类型检查
-pnpm type-check
+npm run type-check
 
 # 代码规范
-pnpm lint
+npm run lint
 
 # 单元测试
-pnpm test
+npx vitest run
 ```
-
-### 后端编译检查
-
-```bash
-cd src-tauri
-cargo check
-cargo test
-```
-
-### 生产构建
-
-```bash
-pnpm tauri build
-```
-
-构建产物位于：
-- Windows: `src-tauri/target/release/bundle/msi/*.exe`
-- macOS: `src-tauri/target/release/bundle/dmg/*.dmg`
-- Linux: `src-tauri/target/release/bundle/deb/*.deb`
 
 ---
 
 ## 目录结构
 
 ```
-CaptionFab/
+Distill/
 ├── src/                        # 前端源码
-│   ├── components/             # Vue 组件
-│   │   ├── common/             # 通用组件
-│   │   ├── layout/             # 布局组件
-│   │   ├── subtitle/           # 字幕组件
-│   │   └── video/              # 视频组件
-│   ├── composables/            # Vue 组合式函数
-│   ├── core/                   # 核心业务逻辑
+│   ├── core/                   # 核心业务逻辑 (Pipeline, ROI)
+│   ├── services/               # OCR 引擎架构 (Local & Cloud)
 │   ├── stores/                 # Pinia 状态管理
-│   ├── utils/                  # 工具函数
-│   └── types/                  # TypeScript 类型定义
+│   ├── components/             # Vue 组件 (Video, Subtitle, Layout)
+│   └── utils/                  # 工具函数 (Exporter, Timecode)
 ├── src-tauri/                  # Rust 后端
-│   └── src/commands/           # Tauri 命令模块
 └── package.json
-```
-
----
-
-## 常见问题
-
-**Q: 开发环境启动失败，提示 `FFmpeg not found`**
-
-A: 请确保 FFmpeg 已安装并加入 PATH。在终端运行 `ffmpeg -version` 验证。
-
-**Q: Rust 编译报错 `linker link.exe not found`**
-
-A: Windows 用户请安装 Visual Studio Build Tools，或使用 `rustup default stable-msvc`。
-
-**Q: `pnpm install` 速度慢**
-
-A: 建议配置 pnpm 镜像源：
-```bash
-pnpm config set registry https://registry.npmmirror.com
 ```
 
 ---

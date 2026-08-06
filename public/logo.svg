@@ -1,107 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CaptionFab Logo">
-  <title>CaptionFab</title>
-  <desc>智能硬编码字幕提取工具 Logo — 融合胶片、字幕文本和工厂齿轮元素</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Distill Logo">
+  <title>Distill</title>
+  <desc>Distill - 专业视频硬字幕提取与蒸馏工具 Logo</desc>
 
   <defs>
-    <!-- 主渐变：深蓝到青色 -->
-    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="40%" stop-color="#1E40AF"/>
-      <stop offset="100%" stop-color="#0EA5E9"/>
+    <!-- 暗黑 Slate 主渐变 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#022c22"/>
     </linearGradient>
 
-    <!-- 强调色渐变：琥珀到橙 -->
-    <linearGradient id="accentGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F59E0B"/>
-      <stop offset="100%" stop-color="#F97316"/>
+    <!-- Emerald 翡翠高亮渐变 -->
+    <linearGradient id="emeraldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
 
-    <!-- 高光渐变 -->
-    <linearGradient id="highlightGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- 柔和阴影 -->
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
-
-    <!-- 发光效果 -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="6" result="blur"/>
+    <!-- 蒸馏光芒与阴影 -->
+    <filter id="emeraldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
 
-    <!-- 圆角矩形裁剪 -->
-    <clipPath id="iconClip">
+    <clipPath id="logoClip">
       <rect x="24" y="24" width="464" height="464" rx="96"/>
     </clipPath>
   </defs>
 
   <!-- 背景：圆角矩形 -->
-  <rect width="512" height="512" rx="128" fill="url(#brandGradient)" filter="url(#softShadow)"/>
+  <rect width="512" height="512" rx="128" fill="url(#bgGradient)"/>
 
-  <!-- 高光层 -->
-  <rect x="8" y="8" width="496" height="496" rx="120" fill="url(#highlightGradient)"/>
+  <!-- 高光边框 -->
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="url(#emeraldGradient)" stroke-width="3" opacity="0.3"/>
 
-  <!-- 主图标组：胶片帧 + 字幕 -->
-  <g transform="translate(128, 100)" clip-path="url(#iconClip)">
+  <!-- 主蒸馏标志 (Distillation Flask & Subtitle Frame Focus) -->
+  <g transform="translate(256, 200)" filter="url(#emeraldGlow)">
+    <!-- 外层 8 点 ROI 框选句柄框 -->
+    <rect x="-110" y="-90" width="220" height="150" rx="16" fill="none" stroke="url(#emeraldGradient)" stroke-width="6" stroke-dasharray="8 4"/>
 
-    <!-- 胶片外框 -->
-    <rect x="0" y="0" width="256" height="200" rx="16" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.9"/>
+    <!-- 4角 ROI 手柄 -->
+    <circle cx="-110" cy="-90" r="8" fill="#34d399"/>
+    <circle cx="110" cy="-90" r="8" fill="#34d399"/>
+    <circle cx="-110" cy="60" r="8" fill="#34d399"/>
+    <circle cx="110" cy="60" r="8" fill="#34d399"/>
 
-    <!-- 胶片齿孔 — 左侧 -->
-    <rect x="-12" y="16" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="-12" y="56" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="-12" y="96" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="-12" y="136" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="-12" y="176" width="10" height="16" rx="4" fill="#ffffff" opacity="0.6"/>
-
-    <!-- 胶片齿孔 — 右侧 -->
-    <rect x="258" y="16" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="258" y="56" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="258" y="96" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="258" y="136" width="10" height="24" rx="4" fill="#ffffff" opacity="0.6"/>
-    <rect x="258" y="176" width="10" height="16" rx="4" fill="#ffffff" opacity="0.6"/>
-
-    <!-- 播放按钮三角 -->
-    <polygon points="100,50 176,100 100,150" fill="#ffffff" opacity="0.95"/>
-
-    <!-- 字幕文本行（底部，模拟硬编码字幕效果） -->
-    <rect x="24" y="160" width="208" height="28" rx="6" fill="#000" fill-opacity="0.5"/>
-    <!-- 第一行字幕 -->
-    <rect x="48" y="166" width="140" height="6" rx="3" fill="#ffffff" opacity="0.9"/>
-    <!-- 第二行字幕 -->
-    <rect x="64" y="178" width="100" height="5" rx="2.5" fill="#ffffff" opacity="0.6"/>
+    <!-- 蒸馏核心 'D' 图腾 / 字幕文本提取脉冲 -->
+    <path d="M-50,-50 H10 C30,-50 45,-35 45,-10 C45,15 30,30 10,30 H-50 Z" fill="none" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+    
+    <!-- 文本音轨/字幕线条 -->
+    <rect x="-32" y="-20" width="48" height="8" rx="4" fill="url(#emeraldGradient)"/>
+    <rect x="-32" y="0" width="32" height="6" rx="3" fill="#ffffff" opacity="0.8"/>
   </g>
 
-  <!-- "Fab" 齿轮/火花装饰（右上角） -->
-  <g transform="translate(380, 80)" filter="url(#glow)">
-    <!-- 八角齿轮 -->
-    <polygon points="0,-28 8,-10 28,-8 12,4 18,24 0,14 -18,24 -12,4 -28,-8 -8,-10"
-             fill="url(#accentGradient)" opacity="0.9"/>
-    <!-- 中心圆 -->
-    <circle cx="0" cy="0" r="8" fill="#ffffff" opacity="0.8"/>
-  </g>
-
-  <!-- 底部品牌文字（内嵌） -->
+  <!-- 底部 Distill 品牌标志 -->
   <g transform="translate(256, 400)">
     <text x="0" y="0" text-anchor="middle"
-          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
-          font-size="48" font-weight="700" letter-spacing="-1"
-          fill="#ffffff" opacity="0.95">
-      CaptionFab
+          font-family="system-ui, -apple-system, 'Inter', sans-serif"
+          font-size="52" font-weight="800" letter-spacing="-1.5"
+          fill="#ffffff">
+      Distill
     </text>
     <text x="0" y="32" text-anchor="middle"
-          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
-          font-size="16" font-weight="400" letter-spacing="4"
-          fill="#ffffff" opacity="0.5">
-      SUBTITLE EXTRACTOR
+          font-family="system-ui, -apple-system, 'Inter', sans-serif"
+          font-size="14" font-weight="600" letter-spacing="4"
+          fill="#10b981" opacity="0.9">
+      SUBTITLE EXTRACTION ENGINE
     </text>
   </g>
-
-  <!-- 装饰性角落元素 -->
-  <path d="M 48 464 L 80 464 L 64 480 Z" fill="#ffffff" opacity="0.1"/>
-  <circle cx="464" cy="464" r="4" fill="#ffffff" opacity="0.15"/>
 </svg>

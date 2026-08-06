@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CaptionFab",
-  "version": "3.6.0",
-  "identifier": "com.captionfab.desktop",
+  "productName": "Distill",
+  "version": "0.0.1",
+  "identifier": "com.distill.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "CaptionFab — 视频字幕提取工具",
+        "title": "Distill — 专业视频字幕提炼工具",
         "width": 1400,
         "height": 900,
         "minWidth": 1200,
@@ -31,7 +31,13 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi", "appimage", "dmg", "app"],
+    "targets": [
+      "nsis",
+      "msi",
+      "appimage",
+      "dmg",
+      "app"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -41,8 +47,8 @@
     ],
     "resources": [],
     "category": "Utility",
-    "shortDescription": "CaptionFab - 视频字幕提取工具",
-    "longDescription": "CaptionFab 是一款基于 OCR 的视频字幕提取工具。它使用 Tesseract.js、PaddleOCR 或 EasyOCR 从视频中提取硬编码字幕，并支持导出为 SRT、VTT、ASS、SSA、JSON、TXT、LRC、SBV 和 CSV 等多种格式。",
+    "shortDescription": "Distill - 视频字幕蒸馏提炼工具",
+    "longDescription": "Distill 是一款专业的视频硬字幕提取与蒸馏工具。支持基于本地 OCR 与云端视觉大模型双模式，通过区域框选高效提取硬编码字幕并导出为 SRT、VTT 等多种格式。",
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
@@ -67,7 +73,11 @@
     },
     "asset-protocol": {
       "all": false,
-      "assetScope": ["$resource/**", "$app/**", "$temp/**"]
+      "assetScope": [
+        "$resource/**",
+        "$app/**",
+        "$temp/**"
+      ]
     }
   }
 }

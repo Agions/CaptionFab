@@ -1,0 +1,146 @@
+<template>
+  <header class="h-16 px-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between shadow-xl">
+    <!-- Brand Logo & Name -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-950">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          Distill
+          <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80">v0.0.1</span>
+          <span v-if="isTauri" class="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800/80">Tauri Native</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">专业硬字幕提取与蒸馏工具</p>
+      </div>
+    </div>
+
+    <!-- Center Main Action Buttons -->
+    <div class="flex items-center gap-3">
+      <!-- 导入视频 (Tauri 原生对话框 & Web 文件框双控) -->
+      <button
+        v-if="isTauri"
+        class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 shadow transition"
+        @click="onTauriImport"
+      >
+        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        导入视频 (Tauri)
+      </button>
+
+      <label v-else class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 cursor-pointer shadow transition">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        导入视频
+        <input type="file" accept="video/*" class="hidden" @change="onFileSelected" />
+      </label>
+
+      <!-- 选择区域 (ROI) -->
+      <button
+        :class="[
+          'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border transition shadow',
+          isRoiActive ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
+        ]"
+        @click="isRoiActive = !isRoiActive"
+      >
+        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5v4h2V7h2V5H3zm0 10v4h4v-2H5v-2H3zm14 4h4v-4h-2v2h-2v2zm2-14h-4v2h2v2h2V5z"/>
+        </svg>
+        选择区域
+      </button>
+
+      <!-- 开始提取字幕 -->
+      <button
+        :disabled="!subtitleStore.videoUrl || subtitleStore.isExtracting"
+        class="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-950 transition"
+        @click="$emit('startExtraction')"
+      >
+        <svg v-if="!subtitleStore.isExtracting" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg v-else class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        {{ subtitleStore.isExtracting ? `提取中 [${subtitleStore.progressPercent}%]...` : '开始提取字幕' }}
+      </button>
+    </div>
+
+    <!-- Right Mode Switcher & Settings -->
+    <div class="flex items-center gap-3">
+      <!-- 离线/云端 模式 Toggle -->
+      <div class="flex items-center p-1 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+        <button
+          :class="[
+            'px-3 py-1 rounded-md transition font-medium',
+            subtitleStore.ocrMode === 'local' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+          ]"
+          @click="subtitleStore.ocrMode = 'local'"
+        >
+          离线模式
+        </button>
+        <button
+          :class="[
+            'px-3 py-1 rounded-md transition font-medium',
+            subtitleStore.ocrMode === 'cloud' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+          ]"
+          @click="subtitleStore.ocrMode = 'cloud'"
+        >
+          云端 API
+        </button>
+      </div>
+
+      <!-- 设置按钮 -->
+      <button
+        class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700"
+        title="配置与安全密钥设置"
+        @click="$emit('openSettings')"
+      >
+        <svg class="w-5 h-5 stroke-current" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useSubtitleStore } from '../../stores/subtitleStore';
+import { TauriBridge } from '../../services/tauriBridge';
+
+const subtitleStore = useSubtitleStore();
+const isRoiActive = ref(true);
+const isTauri = computed(() => TauriBridge.isTauriEnv());
+
+defineEmits(['startExtraction', 'openSettings']);
+
+async function onTauriImport() {
+  const filePath = await TauriBridge.openVideoFileDialog();
+  if (filePath) {
+    // 将原生文件路径转换为 asset 统一协议 URI
+    const assetUrl = `https://asset.localhost/${filePath}`;
+    subtitleStore.videoUrl = assetUrl;
+    subtitleStore.videoFileName = filePath.split('/').pop() || filePath;
+    subtitleStore.clearSubtitles();
+  }
+}
+
+function onFileSelected(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (file) {
+    if (subtitleStore.videoUrl) {
+      URL.revokeObjectURL(subtitleStore.videoUrl);
+    }
+    subtitleStore.videoUrl = URL.createObjectURL(file);
+    subtitleStore.videoFileName = file.name;
+    subtitleStore.clearSubtitles();
+  }
+}
+</script>

@@ -1,23 +1,8 @@
-//! CaptionFab - Rust Tauri Application Library
+//! Distill - Rust Tauri Application Library
 //!
 //! # Overview
 //!
-//! CaptionFab is a desktop application for extracting subtitles from videos using OCR.
-//!
-//! # Architecture
-//!
-//! ```text
-//! ┌────────────────── Frontend (Vue.js) ──────────────────┐
-//! │  OCR Tab  │  ROI Tab  │  Export Tab  │  Settings Tab  │
-//! └───────────────────────┬───────────────────────────────┘
-//!                         │ Tauri IPC
-//! ┌───────────────────────┴───────────────────────────────┐
-//! │                 Backend (Rust/Tauri)                  │
-//! │  video   │  scene  │  export  │  file  │  system   │
-//! └───────────────────────────────────────────────────────┘
-//! ```
-//!
-//! All public `#[tauri::command]` functions are exposed to the frontend.
+//! Distill is a desktop application for extracting hardcoded subtitles from videos using OCR and Vision AI.
 
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -39,7 +24,7 @@ pub fn run() {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    info!("Starting CaptionFab v{}", env!("CARGO_PKG_VERSION"));
+    info!("Starting Distill v{}", env!("CARGO_PKG_VERSION"));
 
     // Warm up the ONNX OCR engine on startup (non-blocking background task)
     info!("Warming up OCR engine...");
@@ -73,7 +58,7 @@ pub fn run() {
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
             tracing::error!("Failed to run Tauri application: {}", e);
-            eprintln!("ERROR: Failed to start CaptionFab application: {}", e);
+            eprintln!("ERROR: Failed to start Distill application: {}", e);
             std::process::exit(1);
         });
 }

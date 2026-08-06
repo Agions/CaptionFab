@@ -1,146 +1,72 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { useTheme } from '@/composables/useTheme'
-import { useKeyboardShortcuts } from '@/composables/useHotkeys'
-import { useSubtitleExtractor } from '@/composables/useExtractor'
-import Toolbar from '@/components/layout/toolbar.vue'
-import Panel from '@/components/layout/panel.vue'
-import VideoPreview from '@/components/layout/video-preview.vue'
-import SubtitleList from '@/components/subtitle/subtitle-list.vue'
-import TimelineController from '@/components/video/timeline-controller.vue'
-import StatusBar from '@/components/layout/status-bar.vue'
-import Shortcuts from '@/components/common/shortcuts.vue'
-import Export from '@/components/subtitle/sub-export.vue'
-import BatchProcessing from '@/components/layout/batch-processing.vue'
-import SubToast from '@/components/common/sub-toast.vue'
-import Toast from '@/components/common/toast.vue'
-import { useSubtitleStore } from '@/stores/subtitle'
+import { ref } from 'vue';
+import TopToolbar from './components/layout/TopToolbar.vue';
+import VideoPlayer from './components/video/VideoPlayer.vue';
+import SubtitleTimelineList from './components/subtitle/SubtitleTimelineList.vue';
+import SettingsModal from './components/layout/SettingsModal.vue';
+import { PipelineEngine } from './core/PipelineEngine';
+import { useSubtitleStore } from './stores/subtitleStore';
 
-// Initialize theme
-useTheme()
+const subtitleStore = useSubtitleStore();
+const videoPlayerRef = ref<InstanceType<typeof VideoPlayer> | null>(null);
+const isSettingsOpen = ref(false);
 
-// Subtitle store for toast
-const subtitleStore = useSubtitleStore()
-const toastVisible = ref(false)
-const toastText = ref('')
-const toastIndex = ref(0)
-const toastTotal = ref(0)
+const pipeline = new PipelineEngine();
 
-// Watch for subtitle selection changes
-watch(() => subtitleStore.selectedSubtitle, (sub) => {
-  if (sub) {
-    const idx = subtitleStore.subtitles.findIndex(s => s.id === sub.id)
-    toastText.value = sub.text
-    toastIndex.value = idx >= 0 ? idx : 0
-    toastTotal.value = subtitleStore.subtitles.length
-    toastVisible.value = true
+async function handleStartExtraction() {
+  const videoEl = videoPlayerRef.value?.getVideoElement();
+  if (!videoEl || !subtitleStore.videoUrl) {
+    alert('请先导入视频文件');
+    return;
   }
-})
 
-// Keyboard shortcuts
-const { setupShortcuts, cleanupShortcuts, setExportCallback } = useKeyboardShortcuts()
-
-// Subtitle extractor
-const subtitleExtractor = useSubtitleExtractor()
-provide('subtitleExtractor', subtitleExtractor)
-
-// Export dialog opener
-function openExport() {
-  exportDialogRef.value?.open()
-}
-provide('openExport', openExport)
-
-const showTimeline = ref(true)
-const shortcutsHelpRef = ref<InstanceType<typeof Shortcuts> | null>(null)
-const exportDialogRef = ref<InstanceType<typeof Export> | null>(null)
-const batchProcessRef = ref<InstanceType<typeof BatchProcessing> | null>(null)
-
-function openBatchProcess() {
-  batchProcessRef.value?.open()
-}
-provide('openBatchProcess', openBatchProcess)
-
-function handleQuestionMark(e: KeyboardEvent) {
-  if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-    shortcutsHelpRef.value?.open()
+  try {
+    await pipeline.startExtraction(videoEl, subtitleStore.roi);
+  } catch (err: any) {
+    alert(`提取硬字幕失败: ${err.message || err}`);
   }
 }
-
-onMounted(() => {
-  setupShortcuts()
-
-  setExportCallback(() => {
-    exportDialogRef.value?.open()
-  })
-
-  window.addEventListener('keydown', handleQuestionMark)
-})
-
-onUnmounted(() => {
-  cleanupShortcuts()
-  window.removeEventListener('keydown', handleQuestionMark)
-})
 </script>
 
 <template>
-  <div class="app-container">
-    <toolbar />
-    
-    <div class="app-main">
-      <panel />
-      <div class="main-content">
-        <video-preview class="video-area" />
-        <timeline-controller v-if="showTimeline" class="timeline-area" />
-      </div>
-      <subtitle-list />
-    </div>
-    
-    <status-bar />
-    
-    <shortcuts ref="shortcutsHelpRef" />
-    <export ref="exportDialogRef" />
-    <batch-processing ref="batchProcessRef" />
-    <sub-toast
-      :visible="toastVisible"
-      :text="toastText"
-      :index="toastIndex"
-      :total="toastTotal"
-      @hide="toastVisible = false"
+  <div class="distill-app w-screen h-screen flex flex-col bg-slate-950 text-slate-100 font-sans overflow-hidden select-none">
+    <!-- 顶部 Toolbar 控制栏 -->
+    <TopToolbar
+      @start-extraction="handleStartExtraction"
+      @open-settings="isSettingsOpen = true"
     />
-    <toast />
+
+    <!-- 主工作台：左侧视频 Preview & ROI 选区 / 右侧字幕时间轴结果 -->
+    <main class="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden bg-slate-950">
+      <!-- 左侧 65% 视频预览区 -->
+      <section class="flex-1 flex flex-col min-w-0 min-h-0">
+        <VideoPlayer ref="videoPlayerRef" />
+      </section>
+
+      <!-- 右侧 35% 字幕结果与时间轴控制面板 -->
+      <aside class="w-[420px] shrink-0 flex flex-col min-h-0">
+        <SubtitleTimelineList />
+      </aside>
+    </main>
+
+    <!-- 设置与 API 密钥 Modal -->
+    <SettingsModal
+      :is-open="isSettingsOpen"
+      @close="isSettingsOpen = false"
+    />
   </div>
 </template>
 
-<style lang="scss" scoped>
-.app-container {
+<style>
+@import 'assets/styles/global.scss';
+
+.distill-app {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: $bg-base;
+  background-color: #090d16;
+  color: #f8fafc;
   overflow: hidden;
-}
-
-.app-main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.video-area {
-  flex: 1;
-  min-height: 0;
-}
-
-.timeline-area {
-  flex-shrink: 0;
-  height: 120px;
 }
 </style>
