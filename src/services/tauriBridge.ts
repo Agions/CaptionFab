@@ -4,13 +4,22 @@
  * 负责检测是否运行在 Tauri 环境，并桥接 Rust 后端的高性能命令（场景检测、ONNX Native OCR、原生文件对话框、视频帧抽帧）。
  */
 
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 
 export class TauriBridge {
   /** 检测当前应用是否运行在 Tauri 客户端容器中 */
   public static isTauriEnv(): boolean {
     return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  }
+
+  /** 将原生系统路径转换为可在 Web 视图渲染的 asset URI (Tauri 2.x convertFileSrc) */
+  public static convertPathToAssetUrl(filePath: string): string {
+    try {
+      return convertFileSrc(filePath);
+    } catch {
+      return `https://asset.localhost/${encodeURIComponent(filePath)}`;
+    }
   }
 
   /** 调用 Tauri 原生文件选择对话框选择视频文件 */
@@ -26,6 +35,9 @@ export class TauriBridge {
           },
         ],
       });
+      if (Array.isArray(selected)) {
+        return selected[0] || null;
+      }
       return typeof selected === 'string' ? selected : null;
     } catch (e) {
       console.warn('Tauri 打开文件对话框失败/取消:', e);

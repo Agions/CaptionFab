@@ -19,25 +19,25 @@
 
     <!-- Center Main Action Buttons -->
     <div class="flex items-center gap-3">
-      <!-- 导入视频 (Tauri 原生对话框 & Web 文件框双控) -->
+      <!-- 隐藏的基础 HTML5 File Input 供双重兜底 -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="video/*"
+        class="hidden"
+        @change="onFileSelected"
+      />
+
+      <!-- 导入视频按键（原生对话框 + 网页 Input 双模式兼容触发） -->
       <button
-        v-if="isTauri"
-        class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 shadow transition"
-        @click="onTauriImport"
+        class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 shadow transition cursor-pointer"
+        @click="onImportClick"
       >
         <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
         </svg>
-        导入视频 (Tauri)
+        <span>{{ isTauri ? '导入视频 (Tauri)' : '导入视频' }}</span>
       </button>
-
-      <label v-else class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 cursor-pointer shadow transition">
-        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-        </svg>
-        导入视频
-        <input type="file" accept="video/*" class="hidden" @change="onFileSelected" />
-      </label>
 
       <!-- 选择区域 (ROI) -->
       <button
@@ -116,19 +116,29 @@ import { TauriBridge } from '../../services/tauriBridge';
 
 const subtitleStore = useSubtitleStore();
 const isRoiActive = ref(true);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 const isTauri = computed(() => TauriBridge.isTauriEnv());
 
 defineEmits(['startExtraction', 'openSettings']);
 
-async function onTauriImport() {
-  const filePath = await TauriBridge.openVideoFileDialog();
-  if (filePath) {
-    // 将原生文件路径转换为 asset 统一协议 URI
-    const assetUrl = `https://asset.localhost/${filePath}`;
-    subtitleStore.videoUrl = assetUrl;
-    subtitleStore.videoFileName = filePath.split('/').pop() || filePath;
-    subtitleStore.clearSubtitles();
+async function onImportClick() {
+  if (isTauri.value) {
+    try {
+      const filePath = await TauriBridge.openVideoFileDialog();
+      if (filePath) {
+        // 使用 Tauri 2.x convertFileSrc 原生转换 asset 路径
+        subtitleStore.videoUrl = TauriBridge.convertPathToAssetUrl(filePath);
+        subtitleStore.videoFileName = filePath.split(/[/\\]/).pop() || filePath;
+        subtitleStore.clearSubtitles();
+        return;
+      }
+    } catch (err) {
+      console.warn('Tauri 原生文件选择框调用异常，触发浏览器文件选择兜底:', err);
+    }
   }
+
+  // 网页模式或原生态对话框取消/未准备好时，自动触发 HTML file input 对话框
+  fileInputRef.value?.click();
 }
 
 function onFileSelected(e: Event) {

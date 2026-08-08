@@ -72,11 +72,9 @@
       "open": true
     },
     "asset-protocol": {
-      "all": false,
-      "assetScope": [
-        "$resource/**",
-        "$app/**",
-        "$temp/**"
+      "enable": true,
+      "scope": [
+        "**"
       ]
     }
   }
