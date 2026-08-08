@@ -34,13 +34,13 @@
         </div>
       </div>
 
-      <!-- 真实视频 HTML5 video 元素 -->
+      <!-- 真实视频 HTML5 video 元素 (移除 crossorigin="anonymous" 确保本地 asset:// 和 blob: 顺利播放) -->
       <video
         v-else
         ref="videoRef"
         :src="subtitleStore.videoUrl"
-        preload="metadata"
-        crossorigin="anonymous"
+        preload="auto"
+        controls
         class="max-w-full max-h-full object-contain"
         @loadedmetadata="onVideoLoaded"
         @timeupdate="onTimeUpdate"
@@ -123,7 +123,7 @@ function onTimeUpdate() {
 }
 
 function onVideoError(e: Event) {
-  console.warn('Video 加载错误:', e);
+  console.warn('Video 元素视频加载异常:', e);
 }
 
 function onDropVideo(e: DragEvent) {
