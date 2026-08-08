@@ -57,8 +57,15 @@ export class PipelineEngine {
         const targetTime = step * stepSeconds;
         videoElement.currentTime = targetTime;
 
-        // 等待 seek 完毕
-        await new Promise((resolve) => setTimeout(resolve, 80));
+        // 异步精准等待 HTML5 Video seeked 完毕，确保图像完整更新
+        await new Promise<void>((resolve) => {
+          const onSeeked = () => {
+            videoElement.removeEventListener('seeked', onSeeked);
+            resolve();
+          };
+          videoElement.addEventListener('seeked', onSeeked, { once: true });
+          setTimeout(onSeeked, 300);
+        });
 
         if (ctx) {
           ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -80,7 +87,7 @@ export class PipelineEngine {
 
       // 恢复原播放位置
       videoElement.currentTime = originalTime;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('PipelineEngine 识别过程出错:', err);
       throw err;
     } finally {

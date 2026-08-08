@@ -40,16 +40,6 @@ features:
     details: 严格按照 SOLID 原则分层设计（Core / Services / UI / Config / Utils），完全解耦并具备完整的 TS 类型定义
 ---
 
-## 🖥️ 真实运行界面 (UI Preview)
-
-### 主工作台 — 暗黑 Studio 界面
-![Distill Studio UI](/images/distill_app_studio_ui.jpg)
-
-### 安全凭据与设置 Modal
-![Distill Settings Modal](/images/distill_settings_modal.jpg)
-
----
-
 ## 项目概览
 
 | 指标 | 数据 |

@@ -10,10 +10,6 @@
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)](https://vuejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square)](https://www.typescriptlang.org)
 
-<br/>
-
-![Distill Studio UI Banner](docs/public/images/distill_app_studio_ui.jpg)
-
 </div>
 
 ---
@@ -28,16 +24,6 @@
 | 🎬 **暗黑 Studio UI** | 沉浸式影视后期风格双栏界面，左侧视频框选预览 + 右侧时间轴字幕卡片列表 |
 | 📦 **多格式实时导出** | 支持一键导出为 SRT、VTT、TXT、JSON 等多种专业字幕与文本格式 |
 | 🛡️ **模块化 5 层架构** | 严格按照 SOLID 原则分层设计（Core / Services / UI / Config / Utils），完全解耦并具备完整的 TS 类型定义 |
-
----
-
-## 📸 界面展示 (Screenshots)
-
-### 1. 暗黑 Studio 主工作台 (Video Preview & ROI Frame & Subtitle Timeline)
-![Distill Studio UI](docs/public/images/distill_app_studio_ui.jpg)
-
-### 2. 安全凭据与设置 Modal (Settings & Credentials Modal)
-![Distill Settings Modal](docs/public/images/distill_settings_modal.jpg)
 
 ---
 
