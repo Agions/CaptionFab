@@ -23,6 +23,11 @@ export class PipelineEngine {
     const subtitleStore = useSubtitleStore();
     const securityStore = useSecurityStore();
 
+    // 校验云端模式配置
+    if (subtitleStore.ocrMode === 'cloud' && !securityStore.apiKey.trim()) {
+      throw new Error('未配置 API Key，请点击右上角设置按钮配置密钥，或切换为离线模式');
+    }
+
     this.isCancelRequested = false;
     subtitleStore.isExtracting = true;
     subtitleStore.progressPercent = 0;
@@ -35,15 +40,21 @@ export class PipelineEngine {
       cloudEndpoint: securityStore.cloudEndpoint,
     };
 
+    // 临时暂停播放以稳定抽取帧画面
+    const wasPlaying = !videoElement.paused;
+    if (wasPlaying) {
+      videoElement.pause();
+    }
+
+    const originalTime = videoElement.currentTime;
+
     try {
       // 获取对应的 OCR 引擎实例
       const ocrEngine = await OCREngineFactory.getEngine(config);
 
       const duration = videoElement.duration || 10;
-      const stepSeconds = 1.5; // 每 1.5 秒抽一帧
-      const totalSteps = Math.floor(duration / stepSeconds);
-
-      const originalTime = videoElement.currentTime;
+      const stepSeconds = duration > 60 ? 1.5 : 1.0; // 智能调节步长
+      const totalSteps = Math.max(1, Math.floor(duration / stepSeconds));
 
       // 隐式 offscreen canvas 抽取帧
       const canvas = document.createElement('canvas');
@@ -64,19 +75,24 @@ export class PipelineEngine {
             resolve();
           };
           videoElement.addEventListener('seeked', onSeeked, { once: true });
-          setTimeout(onSeeked, 300);
+          setTimeout(onSeeked, 250);
         });
 
         if (ctx) {
           ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-          const results = await ocrEngine.recognizeFrame(canvas, roi);
+          
+          try {
+            const results = await ocrEngine.recognizeFrame(canvas, roi);
 
-          if (results && results.length > 0) {
-            results.forEach((r) => {
-              r.startTime = Math.round(targetTime * 1000);
-              r.endTime = Math.round((targetTime + stepSeconds) * 1000);
-            });
-            subtitleStore.addSubtitles(results);
+            if (results && results.length > 0) {
+              results.forEach((r) => {
+                r.startTime = Math.round(targetTime * 1000);
+                r.endTime = Math.round((targetTime + stepSeconds) * 1000);
+              });
+              subtitleStore.addSubtitles(results);
+            }
+          } catch (frameErr) {
+            console.warn(`帧 [${targetTime}s] OCR 识别跳过:`, frameErr);
           }
         }
 
@@ -85,8 +101,11 @@ export class PipelineEngine {
         onProgress?.(percent);
       }
 
-      // 恢复原播放位置
+      // 恢复原播放位置与状态
       videoElement.currentTime = originalTime;
+      if (wasPlaying) {
+        videoElement.play().catch(() => {});
+      }
     } catch (err: unknown) {
       console.error('PipelineEngine 识别过程出错:', err);
       throw err;

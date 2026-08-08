@@ -24,7 +24,10 @@ async function handleStartExtraction() {
     await pipeline.startExtraction(videoEl, subtitleStore.roi);
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    alert(`提取硬字幕失败: ${errMsg}`);
+    alert(`提取硬字幕提示: ${errMsg}`);
+    if (errMsg.includes('API Key')) {
+      isSettingsOpen.value = true;
+    }
   }
 }
 </script>
