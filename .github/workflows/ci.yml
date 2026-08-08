@@ -85,7 +85,7 @@ jobs:
             ffmpeg
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust cargo
         uses: Swatinem/rust-cache@v2
@@ -118,7 +118,7 @@ jobs:
             ffmpeg
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust cargo
         uses: Swatinem/rust-cache@v2
