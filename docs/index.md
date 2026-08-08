@@ -40,14 +40,26 @@ features:
     details: 严格按照 SOLID 原则分层设计（Core / Services / UI / Config / Utils），完全解耦并具备完整的 TS 类型定义
 ---
 
+## 🖥️ 真实运行界面 (UI Preview)
+
+### 主工作台 — 暗黑 Studio 界面
+![Distill Studio UI](/images/distill_app_studio_ui.jpg)
+
+### 安全凭据与设置 Modal
+![Distill Settings Modal](/images/distill_settings_modal.jpg)
+
+---
+
 ## 项目概览
 
 | 指标 | 数据 |
 |:-----|:-----|
-| 测试数量 | Vitest 单元测试全通过 |
+| 测试数量 | 404 个 Vitest 单元测试全通过 |
 | 导出格式 | SRT / VTT / TXT / JSON |
 | 架构设计 | 5 层解耦抽象与依赖倒置 |
 | 技术栈 | Tauri 2.x + Vue 3.5 + TypeScript 5.x |
+
+---
 
 ## 快速链接
 

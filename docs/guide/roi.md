@@ -2,6 +2,8 @@
 
 Distill 提供了交互式 HTML5 Canvas / SVG 叠加图层，支持用户通过 8 点手柄（Handles）精准框选视频中的硬字幕区域。
 
+![Distill 8 点手柄 ROI 选区预览](/images/distill_app_studio_ui.jpg)
+
 ---
 
 ## 8 点手柄框选与坐标归一化

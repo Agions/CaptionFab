@@ -10,6 +10,10 @@
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)](https://vuejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square)](https://www.typescriptlang.org)
 
+<br/>
+
+![Distill Studio UI Banner](docs/public/images/distill_app_studio_ui.jpg)
+
 </div>
 
 ---
@@ -27,6 +31,16 @@
 
 ---
 
+## 📸 界面展示 (Screenshots)
+
+### 1. 暗黑 Studio 主工作台 (Video Preview & ROI Frame & Subtitle Timeline)
+![Distill Studio UI](docs/public/images/distill_app_studio_ui.jpg)
+
+### 2. 安全凭据与设置 Modal (Settings & Credentials Modal)
+![Distill Settings Modal](docs/public/images/distill_settings_modal.jpg)
+
+---
+
 ## 🛠️ 5 层架构设计
 
 ```
@@ -36,7 +50,7 @@ Distill/
 │   ├── services/ocr/            # API 服务层 (IOCREngineProvider, LocalOCREngine, CloudOCREngine, Factory)
 │   ├── stores/                  # 配置与状态层 (subtitleStore, securityStore)
 │   ├── components/              # UI 渲染层
-│   │   ├── layout font/          # 布局组件 (TopToolbar, SettingsModal)
+│   │   ├── layout/              # 布局组件 (TopToolbar, SettingsModal)
 │   │   ├── video/               # 视频组件 (VideoPlayer, VideoCanvasOverlay)
 │   │   └── subtitle/            # 字幕列表组件 (SubtitleTimelineList)
 │   ├── utils/                   # 工具层 (TimecodeConverter, SubtitleExporter)

@@ -4,7 +4,7 @@ export default defineConfig({
   title: 'Distill',
   description: '专业视频硬字幕提取与蒸馏工具 — 从视频画面中蒸馏提炼字幕文本',
   lang: 'zh-CN',
-  base: '/',
+  base: process.env.GITHUB_ACTIONS ? '/Distill/' : '/',
   cleanUrls: true,
 
   themeConfig: {

@@ -2,6 +2,8 @@
 
 Distill 采用「导入 → 选区 → 识别 → 导出」的四步极简工作流，极大地降低用户操作门槛。
 
+![Distill 工作流主界面](/images/distill_app_studio_ui.jpg)
+
 ---
 
 ## 四步工作流
