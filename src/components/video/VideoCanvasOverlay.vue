@@ -3,16 +3,13 @@
     ref="containerRef"
     class="relative w-full h-full overflow-hidden select-none cursor-crosshair"
     @mousedown="onContainerMouseDown"
-    @mousemove="onMouseMove"
-    @mouseup="onMouseUp"
-    @mouseleave="onMouseUp"
   >
     <!-- 视频画质 ROI 遮罩与画框 -->
     <svg class="absolute inset-0 w-full h-full pointer-events-none z-10">
-      <!-- 变暗背景遮罩 (使用 mask 或 4 个外侧矩形) -->
+      <!-- 变暗背景遮罩 -->
       <path :d="maskPathD" fill="rgba(0, 0, 0, 0.55)" />
 
-      <!-- ROI 主矩形框 -->
+      <!-- ROI 主矩形框（移除 CSS transition 动画防止拖拽产生拖尾重影） -->
       <rect
         :x="boxPixel.x"
         :y="boxPixel.y"
@@ -22,7 +19,6 @@
         stroke="#10b981"
         stroke-width="2.5"
         stroke-dasharray="4 2"
-        class="transition-all duration-75"
       />
     </svg>
 
@@ -38,7 +34,7 @@
       @mousedown.stop="startDragMove"
     >
       <!-- 中心提示 Label -->
-      <div class="absolute -top-7 left-0 px-2 py-0.5 bg-emerald-600 text-white text-xs font-mono rounded shadow flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+      <div class="absolute -top-7 left-0 px-2 py-0.5 bg-emerald-600 text-white text-xs font-mono rounded shadow flex items-center gap-1.5 opacity-90 group-hover:opacity-100 pointer-events-none">
         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M3 5v4h2V7h2V5H3zm0 10v4h4v-2H5v-2H3zm14 4h4v-4h-2v2h-2v2zm2-14h-4v2h2v2h2V5z"/></svg>
         字幕框选 ROI [{{ Math.round(roi.width * 100) }}% × {{ Math.round(roi.height * 100) }}%]
       </div>
@@ -66,7 +62,6 @@ const subtitleStore = useSubtitleStore();
 const containerRef = ref<HTMLDivElement | null>(null);
 
 const roi = computed(() => subtitleStore.roi);
-
 const containerSize = ref({ width: 800, height: 450 });
 
 // 8 点控制手柄定义
@@ -125,7 +120,6 @@ function getHandleClass(handle: HandleType) {
 
 function onContainerMouseDown(e: MouseEvent) {
   if (isDragging || isResizing) return;
-  // 直接点击背景创建新框选
   const rect = containerRef.value?.getBoundingClientRect();
   if (!rect) return;
 
@@ -139,6 +133,9 @@ function onContainerMouseDown(e: MouseEvent) {
   currentHandle = 'se';
   dragStartX = e.clientX;
   dragStartY = e.clientY;
+
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
 }
 
 function startDragMove(e: MouseEvent) {
@@ -146,6 +143,9 @@ function startDragMove(e: MouseEvent) {
   dragStartX = e.clientX;
   dragStartY = e.clientY;
   initialRoi = { ...roi.value };
+
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
 }
 
 function startResize(e: MouseEvent, handle: HandleType) {
@@ -154,6 +154,9 @@ function startResize(e: MouseEvent, handle: HandleType) {
   dragStartX = e.clientX;
   dragStartY = e.clientY;
   initialRoi = { ...roi.value };
+
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
 }
 
 function onMouseMove(e: MouseEvent) {
@@ -200,6 +203,8 @@ function onMouseUp() {
   isDragging = false;
   isResizing = false;
   currentHandle = null;
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
 }
 
 let resizeObserver: ResizeObserver | null = null;
@@ -215,6 +220,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateContainerSize);
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
   resizeObserver?.disconnect();
 });
 </script>

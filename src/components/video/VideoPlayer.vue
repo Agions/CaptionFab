@@ -15,9 +15,13 @@
       </div>
     </div>
 
-    <!-- 视频预览区 & ROI Overlay 覆盖层 -->
-    <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-      <!-- 视屏未导入占位提示框 -->
+    <!-- 视频预览区 & 拖拽放置 & ROI Overlay 覆盖层 -->
+    <div
+      class="relative flex-1 bg-black flex items-center justify-center overflow-hidden"
+      @dragover.prevent
+      @drop.prevent="onDropVideo"
+    >
+      <!-- 视频未导入占位提示框 -->
       <div v-if="!subtitleStore.videoUrl" class="flex flex-col items-center justify-center text-slate-400 gap-4 p-8 text-center">
         <div class="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-inner">
           <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,11 +39,14 @@
         v-else
         ref="videoRef"
         :src="subtitleStore.videoUrl"
+        preload="metadata"
+        crossorigin="anonymous"
         class="max-w-full max-h-full object-contain"
         @loadedmetadata="onVideoLoaded"
         @timeupdate="onTimeUpdate"
         @play="isPlaying = true"
         @pause="isPlaying = false"
+        @error="onVideoError"
       ></video>
 
       <!-- ROI 选区交互 Canvas 层 (在视频加载后叠加) -->
@@ -112,6 +119,25 @@ function onVideoLoaded() {
 function onTimeUpdate() {
   if (videoRef.value) {
     subtitleStore.currentTime = videoRef.value.currentTime;
+  }
+}
+
+function onVideoError(e: Event) {
+  console.warn('Video 加载错误:', e);
+}
+
+function onDropVideo(e: DragEvent) {
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    const file = files[0];
+    if (file.type.startsWith('video/') || /\.(mp4|mkv|avi|mov|webm|flv|wmv)$/i.test(file.name)) {
+      if (subtitleStore.videoUrl) {
+        URL.revokeObjectURL(subtitleStore.videoUrl);
+      }
+      subtitleStore.videoUrl = URL.createObjectURL(file);
+      subtitleStore.videoFileName = file.name;
+      subtitleStore.clearSubtitles();
+    }
   }
 }
 
