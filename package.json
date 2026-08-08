@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "docs:build": "vitepress build docs",
     "coverage": "vitest run --coverage",
-    "depcheck": "depcheck --ignores \"@tauri-apps/plugin-dialog,@tauri-apps/plugin-shell\""
+    "depcheck": "depcheck --ignores \"@tauri-apps/plugin-dialog,@tauri-apps/plugin-shell,@tauri-apps/plugin-updater\""
   },
   "keywords": [
     "video",
@@ -48,6 +48,7 @@
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
+    "@tauri-apps/plugin-updater": "^2.0.0",
     "pinia": "^2.1.0",
     "tesseract.js": "^5.0.0",
     "vue": "^3.4.0"
