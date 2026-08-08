@@ -1,7 +1,7 @@
 /**
  * @file LocalOCREngine.ts
  * @description 基于 Tesseract.js 与 Canvas 离线提取的本地 OCR 引擎实现。
- * 支持图像裁剪、预处理降噪与高准确度硬字幕文字检测。
+ * 支持图像裁剪、预处理降噪与高准确度硬字幕中英文文字检测。
  */
 
 import type { IOCREngineProvider, OCRConfig, OCRItem, NormalizedROI } from './IOCREngine';
@@ -21,18 +21,26 @@ export class LocalOCREngine implements IOCREngineProvider {
 
     if (!this.worker) {
       try {
-        // 兼容全平台 Vite ESM / CJS / WebKit 环境
         const tesseractMod = await import('tesseract.js');
         const createWorkerFn = tesseractMod.createWorker || (tesseractMod as any).default?.createWorker;
 
         if (typeof createWorkerFn === 'function') {
-          // 尝试使用官方标准的 worker 初始化参数
-          this.worker = await createWorkerFn('eng', 1, {
+          // 初始化包含中英文 chi_sim+eng 的本地识别 Worker
+          this.worker = await createWorkerFn(['chi_sim', 'eng'], 1, {
             logger: () => {},
           });
         }
       } catch (err) {
-        console.warn('LocalOCREngine: Tesseract Worker 初始化跳过，使用引擎降级处理:', err);
+        console.warn('LocalOCREngine: Tesseract Worker chi_sim+eng 初始化重试:', err);
+        try {
+          const tesseractMod = await import('tesseract.js');
+          const createWorkerFn = tesseractMod.createWorker || (tesseractMod as any).default?.createWorker;
+          if (typeof createWorkerFn === 'function') {
+            this.worker = await createWorkerFn('chi_sim+eng');
+          }
+        } catch (e) {
+          console.warn('LocalOCREngine: Tesseract 加载跳过:', e);
+        }
       }
     }
     this.isInitialized = true;
@@ -55,7 +63,7 @@ export class LocalOCREngine implements IOCREngineProvider {
       try {
         const { data } = await this.worker.recognize(processedCanvas as any);
         const cleanText = data.text ? data.text.trim().replace(/\n+/g, ' ') : '';
-        if (cleanText) {
+        if (cleanText && cleanText.length > 0) {
           return [
             {
               id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -68,55 +76,12 @@ export class LocalOCREngine implements IOCREngineProvider {
           ];
         }
       } catch (err) {
-        console.warn('LocalOCREngine: Tesseract 执行识别跳过:', err);
+        console.warn('LocalOCREngine: Tesseract 识别跳过:', err);
       }
     }
 
-    // 图像帧亮度与对比度分析（离线字幕画面区域变化检测）
-    const detectedItem = this.analyzeCanvasFrame(processedCanvas, roi);
-    return detectedItem ? [detectedItem] : [];
-  }
-
-  /**
-   * 离线 Canvas 画面特征与字幕文本检测 fallback
-   */
-  private analyzeCanvasFrame(canvas: HTMLCanvasElement, roi?: NormalizedROI): OCRItem | null {
-    const ctx = canvas.getContext('2d');
-    if (!ctx || canvas.width <= 0 || canvas.height <= 0) return null;
-
-    try {
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      let nonZeroCount = 0;
-      let totalLuminance = 0;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        totalLuminance += lum;
-        if (lum > 180) { // 硬字幕典型高亮像素
-          nonZeroCount++;
-        }
-      }
-
-      const highLightRatio = nonZeroCount / (canvas.width * canvas.height);
-      if (highLightRatio > 0.015) {
-        return {
-          id: `local_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-          startTime: 0,
-          endTime: 0,
-          text: `[字幕文本帧] (${Math.round(highLightRatio * 100)}% 亮度对比)`,
-          confidence: 85,
-          roi,
-        };
-      }
-    } catch {
-      // 忽略无法获取 ImageData 跨域 Canvas
-    }
-
-    return null;
+    // 仅在完全没有提取出文字时返回空数组，绝不吐出 [字幕文本帧] 占位词
+    return [];
   }
 
   /**
