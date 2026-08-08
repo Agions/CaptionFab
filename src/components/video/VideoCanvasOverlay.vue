@@ -9,7 +9,7 @@
       <!-- 变暗背景遮罩 -->
       <path :d="maskPathD" fill="rgba(0, 0, 0, 0.55)" />
 
-      <!-- ROI 主矩形框（移除 CSS transition 动画防止拖拽产生拖尾重影） -->
+      <!-- ROI 主矩形框 -->
       <rect
         :x="boxPixel.x"
         :y="boxPixel.y"
@@ -39,12 +39,12 @@
         字幕框选 ROI [{{ Math.round(roi.width * 100) }}% × {{ Math.round(roi.height * 100) }}%]
       </div>
 
-      <!-- 8 点控制手柄 Handles -->
+      <!-- 8 点控制手柄 Handles（加大点击触发区域，防止边界遮挡） -->
       <div
         v-for="handle in handles"
         :key="handle"
         :class="[
-          'absolute w-3 h-3 bg-white border-2 border-emerald-600 rounded-full z-30 transition-transform hover:scale-125',
+          'absolute w-3.5 h-3.5 bg-white border-2 border-emerald-600 rounded-full z-30 transition-transform hover:scale-150 shadow-md',
           getHandleClass(handle),
         ]"
         @mousedown.stop="startResize($event, handle)"
@@ -107,14 +107,14 @@ function updateContainerSize() {
 // 8 点手柄 Class 映射
 function getHandleClass(handle: HandleType) {
   switch (handle) {
-    case 'nw': return '-top-1.5 -left-1.5 cursor-nwse-resize';
-    case 'n':  return '-top-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize';
-    case 'ne': return '-top-1.5 -right-1.5 cursor-nesw-resize';
-    case 'e':  return 'top-1/2 -right-1.5 -translate-y-1/2 cursor-ew-resize';
-    case 'se': return '-bottom-1.5 -right-1.5 cursor-nwse-resize';
-    case 's':  return '-bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize';
-    case 'sw': return '-bottom-1.5 -left-1.5 cursor-nesw-resize';
-    case 'w':  return 'top-1/2 -left-1.5 -translate-y-1/2 cursor-ew-resize';
+    case 'nw': return '-top-2 -left-2 cursor-nwse-resize';
+    case 'n':  return '-top-2 left-1/2 -translate-x-1/2 cursor-ns-resize';
+    case 'ne': return '-top-2 -right-2 cursor-nesw-resize';
+    case 'e':  return 'top-1/2 -right-2 -translate-y-1/2 cursor-ew-resize';
+    case 'se': return '-bottom-2 -right-2 cursor-nwse-resize';
+    case 's':  return '-bottom-2 left-1/2 -translate-x-1/2 cursor-ns-resize';
+    case 'sw': return '-bottom-2 -left-2 cursor-nesw-resize';
+    case 'w':  return 'top-1/2 -left-2 -translate-y-1/2 cursor-ew-resize';
   }
 }
 

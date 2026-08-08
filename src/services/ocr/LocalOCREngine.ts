@@ -20,12 +20,17 @@ export class LocalOCREngine implements IOCREngineProvider {
     }
 
     if (!this.worker) {
-      // 使用动态 import('tesseract.js') 彻底避免 Vite ESM 默认导入 (default export) 的 SyntaxError 冲突
+      // 兼容全平台 Vite ESM / CJS / WebKit 环境
       const tesseractMod = await import('tesseract.js');
       const createWorkerFn = tesseractMod.createWorker || (tesseractMod as any).default?.createWorker;
 
       if (typeof createWorkerFn === 'function') {
-        this.worker = await createWorkerFn(this.currentLanguage);
+        // 显式指定浏览器环境 workerPath 与 corePath，避免在 WebKit 引擎内误触发 Node.js require() 异常
+        this.worker = await createWorkerFn(this.currentLanguage, 1, {
+          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v5.1.1/dist/worker.min.js',
+          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.1.0',
+          langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+        });
       } else {
         throw new Error('未能在 tesseract.js 模块中解析出 createWorker 函数');
       }
