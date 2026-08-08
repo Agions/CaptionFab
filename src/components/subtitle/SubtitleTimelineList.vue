@@ -9,11 +9,29 @@
         <span class="text-sm font-semibold text-slate-100">字幕识别结果 ({{ subtitleStore.subtitleCount }})</span>
       </div>
 
-      <!-- 快速导出菜单 Dropdown -->
+      <!-- 快速导出 & AI 润色菜单 Dropdown -->
       <div class="flex items-center gap-2">
+        <!-- AI 智能润色按键 -->
         <button
           v-if="subtitleStore.subtitleCount > 0"
-          class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition border border-slate-700"
+          :disabled="isAiCorrecting"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer"
+          title="使用 AI 智能分析并纠正提取文本中的错别字与语法标点"
+          @click="onAiCorrect"
+        >
+          <svg v-if="!isAiCorrecting" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/>
+          </svg>
+          <svg v-else class="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span>{{ isAiCorrecting ? '润色中...' : 'AI 润色' }}</span>
+        </button>
+
+        <button
+          v-if="subtitleStore.subtitleCount > 0"
+          class="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-lg transition border border-slate-700 cursor-pointer"
           @click="subtitleStore.clearSubtitles"
         >
           清空
@@ -22,7 +40,7 @@
         <div class="relative group">
           <button
             :disabled="subtitleStore.subtitleCount === 0"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg shadow transition"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer"
           >
             <span>导出字幕</span>
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
@@ -31,19 +49,19 @@
           <!-- 导出格式下拉列表 -->
           <div class="absolute right-0 top-full mt-1 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 hidden group-hover:block z-50">
             <button
-              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition"
+              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition cursor-pointer"
               @click="exportAs('srt')"
             >
               导出为 .SRT
             </button>
             <button
-              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition"
+              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition cursor-pointer"
               @click="exportAs('vtt')"
             >
               导出为 .VTT
             </button>
             <button
-              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition"
+              class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-emerald-600 hover:text-white transition cursor-pointer"
               @click="exportAs('txt')"
             >
               导出为 .TXT
@@ -79,17 +97,23 @@
       <p class="text-[11px] text-slate-600 max-w-xs">框选视频字幕区域后，点击顶部“开始提取”按键即可自动抽取时间轴字幕</p>
     </div>
 
-    <!-- 时间轴字幕卡片列表 -->
+    <!-- 时间轴字幕卡片列表 (点击双向跳转视频播放位置 & 动态实时高亮) -->
     <div v-else class="flex-1 overflow-y-auto p-3 space-y-2.5 divide-y divide-slate-800/40">
       <div
         v-for="item in subtitleStore.subtitles"
         :key="item.id"
-        class="pt-2.5 first:pt-0 group flex flex-col gap-1.5 p-2.5 bg-slate-950/60 hover:bg-slate-950 border border-slate-800/80 rounded-lg transition"
+        :class="[
+          'pt-2.5 first:pt-0 group flex flex-col gap-1.5 p-2.5 rounded-lg transition cursor-pointer border',
+          isItemActive(item)
+            ? 'bg-emerald-950/40 border-emerald-500/80 shadow-md shadow-emerald-950/50'
+            : 'bg-slate-950/60 hover:bg-slate-950 border-slate-800/80'
+        ]"
+        @click="seekToSubtitle(item.startTime)"
       >
         <!-- 卡片 Top 时间码 & 置信度 Badge -->
         <div class="flex items-center justify-between text-xs font-mono">
           <div class="flex items-center gap-2 text-emerald-400">
-            <span class="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-800/60 text-[11px]">
+            <span class="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-800/60 text-[11px] font-bold">
               {{ formatTime(item.startTime) }}
             </span>
           </div>
@@ -98,7 +122,7 @@
             <!-- 置信度分值 -->
             <span
               :class="[
-                'text-[10px] px-1.5 py-0.5 rounded font-mono',
+                'text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold',
                 item.confidence >= 90 ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
               ]"
             >
@@ -106,9 +130,9 @@
             </span>
 
             <button
-              class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1"
+              class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1 cursor-pointer"
               title="删除此条"
-              @click="subtitleStore.removeSubtitle(item.id)"
+              @click.stop="subtitleStore.removeSubtitle(item.id)"
             >
               <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -119,7 +143,8 @@
         <textarea
           :value="item.text"
           rows="2"
-          class="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs rounded p-2 resize-none focus:outline-none transition font-sans"
+          class="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs rounded p-2 resize-none focus:outline-none transition font-sans cursor-text"
+          @click.stop
           @input="onTextChange(item.id, $event)"
         ></textarea>
       </div>
@@ -128,20 +153,62 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useSubtitleStore } from '../../stores/subtitleStore';
+import { useSecurityStore } from '../../stores/securityStore';
 import { TimecodeConverter } from '../../utils/TimecodeConverter';
 import { SubtitleExporter, type ExportFormat } from '../../utils/SubtitleExporter';
 import { TauriBridge } from '../../services/tauriBridge';
+import { AICorrector } from '../../core/AICorrector';
+import type { OCRItem } from '../../services/ocr/IOCREngine';
 
 const subtitleStore = useSubtitleStore();
+const securityStore = useSecurityStore();
+const isAiCorrecting = ref(false);
 
 function formatTime(ms: number): string {
   return TimecodeConverter.msToSRT(ms).split(',')[0];
 }
 
+function isItemActive(item: OCRItem): boolean {
+  const curMs = subtitleStore.currentTime * 1000;
+  return curMs >= item.startTime && curMs <= item.endTime;
+}
+
+function seekToSubtitle(startTimeMs: number) {
+  subtitleStore.currentTime = startTimeMs / 1000;
+}
+
 function onTextChange(id: string, e: Event) {
   const target = e.target as HTMLTextAreaElement;
   subtitleStore.updateSubtitleText(id, target.value);
+}
+
+async function onAiCorrect() {
+  if (subtitleStore.subtitleCount === 0) return;
+  
+  isAiCorrecting.value = true;
+  try {
+    const corrector = new AICorrector({
+      apiEndpoint: securityStore.cloudEndpoint || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+      apiKey: securityStore.apiKey,
+      model: 'gemini-1.5-flash',
+      temperature: 0.2,
+      maxTokens: 1024,
+    });
+
+    for (const item of subtitleStore.subtitles) {
+      if (!item.text) continue;
+      const res = await corrector.correct(item.text);
+      if (res.corrected && res.corrected !== item.text) {
+        subtitleStore.updateSubtitleText(item.id, res.corrected);
+      }
+    }
+  } catch (e) {
+    console.warn('AI 字幕润色过程提醒:', e);
+  } finally {
+    isAiCorrecting.value = false;
+  }
 }
 
 async function exportAs(format: ExportFormat) {

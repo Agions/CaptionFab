@@ -1,7 +1,7 @@
 /**
  * @file tauriBridge.ts
  * @description Tauri 2.x Rust 后端 IPC 桥接层。
- * 负责检测是否运行在 Tauri 环境，并桥接 Rust 后端的高性能命令（场景检测、ONNX Native OCR、原生文件对话框、视频帧抽帧）。
+ * 负责检测是否运行在 Tauri 环境，并桥接 Rust 后端的高性能命令（场景检测、ONNX Native OCR、原生文件对话框、视频帧抽帧、智能 ROI 识别）。
  */
 
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
@@ -55,6 +55,17 @@ export class TauriBridge {
   public static async detectScenes(filePath: string, threshold = 0.3): Promise<number[]> {
     if (!this.isTauriEnv()) return [];
     return await invoke('detect_scenes', { path: filePath, threshold });
+  }
+
+  /** 调用 Rust 原生智能硬字幕 ROI 选区检测 */
+  public static async autoDetectROI(filePath: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    if (!this.isTauriEnv()) return null;
+    try {
+      return await invoke('auto_detect_roi', { videoPath: filePath });
+    } catch (e) {
+      console.warn('Tauri 自动识别 ROI 选区异常:', e);
+      return null;
+    }
   }
 
   /** 调用 Rust Native ONNX OCR 引擎提取硬字幕 */

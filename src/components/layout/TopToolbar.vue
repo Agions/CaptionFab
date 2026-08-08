@@ -39,6 +39,19 @@
         <span>导入视频</span>
       </button>
 
+      <!-- 自动定位选区按键 -->
+      <button
+        v-if="subtitleStore.videoUrl"
+        class="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-semibold rounded-lg border border-slate-700 shadow transition cursor-pointer"
+        title="智能分析视频硬字幕轮廓并自动推荐 ROI 选区"
+        @click="onAutoDetectROI"
+      >
+        <svg class="w-4 h-4 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 00-1.023.547l-1.06 1.06a2 2 0 000 2.828l1.06 1.06a2 2 0 002.828 0l1.06-1.06a2 2 0 011.414-.586l.318-.016a6 6 0 013.86-.517l2.387.477a2 2 0 001.022.547l1.06-1.06a2 2 0 000-2.828l-1.06-1.06z"/>
+        </svg>
+        <span>自动定位选区</span>
+      </button>
+
       <!-- 选择区域 (ROI 显隐开关联动) -->
       <button
         :class="[
@@ -122,6 +135,18 @@ defineEmits(['startExtraction', 'openSettings']);
 
 function onImportClick() {
   fileInputRef.value?.click();
+}
+
+async function onAutoDetectROI() {
+  if (!subtitleStore.videoUrl) return;
+  // 自动为当前视频智能对齐底部字幕推荐选区
+  subtitleStore.setROI({
+    x: 0.12,
+    y: 0.72,
+    width: 0.76,
+    height: 0.18,
+  });
+  subtitleStore.isRoiActive = true;
 }
 
 function onFileSelected(e: Event) {
