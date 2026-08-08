@@ -11,8 +11,8 @@ export class LocalOCREngine implements IOCREngineProvider {
   readonly mode = 'local' as const;
 
   private worker: any = null;
-  private isInitialized = false;
-  private currentLanguage = 'chi_sim+eng';
+  public isInitialized = false;
+  public currentLanguage = 'chi_sim+eng';
 
   async initialize(config: OCRConfig): Promise<void> {
     if (config.language) {
@@ -50,6 +50,10 @@ export class LocalOCREngine implements IOCREngineProvider {
     frameData: HTMLCanvasElement | Blob | ImageData,
     roi?: NormalizedROI
   ): Promise<OCRItem[]> {
+    if (!this.isInitialized && !this.worker) {
+      await this.initialize({ mode: 'local', language: this.currentLanguage });
+    }
+
     // 处理 ROI 选区裁剪
     let processedCanvas: HTMLCanvasElement = frameData instanceof HTMLCanvasElement
       ? frameData
@@ -117,7 +121,9 @@ export class LocalOCREngine implements IOCREngineProvider {
     if (this.worker) {
       try {
         await this.worker.terminate();
-      } catch {}
+      } catch {
+        // Safe disposal
+      }
       this.worker = null;
     }
     this.isInitialized = false;

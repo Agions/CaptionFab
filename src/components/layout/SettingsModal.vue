@@ -132,7 +132,7 @@ async function onCheckForUpdates() {
     } else {
       alert(`已是最新版本！当前已是最新 v${info.currentVersion}`);
     }
-  } catch (err) {
+  } catch {
     alert('检测版本更新失败，请检查网络连接');
   } finally {
     isCheckingUpdate.value = false;
