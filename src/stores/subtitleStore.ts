@@ -10,6 +10,9 @@ import type { OCRItem, NormalizedROI } from '../services/ocr/IOCREngine';
 export const useSubtitleStore = defineStore('subtitle', () => {
   // 当前模式: 'local' (离线硬字幕) | 'cloud' (API Key)
   const ocrMode = ref<'local' | 'cloud'>('local');
+
+  // ROI 框选激活显示状态
+  const isRoiActive = ref<boolean>(true);
   
   // 提取视频相关属性
   const videoUrl = ref<string>('');
@@ -20,9 +23,9 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   // 图像选区 ROI (0.0 ~ 1.0 归一化比例)
   const roi = ref<NormalizedROI>({
     x: 0.15,
-    y: 0.75,
+    y: 0.70,
     width: 0.70,
-    height: 0.18,
+    height: 0.20,
   });
 
   // 处理状态
@@ -79,6 +82,7 @@ export const useSubtitleStore = defineStore('subtitle', () => {
 
   return {
     ocrMode,
+    isRoiActive,
     videoUrl,
     videoFileName,
     videoDuration,

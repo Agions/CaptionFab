@@ -39,24 +39,24 @@
         <span>导入视频</span>
       </button>
 
-      <!-- 选择区域 (ROI) -->
+      <!-- 选择区域 (ROI 显隐开关联动) -->
       <button
         :class="[
-          'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border transition shadow',
-          isRoiActive ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
+          'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border transition shadow cursor-pointer',
+          subtitleStore.isRoiActive ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
         ]"
-        @click="isRoiActive = !isRoiActive"
+        @click="subtitleStore.isRoiActive = !subtitleStore.isRoiActive"
       >
         <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5v4h2V7h2V5H3zm0 10v4h4v-2H5v-2H3zm14 4h4v-4h-2v2h-2v2zm2-14h-4v2h2v2h2V5z"/>
         </svg>
-        选择区域
+        <span>选择区域</span>
       </button>
 
       <!-- 开始提取字幕 -->
       <button
         :disabled="!subtitleStore.videoUrl || subtitleStore.isExtracting"
-        class="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-950 transition"
+        class="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-950 transition cursor-pointer"
         @click="$emit('startExtraction')"
       >
         <svg v-if="!subtitleStore.isExtracting" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@
       <div class="flex items-center p-1 bg-slate-900 border border-slate-800 rounded-lg text-xs">
         <button
           :class="[
-            'px-3 py-1 rounded-md transition font-medium',
+            'px-3 py-1 rounded-md transition font-medium cursor-pointer',
             subtitleStore.ocrMode === 'local' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
           ]"
           @click="subtitleStore.ocrMode = 'local'"
@@ -85,7 +85,7 @@
         </button>
         <button
           :class="[
-            'px-3 py-1 rounded-md transition font-medium',
+            'px-3 py-1 rounded-md transition font-medium cursor-pointer',
             subtitleStore.ocrMode === 'cloud' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
           ]"
           @click="subtitleStore.ocrMode = 'cloud'"
@@ -96,7 +96,7 @@
 
       <!-- 设置按钮 -->
       <button
-        class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700"
+        class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 cursor-pointer"
         title="配置与安全密钥设置"
         @click="$emit('openSettings')"
       >
@@ -115,7 +115,6 @@ import { useSubtitleStore } from '../../stores/subtitleStore';
 import { TauriBridge } from '../../services/tauriBridge';
 
 const subtitleStore = useSubtitleStore();
-const isRoiActive = ref(true);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isTauri = computed(() => TauriBridge.isTauriEnv());
 
@@ -132,10 +131,10 @@ function onFileSelected(e: Event) {
     if (subtitleStore.videoUrl) {
       URL.revokeObjectURL(subtitleStore.videoUrl);
     }
-    // 强制使用 HTML5 标准规范的 Blob URL (100% 解决 WebKit unsupported URL 错误)
     subtitleStore.videoUrl = URL.createObjectURL(file);
     subtitleStore.videoFileName = file.name;
     subtitleStore.clearSubtitles();
+    subtitleStore.isRoiActive = true; // 导入新视频时自动显示 ROI 选择框
   }
 }
 </script>

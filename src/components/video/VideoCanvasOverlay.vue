@@ -1,7 +1,7 @@
 <template>
   <div
     ref="containerRef"
-    class="relative w-full h-full overflow-hidden select-none cursor-crosshair"
+    class="absolute inset-0 w-full h-full overflow-hidden select-none cursor-crosshair z-20 pointer-events-auto"
     @mousedown="onContainerMouseDown"
   >
     <!-- 视频画质 ROI 遮罩与画框 -->
@@ -24,7 +24,7 @@
 
     <!-- 可交互与可拖拽的 ROI 选区元素 -->
     <div
-      class="absolute border-2 border-emerald-400 bg-emerald-500/10 z-20 group cursor-move shadow-lg rounded-sm"
+      class="absolute border-2 border-emerald-400 bg-emerald-500/20 z-20 group cursor-move shadow-2xl rounded-sm"
       :style="{
         left: `${boxPixel.x}px`,
         top: `${boxPixel.y}px`,
@@ -34,12 +34,12 @@
       @mousedown.stop="startDragMove"
     >
       <!-- 中心提示 Label -->
-      <div class="absolute -top-7 left-0 px-2 py-0.5 bg-emerald-600 text-white text-xs font-mono rounded shadow flex items-center gap-1.5 opacity-90 group-hover:opacity-100 pointer-events-none">
+      <div class="absolute -top-7 left-0 px-2.5 py-0.5 bg-emerald-600 text-white text-xs font-mono rounded shadow-lg flex items-center gap-1.5 opacity-90 group-hover:opacity-100 pointer-events-none">
         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M3 5v4h2V7h2V5H3zm0 10v4h4v-2H5v-2H3zm14 4h4v-4h-2v2h-2v2zm2-14h-4v2h2v2h2V5z"/></svg>
         字幕框选 ROI [{{ Math.round(roi.width * 100) }}% × {{ Math.round(roi.height * 100) }}%]
       </div>
 
-      <!-- 8 点控制手柄 Handles（加大点击触发区域，防止边界遮挡） -->
+      <!-- 8 点控制手柄 Handles -->
       <div
         v-for="handle in handles"
         :key="handle"
@@ -97,9 +97,10 @@ let initialRoi: NormalizedROI = { ...roi.value };
 
 function updateContainerSize() {
   if (containerRef.value) {
+    const rect = containerRef.value.getBoundingClientRect();
     containerSize.value = {
-      width: containerRef.value.clientWidth || 800,
-      height: containerRef.value.clientHeight || 450,
+      width: rect.width || containerRef.value.clientWidth || 800,
+      height: rect.height || containerRef.value.clientHeight || 450,
     };
   }
 }
@@ -211,6 +212,8 @@ let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   updateContainerSize();
+  requestAnimationFrame(updateContainerSize);
+  setTimeout(updateContainerSize, 100);
   window.addEventListener('resize', updateContainerSize);
   if (containerRef.value) {
     resizeObserver = new ResizeObserver(updateContainerSize);

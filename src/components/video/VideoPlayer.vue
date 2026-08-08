@@ -49,8 +49,8 @@
         @error="onVideoError"
       ></video>
 
-      <!-- ROI 选区交互 Canvas 层 (在视频加载后叠加) -->
-      <VideoCanvasOverlay v-if="subtitleStore.videoUrl" class="absolute inset-0" />
+      <!-- ROI 选区交互 Canvas 层 (在视频加载后且选择区域开关联动显示) -->
+      <VideoCanvasOverlay v-if="subtitleStore.videoUrl && subtitleStore.isRoiActive" class="absolute inset-0 z-20 pointer-events-auto" />
     </div>
 
     <!-- 底部视频控制栏 -->
@@ -70,7 +70,7 @@
       <div class="flex items-center justify-between pt-1">
         <div class="flex items-center gap-3">
           <button
-            class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition"
+            class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition cursor-pointer"
             @click="togglePlay"
           >
             <svg v-if="!isPlaying" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -137,6 +137,7 @@ function onDropVideo(e: DragEvent) {
       subtitleStore.videoUrl = URL.createObjectURL(file);
       subtitleStore.videoFileName = file.name;
       subtitleStore.clearSubtitles();
+      subtitleStore.isRoiActive = true;
     }
   }
 }
