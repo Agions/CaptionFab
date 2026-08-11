@@ -4,7 +4,7 @@
 
 ---
 
-## 🖼️ 应用真实界面概览
+## 🖼️ 应用界面概览
 
 ![Distill 主工作台运行界面](/screenshots/app-studio-ui.jpg)
 
