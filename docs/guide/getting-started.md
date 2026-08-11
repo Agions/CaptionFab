@@ -4,6 +4,12 @@
 
 ---
 
+## 🖼️ 应用真实界面概览
+
+![Distill 主工作台运行界面](/screenshots/app-studio-ui.jpg)
+
+---
+
 ## 环境要求
 
 | 依赖 | 版本要求 | 说明 |
@@ -27,13 +33,13 @@ cd Distill
 ### 2. 安装前端依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. 运行开发环境
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ---
@@ -44,13 +50,13 @@ npm run dev
 
 ```bash
 # 类型检查
-npm run type-check
+pnpm exec vue-tsc --noEmit
 
 # 代码规范
-npm run lint
+pnpm lint
 
 # 单元测试
-npx vitest run
+pnpm test
 ```
 
 ---
@@ -60,8 +66,8 @@ npx vitest run
 ```
 Distill/
 ├── src/                        # 前端源码
-│   ├── core/                   # 核心业务逻辑 (Pipeline, ROI)
-│   ├── services/               # OCR 引擎架构 (Local & Cloud)
+│   ├── core/                   # 核心业务逻辑 (Pipeline, ROI, AICorrector)
+│   ├── services/               # OCR 引擎架构 (Local & Cloud, TauriBridge, UpdaterService)
 │   ├── stores/                 # Pinia 状态管理
 │   ├── components/             # Vue 组件 (Video, Subtitle, Layout)
 │   └── utils/                  # 工具函数 (Exporter, Timecode)
