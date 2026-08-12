@@ -41,7 +41,67 @@ function handleUpdateFound(info: UpdateInfo) {
   isUpdateOpen.value = true;
 }
 
+function loadDemoPresentationData() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1280;
+  canvas.height = 720;
+  const ctx = canvas.getContext('2d');
+
+  // 绘制沉浸式电影场景图层
+  const grad = ctx.createLinearGradient(0, 0, 1280, 720);
+  grad.addColorStop(0, '#0f172a');
+  grad.addColorStop(0.4, '#1e293b');
+  grad.addColorStop(0.8, '#090d16');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1280, 720);
+
+  ctx.fillStyle = '#334155';
+  ctx.beginPath();
+  ctx.arc(640, 260, 180, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.ellipse(640, 480, 480, 160, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 绘制画面底部的真实中文字幕
+  ctx.font = 'bold 38px "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#000000';
+  ctx.strokeText('欢迎使用 Distill 智能硬字幕蒸馏提取工具', 640, 620);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('欢迎使用 Distill 智能硬字幕蒸馏提取工具', 640, 620);
+
+  const dataUrl = canvas.toDataURL('image/png');
+
+  subtitleStore.videoUrl = dataUrl;
+  subtitleStore.videoPoster = dataUrl;
+  subtitleStore.videoFileName = 'Distill_Demo_4K_Movie.mp4';
+  subtitleStore.videoDuration = 185.5;
+  subtitleStore.currentTime = 14.2;
+  subtitleStore.isRoiActive = true;
+  subtitleStore.setROI({ x: 0.10, y: 0.70, width: 0.80, height: 0.20 });
+  subtitleStore.subtitles = [
+    { id: 'sub_1', startTime: 3200, endTime: 6800, text: '欢迎使用 Distill 智能硬字幕蒸馏提取工具', confidence: 98 },
+    { id: 'sub_2', startTime: 7200, endTime: 11500, text: '自动识别视频硬字幕区域与多语言文本', confidence: 96 },
+    { id: 'sub_3', startTime: 12000, endTime: 16800, text: '支持 AI 错别字校对与多格式字幕实时导出', confidence: 95 }
+  ];
+}
+
 onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    (window as any).__subtitleStore = subtitleStore;
+    (window as any).__loadDemoData = loadDemoPresentationData;
+
+    // 如果 URL 包含 ?demo=1，自动加载中文视频与字幕展示数据
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === '1') {
+      loadDemoPresentationData();
+    }
+  }
+
   // 静默后台检查软件最新版本
   try {
     const info = await UpdaterService.check();

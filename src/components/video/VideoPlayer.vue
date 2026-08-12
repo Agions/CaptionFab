@@ -22,7 +22,7 @@
       @drop.prevent="onDropVideo"
     >
       <!-- 视频未导入占位提示框 -->
-      <div v-if="!subtitleStore.videoUrl" class="flex flex-col items-center justify-center text-slate-400 gap-4 p-8 text-center">
+      <div v-if="!subtitleStore.videoUrl && !subtitleStore.videoPoster" class="flex flex-col items-center justify-center text-slate-400 gap-4 p-8 text-center select-none">
         <div class="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-inner">
           <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -34,9 +34,17 @@
         </div>
       </div>
 
-      <!-- 真实视频 HTML5 video 元素 (移除 crossorigin="anonymous" 确保本地 asset:// 和 blob: 顺利播放) -->
+      <!-- Poster Backdrop 画面渲染层 (优先渲染海报/帧图像) -->
+      <img
+        v-if="subtitleStore.videoPoster"
+        :src="subtitleStore.videoPoster"
+        class="max-w-full max-h-full object-contain select-none"
+        alt="Video Preview Frame"
+      />
+
+      <!-- 真实视频 HTML5 video 元素 -->
       <video
-        v-else
+        v-else-if="subtitleStore.videoUrl"
         ref="videoRef"
         :src="subtitleStore.videoUrl"
         preload="auto"
@@ -49,12 +57,12 @@
         @error="onVideoError"
       ></video>
 
-      <!-- ROI 选区交互 Canvas 层 (在视频加载后且选择区域开关联动显示) -->
-      <VideoCanvasOverlay v-if="subtitleStore.videoUrl && subtitleStore.isRoiActive" class="absolute inset-0 z-20 pointer-events-auto" />
+      <!-- ROI 选区交互 Canvas 层 (在视频/海报加载后且选择区域开关联动显示) -->
+      <VideoCanvasOverlay v-if="(subtitleStore.videoUrl || subtitleStore.videoPoster) && subtitleStore.isRoiActive" class="absolute inset-0 z-20 pointer-events-auto" />
     </div>
 
     <!-- 底部视频控制栏 -->
-    <div v-if="subtitleStore.videoUrl" class="px-4 py-3 bg-slate-900 border-t border-slate-800 flex flex-col gap-2">
+    <div v-if="subtitleStore.videoUrl || subtitleStore.videoPoster" class="px-4 py-3 bg-slate-900 border-t border-slate-800 flex flex-col gap-2">
       <!-- 进度条 -->
       <input
         type="range"

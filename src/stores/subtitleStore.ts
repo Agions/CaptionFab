@@ -16,16 +16,17 @@ export const useSubtitleStore = defineStore('subtitle', () => {
   
   // 提取视频相关属性
   const videoUrl = ref<string>('');
+  const videoPoster = ref<string>('');
   const videoFileName = ref<string>('');
   const videoDuration = ref<number>(0);
   const currentTime = ref<number>(0);
 
   // 图像选区 ROI (0.0 ~ 1.0 归一化比例)
   const roi = ref<NormalizedROI>({
-    x: 0.15,
-    y: 0.70,
-    width: 0.70,
-    height: 0.20,
+    x: 0.12,
+    y: 0.72,
+    width: 0.76,
+    height: 0.18,
   });
 
   // 处理状态
@@ -80,10 +81,11 @@ export const useSubtitleStore = defineStore('subtitle', () => {
 
   const subtitleCount = computed(() => subtitles.value.length);
 
-  return {
+  const storeObj = {
     ocrMode,
     isRoiActive,
     videoUrl,
+    videoPoster,
     videoFileName,
     videoDuration,
     currentTime,
@@ -99,4 +101,10 @@ export const useSubtitleStore = defineStore('subtitle', () => {
     clearSubtitles,
     setROI,
   };
+
+  if (typeof window !== 'undefined') {
+    (window as any).__subtitleStore = storeObj;
+  }
+
+  return storeObj;
 });
