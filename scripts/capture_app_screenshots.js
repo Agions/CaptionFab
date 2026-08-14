@@ -28,14 +28,14 @@ async function main() {
     process.exit(1);
   }
 
-  // Launch Chrome CDP with explicit URL argument http://localhost:1420/?demo=1
+  // Launch Chrome CDP with explicit window size and device scale factor
   const chromeProcess = spawn(chromePath, [
     '--headless=new',
     '--disable-gpu',
     '--remote-debugging-host=127.0.0.1',
     '--remote-debugging-port=9222',
     '--window-size=1440,900',
-    'http://localhost:1420/?demo=1'
+    '--force-device-scale-factor=1'
   ]);
 
   const cdpReady = await waitForServer('http://127.0.0.1:9222/json', 30);
@@ -74,26 +74,62 @@ async function main() {
     }
 
     await sendCDP('Page.enable');
+    await sendCDP('DOM.enable');
+    await sendCDP('CSS.enable');
+
+    // Set viewport explicitly to 1440x900
+    await sendCDP('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
     console.log('Navigating Chrome to http://localhost:1420/?demo=1...');
     await sendCDP('Page.navigate', { url: 'http://localhost:1420/?demo=1' });
 
-    // Wait 5s for Vue app to mount, load demo video poster, Chinese subtitles, and ROI box
-    await new Promise(r => setTimeout(r, 5000));
+    // Wait 3s for Vue app to mount
+    await new Promise(r => setTimeout(r, 3000));
 
-    // 1. Capture Main Studio UI with loaded video and Chinese subtitles
+    // Ensure all images are decoded and frames rendered
+    console.log('Waiting for images and canvas to decode and paint...');
+    await sendCDP('Runtime.evaluate', {
+      expression: `
+        (async function() {
+          if (typeof window.__loadDemoData === 'function') {
+            window.__loadDemoData();
+          }
+          const imgs = Array.from(document.querySelectorAll('img'));
+          await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : img.decode().catch(() => {})));
+          await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        })()
+      `,
+      awaitPromise: true
+    });
+
+    await new Promise(r => setTimeout(r, 2000));
+
+    // 1. Capture Main Studio UI
     console.log('Capturing Main Studio UI with loaded video & subtitles...');
-    const ss1 = await sendCDP('Page.captureScreenshot', { format: 'png' });
+    const ss1 = await sendCDP('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: false,
+      fromSurface: true
+    });
+
     console.log('ss1 base64 length:', ss1 && ss1.data ? ss1.data.length : 0);
 
-    if (ss1 && ss1.data && ss1.data.length > 500) {
+    if (ss1 && ss1.data && ss1.data.length > 5000) {
       fs.writeFileSync(path.join(outDir, 'app-studio-ui.jpg'), Buffer.from(ss1.data, 'base64'));
       fs.writeFileSync(path.join(docsOutDir, 'app-studio-ui.jpg'), Buffer.from(ss1.data, 'base64'));
 
       fs.writeFileSync(path.join(outDir, 'roi-selection.png'), Buffer.from(ss1.data, 'base64'));
       fs.writeFileSync(path.join(docsOutDir, 'roi-selection.png'), Buffer.from(ss1.data, 'base64'));
+    } else {
+      console.error('ss1 capture failed or returned tiny image data!');
     }
 
-    // 3. Open Settings Modal
+    // 2. Open Settings Modal
     console.log('Opening Settings Modal...');
     await sendCDP('Runtime.evaluate', {
       expression: `
@@ -103,16 +139,21 @@ async function main() {
     });
     await new Promise(r => setTimeout(r, 1200));
 
-    // 4. Capture Settings Modal UI
-    const ss2 = await sendCDP('Page.captureScreenshot', { format: 'png' });
+    // 3. Capture Settings Modal UI
+    const ss2 = await sendCDP('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: false,
+      fromSurface: true
+    });
+
     console.log('ss2 base64 length:', ss2 && ss2.data ? ss2.data.length : 0);
 
-    if (ss2 && ss2.data && ss2.data.length > 500) {
+    if (ss2 && ss2.data && ss2.data.length > 5000) {
       fs.writeFileSync(path.join(outDir, 'settings-modal.jpg'), Buffer.from(ss2.data, 'base64'));
       fs.writeFileSync(path.join(docsOutDir, 'settings-modal.jpg'), Buffer.from(ss2.data, 'base64'));
     }
 
-    console.log('Successfully captured rich Chinese Video & Subtitle UI screenshots!');
+    console.log('Capture process complete!');
     ws.close();
   } catch (err) {
     console.error('CDP capture error:', err);
